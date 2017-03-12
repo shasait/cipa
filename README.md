@@ -57,6 +57,10 @@ Currently it is limited to Java and Maven.
     // Execute all activities
     cipa.runActivities()
 
+This will first execute cleanUpActivity.
+As soon as it is finished checkOutActivity and createDbSchema1Activity can start.
+After checkOutActivity is finished compileActivity can start and is the last activity.
+
 
 ## Ideas / Plans
 
