@@ -1,0 +1,14 @@
+*	text=auto
+
+*.bat	text eol=crlf
+*.cmd	text eol=crlf
+*.ftl	text
+*.groovy	text
+*.java	text diff=java
+*.js	text
+*.json	text
+*.md	text
+*.sh	text eol=lf
+*.txt	text
+*.xjb	text
+*.xml	text
