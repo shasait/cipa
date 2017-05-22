@@ -21,17 +21,27 @@ package de.hasait.cipa
  */
 class CipaNode implements Serializable {
 
-	private final String _nodeLabel
+	private final String nodeLabel
 
-	CipaNode(String pNodeLabel) {
-		if (!pNodeLabel) {
-			throw new IllegalArgumentException('pNodeLabel')
+	private Closure<List<String>> initializer
+
+	CipaNode(String nodeLabel) {
+		if (!nodeLabel) {
+			throw new IllegalArgumentException('nodeLabel')
 		}
-		_nodeLabel = pNodeLabel
+		this.nodeLabel = nodeLabel
 	}
 
 	String getNodeLabel() {
-		return _nodeLabel
+		return nodeLabel
+	}
+
+	void setInitializer(Closure<List<String>> initializer) {
+		this.initializer = initializer
+	}
+
+	Closure<List<String>> getInitializer() {
+		return initializer
 	}
 
 }

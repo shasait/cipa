@@ -10,8 +10,9 @@ Currently it is limited to Java and Maven.
 ## Example Jenkinsfile
 
 
-    @Library('cipa@1.0') _
+    @Library('cipa@1.1') _
     
+    def cipa = new de.hasait.cipa.Cipa(this)
     cipa.setJdkVersion('JDK8')
     cipa.setMvnVersion('M3')
     cipa.setMvnSettingsFileId('ciserver-settings.xml')
