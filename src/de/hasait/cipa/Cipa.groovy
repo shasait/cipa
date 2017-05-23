@@ -30,59 +30,59 @@ class Cipa implements Serializable {
 	private static final String ENV_VAR___MVN_TOOLCHAINS = 'MVN_TOOLCHAINS'
 	private static final String ENV_VAR___MVN_NODE_OPTIONS = 'MVN_NODE_OPTS'
 
-	private final def _script
+	private final def script
 
-	private CipaTool _toolJdk
-	private MvnCipaTool _toolMvn
+	private CipaTool toolJdk
+	private MvnCipaTool toolMvn
 
-	private final List<CipaTool> _tools = new ArrayList<>()
-	private final List<CipaNode> _nodes = new ArrayList<>()
-	private final List<CipaActivity> _activities = new ArrayList<>()
+	private final List<CipaTool> tools = new ArrayList<>()
+	private final List<CipaNode> nodes = new ArrayList<>()
+	private final List<CipaActivity> activities = new ArrayList<>()
 
 	Cipa(script) {
 		if (!script) {
 			throw new IllegalArgumentException('script')
 		}
-		_script = script;
+		this.script = script;
 	}
 
 	CipaNode newNode(String nodeLabel) {
 		CipaNode node = new CipaNode(nodeLabel)
-		_nodes.add(node)
+		nodes.add(node)
 		return node
 	}
 
 	CipaActivity newActivity(CipaNode node, String description, Closure body) {
 		CipaActivity activity = new CipaActivity(node, description, body)
-		_activities.add(activity)
+		activities.add(activity)
 		return activity
 	}
 
 	CipaTool configureJDK(String version) {
-		if (!_toolJdk) {
-			_toolJdk = new CipaTool()
-			_tools.add(_toolJdk)
+		if (!toolJdk) {
+			toolJdk = new CipaTool()
+			tools.add(toolJdk)
 		}
-		_toolJdk.name = version
-		_toolJdk.type = 'hudson.model.JDK'
-		_toolJdk.addToPathWithSuffix = '/bin'
-		_toolJdk.dedicatedEnvVar = ENV_VAR___JDK_HOME
+		toolJdk.name = version
+		toolJdk.type = 'hudson.model.JDK'
+		toolJdk.addToPathWithSuffix = '/bin'
+		toolJdk.dedicatedEnvVar = ENV_VAR___JDK_HOME
 	}
 
 	MvnCipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
-		if (!_toolMvn) {
-			_toolMvn = new MvnCipaTool()
-			_tools.add(_toolMvn)
+		if (!toolMvn) {
+			toolMvn = new MvnCipaTool()
+			tools.add(toolMvn)
 		}
-		_toolMvn.name = version
-		_toolMvn.type = 'hudson.tasks.Maven$MavenInstallation'
-		_toolMvn.addToPathWithSuffix = '/bin'
-		_toolMvn.dedicatedEnvVar = ENV_VAR___MVN_HOME
+		toolMvn.name = version
+		toolMvn.type = 'hudson.tasks.Maven$MavenInstallation'
+		toolMvn.addToPathWithSuffix = '/bin'
+		toolMvn.dedicatedEnvVar = ENV_VAR___MVN_HOME
 		if (mvnSettingsFileId) {
-			_toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_SETTINGS, mvnSettingsFileId)
+			toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_SETTINGS, mvnSettingsFileId)
 		}
 		if (mvnToolchainsFileId) {
-			_toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_TOOLCHAINS, mvnToolchainsFileId)
+			toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_TOOLCHAINS, mvnToolchainsFileId)
 		}
 	}
 
@@ -90,7 +90,7 @@ class Cipa implements Serializable {
 		CipaTool tool = new CipaTool()
 		tool.name = name
 		tool.type = type
-		_tools.add(tool)
+		tools.add(tool)
 		return tool
 	}
 
@@ -102,14 +102,14 @@ class Cipa implements Serializable {
 				parallelActivitiesBranches["${i}-${activity.description}"] = parallelActivityRunBranch(activity)
 			}
 			nodeWithEnv(node) {
-				_script.parallel(parallelActivitiesBranches)
+				script.parallel(parallelActivitiesBranches)
 			}
 		}
 	}
 
 	private Closure parallelActivityRunBranch(CipaActivity activity) {
 		return {
-			_script.waitUntil() {
+			script.waitUntil() {
 				activity.allDependenciesSucceeded()
 			}
 			activity.runActivity()
@@ -117,13 +117,13 @@ class Cipa implements Serializable {
 	}
 
 	void runActivities() {
-		_script.echo("[CIPActivities] Running...")
+		script.echo("[CIPActivities] Running...")
 
 		def parallelNodeBranches = [:]
-		for (int i = 0; i < _nodes.size(); i++) {
-			CipaNode node = _nodes.get(i)
+		for (int i = 0; i < nodes.size(); i++) {
+			CipaNode node = nodes.get(i)
 			List<CipaActivity> nodeActivities = new ArrayList<>()
-			for (activity in _activities) {
+			for (activity in activities) {
 				if (activity.node.is(node)) {
 					nodeActivities.add(activity)
 				}
@@ -131,53 +131,53 @@ class Cipa implements Serializable {
 			parallelNodeBranches["${i}-${node.nodeLabel}"] = parallelNodeWithActivitiesBranch(node, nodeActivities)
 		}
 
-		_script.stage('Pipeline') {
-			_script.parallel(parallelNodeBranches)
+		script.stage('Pipeline') {
+			script.parallel(parallelNodeBranches)
 		}
 
-		_script.echo("[CIPActivities] Done")
+		script.echo("[CIPActivities] Done")
 
-		for (activity in _activities) {
-			_script.echo("[CIPActivities] Activity: ${activity.description}")
-			_script.echo("[CIPActivities]     ${activity.buildStateHistoryString()}")
+		for (activity in activities) {
+			script.echo("[CIPActivities] Activity: ${activity.description}")
+			script.echo("[CIPActivities]     ${activity.buildStateHistoryString()}")
 		}
 	}
 
 	private void nodeWithEnv(CipaNode node, Closure body) {
-		_script.node(node.nodeLabel) {
-			_script.echo('[CIPActivities] On host: ' + determineHostname())
-			def workspace = _script.env.WORKSPACE
-			_script.echo("[CIPActivities] workspace: ${workspace}")
+		script.node(node.nodeLabel) {
+			script.echo('[CIPActivities] On host: ' + determineHostname())
+			def workspace = script.env.WORKSPACE
+			script.echo("[CIPActivities] workspace: ${workspace}")
 
 			def envVars = []
 			def pathEntries = []
 			def configFiles = []
 
-			for (tool in _tools) {
-				def toolHome = _script.tool(name: tool.name, type: tool.type)
-				_script.echo("[CIPActivities] Tool ${tool.name}: ${toolHome}")
+			for (tool in tools) {
+				def toolHome = script.tool(name: tool.name, type: tool.type)
+				script.echo("[CIPActivities] Tool ${tool.name}: ${toolHome}")
 				if (tool.dedicatedEnvVar) {
 					envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
 				}
 				if (tool.addToPathWithSuffix) {
 					pathEntries.add("${toolHome}${tool.addToPathWithSuffix}")
 				}
-				if (tool.is(_toolMvn)) {
+				if (tool.is(toolMvn)) {
 					def mvnRepo = determineMvnRepo()
-					_script.echo("[CIPActivities] mvnRepo: ${mvnRepo}")
+					script.echo("[CIPActivities] mvnRepo: ${mvnRepo}")
 					envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
-					envVars.add("${ENV_VAR___MVN_NODE_OPTIONS}=${_toolMvn.options}")
+					envVars.add("${ENV_VAR___MVN_NODE_OPTIONS}=${toolMvn.options}")
 				}
 				for (configFileEnvVar in tool.configFileEnvVars) {
-					configFiles.add(_script.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
+					configFiles.add(script.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
 				}
 			}
 
 			pathEntries.add('$PATH')
 			envVars.add('PATH=' + pathEntries.join(':'))
 
-			_script.withEnv(envVars) {
-				_script.configFileProvider(configFiles) {
+			script.withEnv(envVars) {
+				script.configFileProvider(configFiles) {
 					body()
 				}
 			}
@@ -191,7 +191,7 @@ class Cipa implements Serializable {
 	@NonCPS
 	def obtainValueFromParamsOrEnv(String name, boolean required = true) {
 		// P_ prefix needed otherwise params overwrite env
-		def value = _script.params['P_' + name] ?: _script.env.getEnvironment()[name] ?: null
+		def value = script.params['P_' + name] ?: script.env.getEnvironment()[name] ?: null
 		if (value || !required) {
 			return value
 		}
@@ -199,12 +199,12 @@ class Cipa implements Serializable {
 	}
 
 	String determineHostname() {
-		String hostnameRaw = _script.sh(returnStdout: true, script: 'hostname')
+		String hostnameRaw = script.sh(returnStdout: true, script: 'hostname')
 		return hostnameRaw.trim()
 	}
 
 	String determineMvnRepo() {
-		String workspace = _script.env.WORKSPACE
+		String workspace = script.env.WORKSPACE
 		return workspace + '/.repo'
 	}
 
@@ -212,7 +212,7 @@ class Cipa implements Serializable {
 	 * Determine SVN URL of current working directory.
 	 */
 	String determineSvnUrlOfCwd() {
-		String svnRev = _script.sh(returnStdout: true, script: 'svn info | awk \'/^URL/{print $2}\'')
+		String svnRev = script.sh(returnStdout: true, script: 'svn info | awk \'/^URL/{print $2}\'')
 		return svnRev
 	}
 
@@ -220,7 +220,7 @@ class Cipa implements Serializable {
 	 * Determine SVN Revision of current working directory.
 	 */
 	String determineSvnRevOfCwd() {
-		String svnRev = _script.sh(returnStdout: true, script: 'svn info | awk \'/^Revision/{print $2}\'')
+		String svnRev = script.sh(returnStdout: true, script: 'svn info | awk \'/^Revision/{print $2}\'')
 		return svnRev
 	}
 
@@ -235,10 +235,10 @@ class Cipa implements Serializable {
 			List<String> options = [],
 			boolean returnStdout = false) {
 		def allArguments = ['-B', '-V', '-e']
-		if (_script.env[ENV_VAR___MVN_SETTINGS]) {
+		if (script.env[ENV_VAR___MVN_SETTINGS]) {
 			allArguments.add('-s "${' + ENV_VAR___MVN_SETTINGS + '}"')
 		}
-		if (_script.env[ENV_VAR___MVN_TOOLCHAINS]) {
+		if (script.env[ENV_VAR___MVN_TOOLCHAINS]) {
 			allArguments.add('--global-toolchains "${' + ENV_VAR___MVN_TOOLCHAINS + '}"')
 		}
 		allArguments.add('-Dmaven.repo.local="${' + ENV_VAR___MVN_REPO + '}"')
@@ -255,9 +255,9 @@ class Cipa implements Serializable {
 		allOptions.add('${' + ENV_VAR___MVN_NODE_OPTIONS + '}')
 		def allOptionsString = allOptions.join(' ')
 
-		_script.withEnv(["MAVEN_OPTS=${allOptionsString}"]) {
-			_script.sh(script: 'echo "MAVEN_OPTS=${MAVEN_OPTS}"')
-			return _script.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
+		script.withEnv(["MAVEN_OPTS=${allOptionsString}"]) {
+			script.sh(script: 'echo "MAVEN_OPTS=${MAVEN_OPTS}"')
+			return script.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
 		}
 	}
 

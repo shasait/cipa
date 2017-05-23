@@ -21,14 +21,14 @@ package de.hasait.cipa
  */
 class MvnCipaTool extends CipaTool {
 
-	private String _options
+	private String options
 
 	String getOptions() {
-		return _options
+		return options
 	}
 
 	void setOptions(final String options) {
-		_options = options
+		this.options = options
 	}
 
 }

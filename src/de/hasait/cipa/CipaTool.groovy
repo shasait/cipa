@@ -21,51 +21,51 @@ package de.hasait.cipa
  */
 class CipaTool implements Serializable {
 
-	private final Map<String, String> _configFileEnvVars = new HashMap<>()
+	private final Map<String, String> configFileEnvVars = new HashMap<>()
 
-	private String _name
-	private String _type
-	private String _dedicatedEnvVar
-	private String _addToPathWithSuffix
+	private String name
+	private String type
+	private String dedicatedEnvVar
+	private String addToPathWithSuffix
 
 	String getName() {
-		return _name
+		return name
 	}
 
 	void setName(String name) {
-		_name = name
+		this.name = name
 	}
 
 	String getType() {
-		return _type
+		return type
 	}
 
 	void setType(String type) {
-		_type = type
+		this.type = type
 	}
 
 	String getDedicatedEnvVar() {
-		return _dedicatedEnvVar
+		return dedicatedEnvVar
 	}
 
 	void setDedicatedEnvVar(String dedicatedEnvVar) {
-		_dedicatedEnvVar = dedicatedEnvVar
+		this.dedicatedEnvVar = dedicatedEnvVar
 	}
 
 	String getAddToPathWithSuffix() {
-		return _addToPathWithSuffix
+		return addToPathWithSuffix
 	}
 
 	void setAddToPathWithSuffix(String addToPathWithSuffix) {
-		_addToPathWithSuffix = addToPathWithSuffix
+		this.addToPathWithSuffix = addToPathWithSuffix
 	}
 
 	void addConfigFileEnvVar(String envVar, String configFileId) {
-		_configFileEnvVars.put(envVar, configFileId)
+		configFileEnvVars.put(envVar, configFileId)
 	}
 
 	Map<String, String> getConfigFileEnvVars() {
-		return Collections.unmodifiableMap(_configFileEnvVars)
+		return Collections.unmodifiableMap(configFileEnvVars)
 	}
 
 }
