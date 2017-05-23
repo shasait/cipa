@@ -27,6 +27,7 @@ class CipaTool implements Serializable {
 	private String type
 	private String dedicatedEnvVar
 	private String addToPathWithSuffix
+	private String options
 
 	String getName() {
 		return name
@@ -66,6 +67,14 @@ class CipaTool implements Serializable {
 
 	Map<String, String> getConfigFileEnvVars() {
 		return Collections.unmodifiableMap(configFileEnvVars)
+	}
+
+	String getOptions() {
+		return options
+	}
+
+	void setOptions(final String options) {
+		this.options = options
 	}
 
 }

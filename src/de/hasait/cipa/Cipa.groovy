@@ -33,7 +33,7 @@ class Cipa implements Serializable {
 	private final def script
 
 	private CipaTool toolJdk
-	private MvnCipaTool toolMvn
+	private CipaTool toolMvn
 
 	private final List<CipaTool> tools = new ArrayList<>()
 	private final List<CipaNode> nodes = new ArrayList<>()
@@ -69,9 +69,9 @@ class Cipa implements Serializable {
 		toolJdk.dedicatedEnvVar = ENV_VAR___JDK_HOME
 	}
 
-	MvnCipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
+	CipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
 		if (!toolMvn) {
-			toolMvn = new MvnCipaTool()
+			toolMvn = new CipaTool()
 			tools.add(toolMvn)
 		}
 		toolMvn.name = version
