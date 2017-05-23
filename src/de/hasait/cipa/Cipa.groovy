@@ -22,73 +22,76 @@ import com.cloudbees.groovy.cps.NonCPS
  *
  */
 class Cipa implements Serializable {
-	def script
-	private String jdkVersion
-	private String mvnVersion
-	private String mvnSettingsFileId
-	private String mvnToolchainsFileId
-	private String mvnOptions
 
-	private final List<CipaNode> nodes = new ArrayList<>()
-	private final List<CipaActivity> activities = new ArrayList<>()
+	private static final String ENV_VAR___JDK_HOME = 'JAVA_HOME'
+	private static final String ENV_VAR___MVN_HOME = 'M2_HOME'
+	private static final String ENV_VAR___MVN_REPO = 'MVN_REPO'
+	private static final String ENV_VAR___MVN_SETTINGS = 'MVN_SETTINGS'
+	private static final String ENV_VAR___MVN_TOOLCHAINS = 'MVN_TOOLCHAINS'
+	private static final String ENV_VAR___MVN_NODE_OPTIONS = 'MVN_NODE_OPTS'
+
+	private final def _script
+
+	private CipaTool _toolJdk
+	private MvnCipaTool _toolMvn
+
+	private final List<CipaTool> _tools = new ArrayList<>()
+	private final List<CipaNode> _nodes = new ArrayList<>()
+	private final List<CipaActivity> _activities = new ArrayList<>()
 
 	Cipa(script) {
 		if (!script) {
 			throw new IllegalArgumentException('script')
 		}
-		this.script = script;
-	}
-
-	String getJdkVersion() {
-		return jdkVersion
-	}
-
-	void setJdkVersion(String jdkVersion) {
-		this.jdkVersion = jdkVersion
-	}
-
-	String getMvnVersion() {
-		return mvnVersion
-	}
-
-	void setMvnVersion(String mvnVersion) {
-		this.mvnVersion = mvnVersion
-	}
-
-	String getMvnSettingsFileId() {
-		return mvnSettingsFileId
-	}
-
-	void setMvnSettingsFileId(String mvnSettingsFileId) {
-		this.mvnSettingsFileId = mvnSettingsFileId
-	}
-
-	String getMvnToolchainsFileId() {
-		return mvnToolchainsFileId
-	}
-
-	void setMvnToolchainsFileId(String mvnToolchainsFileId) {
-		this.mvnToolchainsFileId = mvnToolchainsFileId
-	}
-
-	String getMvnOptions() {
-		return mvnOptions
-	}
-
-	void setMvnOptions(String mvnOptions) {
-		this.mvnOptions = mvnOptions
+		_script = script;
 	}
 
 	CipaNode newNode(String nodeLabel) {
 		CipaNode node = new CipaNode(nodeLabel)
-		nodes.add(node)
+		_nodes.add(node)
 		return node
 	}
 
 	CipaActivity newActivity(CipaNode node, String description, Closure body) {
 		CipaActivity activity = new CipaActivity(node, description, body)
-		activities.add(activity)
+		_activities.add(activity)
 		return activity
+	}
+
+	CipaTool configureJDK(String version) {
+		if (!_toolJdk) {
+			_toolJdk = new CipaTool()
+			_tools.add(_toolJdk)
+		}
+		_toolJdk.name = version
+		_toolJdk.type = 'hudson.model.JDK'
+		_toolJdk.addToPathWithSuffix = '/bin'
+		_toolJdk.dedicatedEnvVar = ENV_VAR___JDK_HOME
+	}
+
+	MvnCipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
+		if (!_toolMvn) {
+			_toolMvn = new MvnCipaTool()
+			_tools.add(_toolMvn)
+		}
+		_toolMvn.name = version
+		_toolMvn.type = 'hudson.tasks.Maven$MavenInstallation'
+		_toolMvn.addToPathWithSuffix = '/bin'
+		_toolMvn.dedicatedEnvVar = ENV_VAR___MVN_HOME
+		if (mvnSettingsFileId) {
+			_toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_SETTINGS, mvnSettingsFileId)
+		}
+		if (mvnToolchainsFileId) {
+			_toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_TOOLCHAINS, mvnToolchainsFileId)
+		}
+	}
+
+	CipaTool configureTool(String name, String type) {
+		CipaTool tool = new CipaTool()
+		tool.name = name
+		tool.type = type
+		_tools.add(tool)
+		return tool
 	}
 
 	private Closure parallelNodeWithActivitiesBranch(CipaNode node, List<CipaActivity> nodeActivities) {
@@ -99,14 +102,14 @@ class Cipa implements Serializable {
 				parallelActivitiesBranches["${i}-${activity.description}"] = parallelActivityRunBranch(activity)
 			}
 			nodeWithEnv(node) {
-				script.parallel(parallelActivitiesBranches)
+				_script.parallel(parallelActivitiesBranches)
 			}
 		}
 	}
 
 	private Closure parallelActivityRunBranch(CipaActivity activity) {
 		return {
-			script.waitUntil() {
+			_script.waitUntil() {
 				activity.allDependenciesSucceeded()
 			}
 			activity.runActivity()
@@ -114,20 +117,13 @@ class Cipa implements Serializable {
 	}
 
 	void runActivities() {
-		script.echo("[CIPActivities] Running...")
-
-		if (!jdkVersion) {
-			throw new IllegalStateException('jdkVersion undefined')
-		}
-		if (!mvnVersion) {
-			throw new IllegalStateException('mvnVersion undefined')
-		}
+		_script.echo("[CIPActivities] Running...")
 
 		def parallelNodeBranches = [:]
-		for (int i = 0; i < nodes.size(); i++) {
-			CipaNode node = nodes.get(i)
+		for (int i = 0; i < _nodes.size(); i++) {
+			CipaNode node = _nodes.get(i)
 			List<CipaActivity> nodeActivities = new ArrayList<>()
-			for (activity in activities) {
+			for (activity in _activities) {
 				if (activity.node.is(node)) {
 					nodeActivities.add(activity)
 				}
@@ -135,48 +131,53 @@ class Cipa implements Serializable {
 			parallelNodeBranches["${i}-${node.nodeLabel}"] = parallelNodeWithActivitiesBranch(node, nodeActivities)
 		}
 
-		script.stage('Pipeline') {
-			script.parallel(parallelNodeBranches)
+		_script.stage('Pipeline') {
+			_script.parallel(parallelNodeBranches)
 		}
 
-		script.echo("[CIPActivities] Done")
+		_script.echo("[CIPActivities] Done")
 
-		for (activity in activities) {
-			script.echo("[CIPActivities] Activity: ${activity.description}")
-			script.echo("[CIPActivities]     ${activity.buildStateHistoryString()}")
+		for (activity in _activities) {
+			_script.echo("[CIPActivities] Activity: ${activity.description}")
+			_script.echo("[CIPActivities]     ${activity.buildStateHistoryString()}")
 		}
 	}
 
 	private void nodeWithEnv(CipaNode node, Closure body) {
-		script.node(node.nodeLabel) {
-			script.echo("[CIPActivities] On host: " + determineHostname())
-			def workspace = script.env.WORKSPACE
-			script.echo("[CIPActivities] workspace: ${workspace}")
-			def javaHome = script.tool(name: jdkVersion, type: 'hudson.model.JDK')
-			script.echo("[CIPActivities] javaHome: ${javaHome}")
-			def mvnHome = script.tool(name: mvnVersion, type: 'hudson.tasks.Maven$MavenInstallation')
-			script.echo("[CIPActivities] mvnHome: ${mvnHome}")
-			def mvnRepo = determineMvnRepo()
-			script.echo("[CIPActivities] mvnRepo: ${mvnRepo}")
-			def nodeMvnOptions = mvnOptions + ' -Dmaven.multiModuleProjectDirectory=' + mvnHome
-			def nodePathElements = ['$JAVA_HOME/bin', '$M2_HOME/bin']
-			if (node.initializer) {
-				List<String> initializerPathElements = node.initializer()
-				if (initializerPathElements) {
-					nodePathElements.addAll(initializerPathElements)
+		_script.node(node.nodeLabel) {
+			_script.echo('[CIPActivities] On host: ' + determineHostname())
+			def workspace = _script.env.WORKSPACE
+			_script.echo("[CIPActivities] workspace: ${workspace}")
+
+			def envVars = []
+			def pathEntries = []
+			def configFiles = []
+
+			for (tool in _tools) {
+				def toolHome = _script.tool(name: tool.name, type: tool.type)
+				_script.echo("[CIPActivities] Tool ${tool.name}: ${toolHome}")
+				if (tool.dedicatedEnvVar) {
+					envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
+				}
+				if (tool.addToPathWithSuffix) {
+					pathEntries.add("${toolHome}${tool.addToPathWithSuffix}")
+				}
+				if (tool.is(_toolMvn)) {
+					def mvnRepo = determineMvnRepo()
+					_script.echo("[CIPActivities] mvnRepo: ${mvnRepo}")
+					envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
+					envVars.add("${ENV_VAR___MVN_NODE_OPTIONS}=${_toolMvn.options}")
+				}
+				for (configFileEnvVar in tool.configFileEnvVars) {
+					configFiles.add(_script.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
 				}
 			}
-			nodePathElements.add('$PATH')
-			def pathElementsString = nodePathElements.join(':')
-			script.withEnv(["JAVA_HOME=${javaHome}", "M2_HOME=${mvnHome}", "MVN_REPO=${mvnRepo}", "MVN_NODE_OPTS=${nodeMvnOptions}", 'PATH=' + pathElementsString]) {
-				def configFiles = []
-				if (mvnSettingsFileId) {
-					configFiles.add(script.configFile(fileId: mvnSettingsFileId, variable: 'MVN_SETTINGS'))
-				}
-				if (mvnToolchainsFileId) {
-					configFiles.add(script.configFile(fileId: mvnToolchainsFileId, variable: 'MVN_TOOLCHAINS'))
-				}
-				script.configFileProvider(configFiles) {
+
+			pathEntries.add('$PATH')
+			envVars.add('PATH=' + pathEntries.join(':'))
+
+			_script.withEnv(envVars) {
+				_script.configFileProvider(configFiles) {
 					body()
 				}
 			}
@@ -190,7 +191,7 @@ class Cipa implements Serializable {
 	@NonCPS
 	def obtainValueFromParamsOrEnv(String name, boolean required = true) {
 		// P_ prefix needed otherwise params overwrite env
-		def value = script.params['P_' + name] ?: script.env.getEnvironment()[name] ?: null
+		def value = _script.params['P_' + name] ?: _script.env.getEnvironment()[name] ?: null
 		if (value || !required) {
 			return value
 		}
@@ -198,12 +199,12 @@ class Cipa implements Serializable {
 	}
 
 	String determineHostname() {
-		String hostnameRaw = script.sh(returnStdout: true, script: 'hostname')
+		String hostnameRaw = _script.sh(returnStdout: true, script: 'hostname')
 		return hostnameRaw.trim()
 	}
 
 	String determineMvnRepo() {
-		String workspace = script.env.WORKSPACE
+		String workspace = _script.env.WORKSPACE
 		return workspace + '/.repo'
 	}
 
@@ -211,7 +212,7 @@ class Cipa implements Serializable {
 	 * Determine SVN URL of current working directory.
 	 */
 	String determineSvnUrlOfCwd() {
-		String svnRev = script.sh(returnStdout: true, script: 'svn info | awk \'/^URL/{print $2}\'')
+		String svnRev = _script.sh(returnStdout: true, script: 'svn info | awk \'/^URL/{print $2}\'')
 		return svnRev
 	}
 
@@ -219,7 +220,7 @@ class Cipa implements Serializable {
 	 * Determine SVN Revision of current working directory.
 	 */
 	String determineSvnRevOfCwd() {
-		String svnRev = script.sh(returnStdout: true, script: 'svn info | awk \'/^Revision/{print $2}\'')
+		String svnRev = _script.sh(returnStdout: true, script: 'svn info | awk \'/^Revision/{print $2}\'')
 		return svnRev
 	}
 
@@ -234,13 +235,13 @@ class Cipa implements Serializable {
 			List<String> options = [],
 			boolean returnStdout = false) {
 		def allArguments = ['-B', '-V', '-e']
-		if (script.env['MVN_SETTINGS']) {
-			allArguments.add('-s "${MVN_SETTINGS}"')
+		if (_script.env[ENV_VAR___MVN_SETTINGS]) {
+			allArguments.add('-s "${' + ENV_VAR___MVN_SETTINGS + '}"')
 		}
-		if (script.env['MVN_TOOLCHAINS']) {
-			allArguments.add('--global-toolchains "${MVN_TOOLCHAINS}"')
+		if (_script.env[ENV_VAR___MVN_TOOLCHAINS]) {
+			allArguments.add('--global-toolchains "${' + ENV_VAR___MVN_TOOLCHAINS + '}"')
 		}
-		allArguments.add('-Dmaven.repo.local="${MVN_REPO}"')
+		allArguments.add('-Dmaven.repo.local="${' + ENV_VAR___MVN_REPO + '}"')
 		if (!profiles.isEmpty()) {
 			allArguments.add('-P' + profiles.join(','))
 		}
@@ -250,11 +251,13 @@ class Cipa implements Serializable {
 		def allArgumentsString = allArguments.isEmpty() ? '' : allArguments.join(' ')
 
 		def allOptions = options.collect()
-		allOptions.add('${MVN_NODE_OPTS}')
+		allOptions.add('-Dmaven.multiModuleProjectDirectory="${' + ENV_VAR___MVN_HOME + '}"')
+		allOptions.add('${' + ENV_VAR___MVN_NODE_OPTIONS + '}')
 		def allOptionsString = allOptions.join(' ')
 
-		script.withEnv(["MAVEN_OPTS=${allOptionsString}"]) {
-			return script.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
+		_script.withEnv(["MAVEN_OPTS=${allOptionsString}"]) {
+			_script.sh(script: 'echo "MAVEN_OPTS=${MAVEN_OPTS}"')
+			return _script.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
 		}
 	}
 

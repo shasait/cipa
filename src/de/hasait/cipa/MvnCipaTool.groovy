@@ -19,19 +19,16 @@ package de.hasait.cipa
 /**
  *
  */
-class CipaNode implements Serializable {
+class MvnCipaTool extends CipaTool {
 
-	private final String _nodeLabel
+	private String _options
 
-	CipaNode(String nodeLabel) {
-		if (!nodeLabel) {
-			throw new IllegalArgumentException('nodeLabel')
-		}
-		_nodeLabel = nodeLabel
+	String getOptions() {
+		return _options
 	}
 
-	String getNodeLabel() {
-		return _nodeLabel
+	void setOptions(final String options) {
+		_options = options
 	}
 
 }

@@ -19,22 +19,23 @@ package de.hasait.cipa
 import java.text.SimpleDateFormat
 
 class CipaActivity implements Serializable {
+
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat('yyyy-MM-dd\' \'HH:mm:ss\' \'Z')
 
 	private static String format(Date date) {
 		return date ? DATE_FORMAT.format(date) : ''
 	}
 
-	private final CipaNode node
-	private final String description
-	private final Closure body
+	private final CipaNode _node
+	private final String _description
+	private final Closure _body
 
-	private final List<CipaActivity> dependsOn = new ArrayList<>()
+	private final List<CipaActivity> _dependsOn = new ArrayList<>()
 
-	private final Date creationDate
-	private Date runningDate
-	private Date finishedDate
-	private Throwable failedThrowable
+	private final Date _creationDate
+	private Date _runningDate
+	private Date _finishedDate
+	private Throwable _failedThrowable
 
 	CipaActivity(CipaNode node, String description, Closure body) {
 		if (!node) {
@@ -43,54 +44,54 @@ class CipaActivity implements Serializable {
 		if (!description) {
 			throw new IllegalArgumentException('description')
 		}
-		this.node = node
-		this.description = description
-		this.body = body
+		_node = node
+		_description = description
+		_body = body
 
-		creationDate = new Date()
+		_creationDate = new Date()
 	}
 
 	CipaNode getNode() {
-		return node
+		return _node
 	}
 
 	String getDescription() {
-		return description
+		return _description
 	}
 
 	void addDependency(CipaActivity activity) {
-		dependsOn.add(activity)
+		_dependsOn.add(activity)
 	}
 
 	Date getCreationDate() {
-		return creationDate
+		return _creationDate
 	}
 
 	Date getRunningDate() {
-		return runningDate
+		return _runningDate
 	}
 
 	Date getFinishedDate() {
-		return finishedDate
+		return _finishedDate
 	}
 
 	Throwable getFailedThrowable() {
-		return failedThrowable
+		return _failedThrowable
 	}
 
 	String buildStateHistoryString() {
 		StringBuilder sb = new StringBuilder()
 		sb.append('Created: ')
-		sb.append(format(creationDate))
-		if (runningDate) {
+		sb.append(format(_creationDate))
+		if (_runningDate) {
 			sb.append(' | Running: ')
-			sb.append(format(runningDate))
-			if (finishedDate) {
+			sb.append(format(_runningDate))
+			if (_finishedDate) {
 				sb.append(' | Finished: ')
-				sb.append(format(finishedDate))
-				if (failedThrowable) {
+				sb.append(format(_finishedDate))
+				if (_failedThrowable) {
 					sb.append(' - Failed: ')
-					sb.append(failedThrowable.getMessage())
+					sb.append(_failedThrowable.getMessage())
 				}
 			}
 		}
@@ -102,22 +103,22 @@ class CipaActivity implements Serializable {
 			throw new IllegalStateException("!allDependenciesSucceeded")
 		}
 		try {
-			runningDate = new Date()
-			body()
-			finishedDate = new Date()
+			_runningDate = new Date()
+			_body()
+			_finishedDate = new Date()
 		} catch (Throwable throwable) {
-			failedThrowable = throwable
-			finishedDate = new Date()
+			_failedThrowable = throwable
+			_finishedDate = new Date()
 		}
 	}
 
 	boolean allDependenciesSucceeded() {
-		for (dependency in dependsOn) {
-			if (!dependency.finishedDate) {
+		for (dependency in _dependsOn) {
+			if (!dependency._finishedDate) {
 				return false
 			}
 
-			Throwable throwable = dependency.failedThrowable
+			Throwable throwable = dependency._failedThrowable
 			if (throwable) {
 				throw new RuntimeException("Dependency failed: ${dependency.name}", throwable)
 			}
