@@ -67,6 +67,7 @@ class Cipa implements Serializable {
 		toolJdk.type = 'hudson.model.JDK'
 		toolJdk.addToPathWithSuffix = '/bin'
 		toolJdk.dedicatedEnvVar = ENV_VAR___JDK_HOME
+		return toolJdk
 	}
 
 	CipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
@@ -84,6 +85,7 @@ class Cipa implements Serializable {
 		if (mvnToolchainsFileId) {
 			toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_TOOLCHAINS, mvnToolchainsFileId)
 		}
+		return toolMvn
 	}
 
 	CipaTool configureTool(String name, String type) {
