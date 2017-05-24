@@ -10,14 +10,14 @@ Currently it is limited to Java and Maven.
 ## Example Jenkinsfile
 
 
-    @Library('cipa@1.1') _
+    @Library('cipa@master')
+    import de.hasait.cipa.Cipa
+    import groovy.transform.Field
     
-    def cipa = new de.hasait.cipa.Cipa(this)
-    cipa.setJdkVersion('JDK8')
-    cipa.setMvnVersion('M3')
-    cipa.setMvnSettingsFileId('ciserver-settings.xml')
-    cipa.setMvnToolchainsFileId('ciserver-toolchains.xml')
-    cipa.setMvnOptions('-Xms1g -Xmx4g')
+    @Field
+    def cipa = new Cipa(this)
+    cipa.configureJDK('JDK8')
+    cipa.configureMaven('M3', 'ciserver-settings.xml', 'ciserver-toolchains.xml').setOptions('-Xms1g -Xmx4g')
     
     // Declare two nodes by label...
     def node1a = cipa.newNode('node1')
