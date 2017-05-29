@@ -120,7 +120,7 @@ class CipaActivity implements Serializable {
 
 			Throwable throwable = dependency.failedThrowable
 			if (throwable) {
-				throw new RuntimeException("Dependency failed: ${dependency.name}", throwable)
+				throw new RuntimeException("Dependency failed: ${dependency.description}", throwable)
 			}
 		}
 
