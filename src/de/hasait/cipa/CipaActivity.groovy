@@ -104,7 +104,7 @@ class CipaActivity implements Serializable {
 		}
 		try {
 			runningDate = new Date()
-			throwOnAnyDependencyFailure()
+			throwOnAnyActivityFailure('Dependencies', dependsOn)
 			body()
 			finishedDate = new Date()
 		} catch (Throwable throwable) {
@@ -123,18 +123,18 @@ class CipaActivity implements Serializable {
 		return true
 	}
 
-	private void throwOnAnyDependencyFailure() {
+	static void throwOnAnyActivityFailure(String msgPrefix, List<CipaActivity> activities) {
 		StringBuilder sb
-		for (dependency in dependsOn) {
-			if (dependency.failedThrowable) {
+		for (activity in activities) {
+			if (activity.failedThrowable) {
 				if (!sb) {
-					sb = new StringBuilder('Dependencies failed: [')
+					sb = new StringBuilder(msgPrefix + ' failed: [')
 				} else {
 					sb.append('; ')
 				}
-				sb.append(dependency.description)
+				sb.append(activity.description)
 				sb.append(' = ')
-				sb.append(dependency.failedThrowable.message)
+				sb.append(activity.failedThrowable.message)
 			}
 		}
 

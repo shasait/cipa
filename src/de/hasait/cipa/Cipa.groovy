@@ -146,6 +146,8 @@ class Cipa implements Serializable {
 			script.echo("[CIPActivities] Activity: ${activity.description}")
 			script.echo("[CIPActivities]     ${activity.buildStateHistoryString()}")
 		}
+
+		CipaActivity.throwOnAnyActivityFailure('Activities', activities)
 	}
 
 	private void nodeWithEnv(CipaNode node, Closure body) {
