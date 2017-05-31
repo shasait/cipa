@@ -139,6 +139,7 @@ class CipaActivity implements Serializable {
 		}
 
 		if (sb) {
+			sb.append(']')
 			throw new RuntimeException(sb.toString())
 		}
 	}
