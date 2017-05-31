@@ -91,7 +91,7 @@ class CipaActivity implements Serializable {
 				sb.append(format(finishedDate))
 				if (failedThrowable) {
 					sb.append(' - Failed: ')
-					sb.append(failedThrowable.getMessage())
+					sb.append(failedThrowable.message)
 				}
 			}
 		}
@@ -99,11 +99,12 @@ class CipaActivity implements Serializable {
 	}
 
 	void runActivity() {
-		if (!allDependenciesSucceeded()) {
-			throw new IllegalStateException("!allDependenciesSucceeded")
+		if (!readyToRunActivity()) {
+			throw new IllegalStateException('!readyToRunActivity')
 		}
 		try {
 			runningDate = new Date()
+			throwOnAnyDependencyFailure()
 			body()
 			finishedDate = new Date()
 		} catch (Throwable throwable) {
@@ -112,19 +113,34 @@ class CipaActivity implements Serializable {
 		}
 	}
 
-	boolean allDependenciesSucceeded() {
+	boolean readyToRunActivity() {
 		for (dependency in dependsOn) {
 			if (!dependency.finishedDate) {
 				return false
 			}
-
-			Throwable throwable = dependency.failedThrowable
-			if (throwable) {
-				throw new RuntimeException("Dependency failed: ${dependency.description}", throwable)
-			}
 		}
 
 		return true
+	}
+
+	private void throwOnAnyDependencyFailure() {
+		StringBuilder sb
+		for (dependency in dependsOn) {
+			if (dependency.failedThrowable) {
+				if (!sb) {
+					sb = new StringBuilder('Dependencies failed: [')
+				} else {
+					sb.append('; ')
+				}
+				sb.append(dependency.description)
+				sb.append(' = ')
+				sb.append(dependency.failedThrowable.message)
+			}
+		}
+
+		if (sb) {
+			throw new RuntimeException(sb.toString())
+		}
 	}
 
 }

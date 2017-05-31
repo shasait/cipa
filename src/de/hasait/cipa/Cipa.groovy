@@ -104,7 +104,7 @@ class Cipa implements Serializable {
 				parallelActivitiesBranches["${i}-${activity.description}"] = parallelActivityRunBranch(activity)
 			}
 			nodeWithEnv(node) {
-				script.parallel(parallelActivitiesBranches)
+				script.parallel(closures: parallelActivitiesBranches, failFast: true)
 			}
 		}
 	}
@@ -112,7 +112,7 @@ class Cipa implements Serializable {
 	private Closure parallelActivityRunBranch(CipaActivity activity) {
 		return {
 			script.waitUntil() {
-				activity.allDependenciesSucceeded()
+				activity.readyToRunActivity()
 			}
 			activity.runActivity()
 		}
@@ -134,7 +134,7 @@ class Cipa implements Serializable {
 		}
 
 		script.stage('Pipeline') {
-			script.parallel(parallelNodeBranches)
+			script.parallel(closures: parallelNodeBranches, failFast: true)
 		}
 
 		script.echo("[CIPActivities] Done")
