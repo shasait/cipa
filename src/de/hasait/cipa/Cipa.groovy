@@ -232,7 +232,7 @@ class Cipa implements Serializable {
 	}
 
 	String determineProjectVersionOfCwd() {
-		return mvn(['org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate'], [], ['-N', '-Dexpression=project.version', '| grep -v \'\\[INFO\\]\' | tr -d \'\\r\\n\''], [], true)
+		return mvn(['org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate'], [], ['-N', '-Dexpression=project.version', '| grep -v \'\\[INFO\\]\' | tail -n 1 | tr -d \'\\r\\n\''], [], true)
 	}
 
 	String mvn(
