@@ -46,12 +46,14 @@ class Cipa implements Serializable {
 		this.script = script;
 	}
 
+	@NonCPS
 	CipaNode newNode(String nodeLabel) {
 		CipaNode node = new CipaNode(nodeLabel)
 		nodes.add(node)
 		return node
 	}
 
+	@NonCPS
 	CipaActivity newActivity(CipaNode node, String description, Closure body) {
 		CipaActivity activity = new CipaActivity(node, description, body)
 		activities.add(activity)
