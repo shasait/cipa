@@ -66,7 +66,7 @@ class CipaTool implements Serializable {
 	}
 
 	Map<String, String> getConfigFileEnvVars() {
-		return Collections.unmodifiableMap(configFileEnvVars)
+		return configFileEnvVars
 	}
 
 	String getOptions() {
