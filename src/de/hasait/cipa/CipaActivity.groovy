@@ -16,6 +16,8 @@
 
 package de.hasait.cipa
 
+import com.cloudbees.groovy.cps.NonCPS
+
 import java.text.SimpleDateFormat
 
 class CipaActivity implements Serializable {
@@ -59,6 +61,7 @@ class CipaActivity implements Serializable {
 		return description
 	}
 
+	@NonCPS
 	void addDependency(CipaActivity activity) {
 		dependsOn.add(activity)
 	}
