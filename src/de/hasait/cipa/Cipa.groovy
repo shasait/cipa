@@ -28,6 +28,7 @@ class Cipa implements Serializable {
 	private static final String ENV_VAR___MVN_REPO = 'MVN_REPO'
 	private static final String ENV_VAR___MVN_SETTINGS = 'MVN_SETTINGS'
 	private static final String ENV_VAR___MVN_TOOLCHAINS = 'MVN_TOOLCHAINS'
+	private static final String ENV_VAR___MVN_OPTIONS = 'MAVEN_OPTS'
 
 	private final def script
 
@@ -181,7 +182,7 @@ class Cipa implements Serializable {
 					def mvnRepo = determineMvnRepo()
 					script.echo("[CIPActivities] mvnRepo: ${mvnRepo}")
 					envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
-					envVars.add("MAVEN_OPTS=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${script.env.MAVEN_OPTS ?: ''}")
+					envVars.add("${ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${script.env[ENV_VAR___MVN_OPTIONS] ?: ''}")
 				}
 				for (configFileEnvVar in tool.configFileEnvVars) {
 					configFiles.add(script.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
@@ -266,7 +267,7 @@ class Cipa implements Serializable {
 
 		def optionsString = options.join(' ')
 
-		script.withEnv(["MAVEN_OPTS=${optionsString} ${script.env.MAVEN_OPTS ?: ''}"]) {
+		script.withEnv(["${ENV_VAR___MVN_OPTIONS}=${optionsString} ${script.env[ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
 			script.sh(script: 'printenv | sort')
 			return script.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
 		}
