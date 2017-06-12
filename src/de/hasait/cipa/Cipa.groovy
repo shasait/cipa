@@ -119,6 +119,13 @@ class Cipa implements Serializable {
 				activity.readyToRunActivity()
 			}
 			activity.runActivity()
+			if (activity.failedThrowable) {
+				StringWriter sw = new StringWriter()
+				PrintWriter pw = new PrintWriter(sw)
+				activity.failedThrowable.printStackTrace(pw)
+				pw.flush()
+				script.echo(sw.toString())
+			}
 		}
 	}
 
