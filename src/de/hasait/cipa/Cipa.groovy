@@ -181,7 +181,7 @@ class Cipa implements Serializable {
 					def mvnRepo = determineMvnRepo()
 					script.echo("[CIPActivities] mvnRepo: ${mvnRepo}")
 					envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
-					envVars.add("MAVEN_OPTS=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${script.env.MAVEN_OPTS}")
+					envVars.add("MAVEN_OPTS=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${script.env.MAVEN_OPTS ?: ''}")
 				}
 				for (configFileEnvVar in tool.configFileEnvVars) {
 					configFiles.add(script.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
@@ -266,7 +266,7 @@ class Cipa implements Serializable {
 
 		def optionsString = options.join(' ')
 
-		script.withEnv(["MAVEN_OPTS=${optionsString} ${script.env.MAVEN_OPTS}"]) {
+		script.withEnv(["MAVEN_OPTS=${optionsString} ${script.env.MAVEN_OPTS ?: ''}"]) {
 			script.sh(script: 'printenv | sort')
 			return script.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
 		}
