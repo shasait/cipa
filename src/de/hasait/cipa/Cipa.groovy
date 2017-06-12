@@ -189,8 +189,7 @@ class Cipa implements Serializable {
 				}
 			}
 
-			pathEntries.add('$PATH')
-			envVars.add('PATH=' + pathEntries.join(':'))
+			envVars.add('PATH+=' + pathEntries.join(':'))
 
 			script.withEnv(envVars) {
 				script.configFileProvider(configFiles) {
