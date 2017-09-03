@@ -14,28 +14,15 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.activity
 
 /**
  *
  */
-class CipaNode implements Serializable {
+interface CipaAroundActivity {
 
-	private final String label
+	void runActivity(String name, Closure<?> body)
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
-
-	String getLabel() {
-		return label
-	}
-
-	String toString() {
-		return label
-	}
+	int getRunActivityOrder()
 
 }

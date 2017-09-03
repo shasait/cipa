@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.Cipa
+import de.hasait.cipa.activity.CipaActivity
+import de.hasait.cipa.activity.CipaAroundActivity
+import de.hasait.cipa.CipaNode
 
 import java.text.SimpleDateFormat
 
-class CipaActivity implements Serializable {
+class CipaActivityWrapper implements Serializable {
 
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat('yyyy-MM-dd\' \'HH:mm:ss\' \'Z')
 
@@ -28,46 +32,52 @@ class CipaActivity implements Serializable {
 		return date ? DATE_FORMAT.format(date) : ''
 	}
 
-	private final CipaNode node
-	private final String description
-	private final Closure body
+	private final Cipa cipa
+	private final CipaActivity activity
+	private final List<CipaAroundActivity> aroundActivities
 
-	private final List<CipaActivity> dependsOn = new ArrayList<>()
+	private final Set<CipaActivityWrapper> dependsOn = new HashSet<>()
 
 	private final Date creationDate
+	private Throwable prepareThrowable
 	private Date runningDate
 	private Date finishedDate
 	private Throwable failedThrowable
 
-	CipaActivity(CipaNode node, String description, Closure body) {
-		if (!node) {
-			throw new IllegalArgumentException('node')
-		}
-		if (!description) {
-			throw new IllegalArgumentException('description')
-		}
-		this.node = node
-		this.description = description
-		this.body = body
+	CipaActivityWrapper(Cipa cipa, CipaActivity activity, List<CipaAroundActivity> aroundActivities) {
+		this.cipa = cipa
+		this.activity = activity
+		this.aroundActivities = aroundActivities
 
 		creationDate = new Date()
 	}
 
 	CipaNode getNode() {
-		return node
+		return activity.node
 	}
 
 	String getDescription() {
-		return description
+		return activity.description
 	}
 
 	@NonCPS
-	void addDependency(CipaActivity activity) {
+	void addDependency(CipaActivityWrapper activity) {
 		dependsOn.add(activity)
 	}
 
 	Date getCreationDate() {
 		return creationDate
+	}
+
+	Throwable getPrepareThrowable() {
+		return prepareThrowable
+	}
+
+	void setPrepareThrowable(Throwable prepareThrowable) {
+		if (!prepareThrowable) {
+			throw new IllegalArgumentException('!prepareThrowable')
+		}
+		this.prepareThrowable = prepareThrowable
 	}
 
 	Date getRunningDate() {
@@ -101,14 +111,26 @@ class CipaActivity implements Serializable {
 		return sb.toString()
 	}
 
+	void prepareNode() {
+		try {
+			activity.prepareNode()
+		} catch (Throwable throwable) {
+			prepareThrowable = throwable
+		}
+	}
+
 	void runActivity() {
 		if (!readyToRunActivity()) {
 			throw new IllegalStateException('!readyToRunActivity')
 		}
+		if (prepareThrowable) {
+			throw new IllegalStateException('prepareThrowable')
+		}
 		try {
 			runningDate = new Date()
 			throwOnAnyActivityFailure('Dependencies', dependsOn)
-			body()
+			runAroundActivity(0)
+
 			finishedDate = new Date()
 		} catch (Throwable throwable) {
 			failedThrowable = throwable
@@ -116,9 +138,17 @@ class CipaActivity implements Serializable {
 		}
 	}
 
+	private void runAroundActivity(int i) {
+		if (i < aroundActivities.size()) {
+			aroundActivities.get(i).runActivity(description, { runAroundActivity(i + 1) })
+		} else {
+			activity.run()
+		}
+	}
+
 	boolean readyToRunActivity() {
 		for (dependency in dependsOn) {
-			if (!dependency.finishedDate) {
+			if (!dependency.finishedDate && !dependency.prepareThrowable) {
 				return false
 			}
 		}
@@ -126,10 +156,10 @@ class CipaActivity implements Serializable {
 		return true
 	}
 
-	static void throwOnAnyActivityFailure(String msgPrefix, List<CipaActivity> activities) {
-		StringBuilder sb
+	static void throwOnAnyActivityFailure(String msgPrefix, Set<CipaActivityWrapper> activities) {
+		StringBuilder sb = null
 		for (activity in activities) {
-			if (activity.failedThrowable) {
+			if (activity.failedThrowable || activity.prepareThrowable) {
 				if (!sb) {
 					sb = new StringBuilder(msgPrefix + ' failed: [')
 				} else {
@@ -137,7 +167,11 @@ class CipaActivity implements Serializable {
 				}
 				sb.append(activity.description)
 				sb.append(' = ')
-				sb.append(activity.failedThrowable.message)
+				if (activity.failedThrowable) {
+					sb.append(activity.failedThrowable.message)
+				} else {
+					sb.append(activity.prepareThrowable.message)
+				}
 			}
 		}
 

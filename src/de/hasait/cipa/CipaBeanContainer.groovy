@@ -19,23 +19,14 @@ package de.hasait.cipa
 /**
  *
  */
-class CipaNode implements Serializable {
+interface CipaBeanContainer {
 
-	private final String label
+	public <T> T addBean(T bean)
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
+	public <T> Set<T> findBeans(Class<T> type)
 
-	String getLabel() {
-		return label
-	}
+	public <T> T findBean(Class<T> type, boolean optional)
 
-	String toString() {
-		return label
-	}
+	public <T> T findBean(Class<T> type)
 
 }

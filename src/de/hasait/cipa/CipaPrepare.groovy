@@ -17,25 +17,12 @@
 package de.hasait.cipa
 
 /**
- *
+ * Between CipaInit and CipaActivity.
  */
-class CipaNode implements Serializable {
+interface CipaPrepare {
 
-	private final String label
+	int getPrepareCipaOrder()
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
-
-	String getLabel() {
-		return label
-	}
-
-	String toString() {
-		return label
-	}
+	void prepareCipa(Cipa cipa)
 
 }

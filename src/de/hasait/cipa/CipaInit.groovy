@@ -17,25 +17,12 @@
 package de.hasait.cipa
 
 /**
- *
+ * <p>First run stage:</p>
+ * <p>Allows finding beans.</p>
+ * <p>Allows adding more beans.</p>
  */
-class CipaNode implements Serializable {
+interface CipaInit {
 
-	private final String label
-
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
-
-	String getLabel() {
-		return label
-	}
-
-	String toString() {
-		return label
-	}
+	void initCipa(Cipa cipa)
 
 }

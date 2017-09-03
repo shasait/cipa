@@ -14,28 +14,22 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
-
+package de.hasait.cipa.test
 /**
  *
  */
-class CipaNode implements Serializable {
+class TestMain {
 
-	private final String label
+	static void main(String[] args) {
+		System.out.println("Test")
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
+		TestRawScript rawScript = new TestRawScript()
+		rawScript.env.MAIN_SCM_URL = 'scm://somewhere.git'
+		rawScript.env.MAIN_SCM_CREDENTIALS_ID = 'somecreds'
+		rawScript.env.NODE_LABEL_PREFIX = 'nlprefix-'
 
-	String getLabel() {
-		return label
-	}
-
-	String toString() {
-		return label
+		TestPipeline testPipeline = new TestPipeline(rawScript)
+		testPipeline.run()
 	}
 
 }

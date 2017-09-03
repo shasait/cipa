@@ -17,25 +17,12 @@
 package de.hasait.cipa
 
 /**
- *
+ * Activities can implement this interface in order to add and read job parameters.
  */
-class CipaNode implements Serializable {
+interface JobParameterContribution extends Serializable {
 
-	private final String label
+	void contributeParameters(JobParameterContainer container)
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
-
-	String getLabel() {
-		return label
-	}
-
-	String toString() {
-		return label
-	}
+	void processParameters(JobParameterValues values)
 
 }

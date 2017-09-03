@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.resource
+
+import de.hasait.cipa.CipaNode
 
 /**
  *
  */
-class CipaNode implements Serializable {
+interface CipaResource {
 
-	private final String label
+	/**
+	 * @return The node the resource belongs to OR null if global.
+	 */
+	CipaNode getNode()
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
-
-	String getLabel() {
-		return label
-	}
-
-	String toString() {
-		return label
-	}
+	String getDescription()
 
 }

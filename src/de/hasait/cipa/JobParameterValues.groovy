@@ -16,26 +16,10 @@
 
 package de.hasait.cipa
 
-/**
- *
- */
-class CipaNode implements Serializable {
+interface JobParameterValues {
 
-	private final String label
+	Object retrieveOptionalValue(String name, Object defaultValue)
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
-
-	String getLabel() {
-		return label
-	}
-
-	String toString() {
-		return label
-	}
+	Object retrieveRequiredValue(String name)
 
 }

@@ -16,26 +16,10 @@
 
 package de.hasait.cipa
 
-/**
- *
- */
-class CipaNode implements Serializable {
+interface JobParameterContainer {
 
-	private final String label
+	void addStringParameter(String name, String defaultValue, String description)
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
-		}
-		this.label = label
-	}
-
-	String getLabel() {
-		return label
-	}
-
-	String toString() {
-		return label
-	}
+	void addBooleanParameter(String name, boolean defaultValue, String description)
 
 }

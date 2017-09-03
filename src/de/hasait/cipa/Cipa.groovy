@@ -17,11 +17,20 @@
 package de.hasait.cipa
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.activity.CipaActivity
+import de.hasait.cipa.activity.CipaAroundActivity
+import de.hasait.cipa.internal.CipaActivityWrapper
+import de.hasait.cipa.internal.CipaPrepareEnv
+import de.hasait.cipa.internal.CipaPrepareJobParameters
+import de.hasait.cipa.internal.CipaPrepareNodeLabelPrefix
+import de.hasait.cipa.resource.CipaCustomResource
+import de.hasait.cipa.resource.CipaFileResource
+import de.hasait.cipa.resource.CipaResource
 
 /**
  *
  */
-class Cipa implements Serializable {
+class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private static final String ENV_VAR___JDK_HOME = 'JAVA_HOME'
 	private static final String ENV_VAR___MVN_HOME = 'M2_HOME'
@@ -30,34 +39,85 @@ class Cipa implements Serializable {
 	private static final String ENV_VAR___MVN_TOOLCHAINS = 'MVN_TOOLCHAINS'
 	private static final String ENV_VAR___MVN_OPTIONS = 'MAVEN_OPTS'
 
-	private final def script
+	private final def rawScript
+	private final Script script
+	private final CipaPrepareNodeLabelPrefix nodeLabelPrefixHolder
+
+	private final Set<Object> beans = new LinkedHashSet<>()
 
 	private CipaTool toolJdk
 	private CipaTool toolMvn
 
-	private final List<CipaTool> tools = new ArrayList<>()
-	private final List<CipaNode> nodes = new ArrayList<>()
-	private final List<CipaActivity> activities = new ArrayList<>()
+	private final Set<CipaTool> tools = new LinkedHashSet<>()
 
-	Cipa(script) {
-		if (!script) {
-			throw new IllegalArgumentException('script')
+	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
+
+	Cipa(rawScript) {
+		if (!rawScript) {
+			throw new IllegalArgumentException('rawScript is null')
 		}
-		this.script = script;
+		this.rawScript = rawScript
+		this.script = new Script(rawScript)
+		addBean(script)
+		addBean(new CipaPrepareEnv())
+		addBean(new CipaPrepareJobParameters())
+		nodeLabelPrefixHolder = new CipaPrepareNodeLabelPrefix()
+		addBean(nodeLabelPrefixHolder)
+	}
+
+	@Override
+	@NonCPS
+	public <T> T addBean(T bean) {
+		beans.add(bean)
+		return bean
+	}
+
+	@Override
+	@NonCPS
+	public <T> Set<T> findBeans(Class<T> type) {
+		Set<T> result = new LinkedHashSet<>()
+		for (bean in beans) {
+			if (type.isInstance(bean)) {
+				result.add((T) bean)
+			}
+		}
+		return result
+	}
+
+	@Override
+	@NonCPS
+	public <T> T findBean(Class<T> type, boolean optional = false) {
+		Set<T> results = findBeans(type)
+		Iterator<T> resultsI = results.iterator()
+		if (!resultsI.hasNext()) {
+			if (optional) {
+				return null
+			}
+			throw new IllegalStateException("No bean found: ${type}")
+		}
+		T result = resultsI.next()
+		if (resultsI.hasNext()) {
+			throw new IllegalStateException("Multiple beans found: ${type}")
+		}
+		return result
 	}
 
 	@NonCPS
 	CipaNode newNode(String nodeLabel) {
 		CipaNode node = new CipaNode(nodeLabel)
-		nodes.add(node)
-		return node
+		return addBean(node)
 	}
 
 	@NonCPS
-	CipaActivity newActivity(CipaNode node, String description, Closure body) {
-		CipaActivity activity = new CipaActivity(node, description, body)
-		activities.add(activity)
-		return activity
+	CipaFileResource newFileResource(CipaNode node, String relDir, String state) {
+		CipaFileResource resource = new CipaFileResource(node, relDir, state)
+		return addBean(resource)
+	}
+
+	@NonCPS
+	CipaCustomResource newCustomResource(CipaNode node = null, String type, String id, String state) {
+		CipaCustomResource resource = new CipaCustomResource(node, type, id, state)
+		return addBean(resource)
 	}
 
 	CipaTool configureJDK(String version) {
@@ -98,24 +158,177 @@ class Cipa implements Serializable {
 		return tool
 	}
 
-	private Closure parallelNodeWithActivitiesBranch(CipaNode node, List<CipaActivity> nodeActivities) {
-		return {
-			def parallelActivitiesBranches = [:]
-			for (int i = 0; i < nodeActivities.size(); i++) {
-				CipaActivity activity = nodeActivities.get(i)
-				parallelActivitiesBranches["${i}-${activity.description}"] = parallelActivityRunBranch(activity)
-			}
+	@NonCPS
+	private Set<CipaInit> findBeansToInitialize() {
+		Set<CipaInit> inits = findBeans(CipaInit.class)
+		inits.removeAll(alreadyInitialized)
+		return inits
+	}
 
-			nodeWithEnv(node) {
-				parallelActivitiesBranches.failFast = true
-				script.parallel(parallelActivitiesBranches)
+	private void initBeans() {
+		rawScript.echo("[CIPA] Initializing...")
+		int initRound = 0
+		while (true) {
+			Set<CipaInit> inits = findBeansToInitialize()
+			if (inits.empty) {
+				break
+			}
+			initRound++
+			if (initRound > 100) {
+				throw new IllegalStateException("Init loop? ${inits}")
+			}
+			rawScript.echo("[CIPA] Initializing: ${inits}")
+			for (init in inits) {
+				init.initCipa(this)
+				alreadyInitialized.add(init)
 			}
 		}
 	}
 
-	private Closure parallelActivityRunBranch(CipaActivity activity) {
+	@NonCPS
+	private List<CipaPrepare> findBeansToPrepare() {
+		List<CipaPrepare> prepares = new ArrayList<>(findBeans(CipaPrepare.class))
+		prepares.sort({ it.prepareCipaOrder })
+		return prepares
+	}
+
+	private void prepareBeans() {
+		rawScript.echo("[CIPA] Preparing...")
+		List<CipaPrepare> prepares = findBeansToPrepare()
+		rawScript.echo("[CIPA] Preparing: ${prepares}")
+
+		for (prepare in prepares) {
+			prepare.prepareCipa(this)
+		}
+
+		initBeans()
+	}
+
+	@NonCPS
+	private List<CipaAroundActivity> findCipaAroundActivities() {
+		List<CipaAroundActivity> aroundActivities = new ArrayList<>(findBeans(CipaAroundActivity.class))
+		aroundActivities.sort({ it.runActivityOrder })
+		return aroundActivities
+	}
+
+	private void analyzeActivities(Set<CipaNode> nodes, Set<CipaActivityWrapper> wrappers, Map<CipaNode, List<CipaActivityWrapper>> activitiesByNode) {
+		Set<CipaResource> resources = findBeans(CipaResource.class)
+
+		rawScript.echo("[CIPA] Analyzing activities...")
+		for (node in nodes) {
+			activitiesByNode.put(node, new ArrayList<>())
+		}
+		Map<CipaResource, List<CipaActivityWrapper>> activitiesRequires = new HashMap<>()
+		Map<CipaResource, List<CipaActivityWrapper>> activitiesProvides = new HashMap<>()
+		Set<CipaActivity> activities = findBeans(CipaActivity.class)
+		List<CipaAroundActivity> aroundActivities = findCipaAroundActivities()
+		for (activity in activities) {
+			CipaNode node = activity.node
+			if (!activitiesByNode.containsKey(node)) {
+				throw new IllegalStateException("Node [${node}] unknown - either create with cipa.newNode or register with addBean!")
+			}
+			CipaActivityWrapper wrapper = new CipaActivityWrapper(this, activity, aroundActivities)
+			wrappers.add(wrapper)
+			activitiesByNode.get(node).add(wrapper)
+			for (requires in activity.runRequires) {
+				if (!resources.contains(requires)) {
+					throw new IllegalStateException("Resource [${requires.description}] unknown - either create with cipa.new*Resource or register with addBean!")
+				}
+				if (!activitiesRequires.containsKey(requires)) {
+					activitiesRequires.put(requires, new ArrayList<>())
+				}
+				activitiesRequires.get(requires).add(wrapper)
+			}
+			for (provides in activity.runProvides) {
+				if (!resources.contains(provides)) {
+					throw new IllegalStateException("Resource [${provides.description}] unknown - either create with cipa.new*Resource or register with addBean!")
+				}
+				if (!activitiesProvides.containsKey(provides)) {
+					activitiesProvides.put(provides, new ArrayList<>())
+				}
+				activitiesProvides.get(provides).add(wrapper)
+			}
+		}
+		for (requires in activitiesRequires) {
+			if (!activitiesProvides.containsKey(requires.key)) {
+				throw new IllegalArgumentException("Required resource [${requires.key.description}] not provided!")
+			}
+			List<CipaActivityWrapper> providesWrappers = activitiesProvides.get(requires.key)
+			for (requiresWrapper in requires.value) {
+				for (providesWrapper in providesWrappers) {
+					requiresWrapper.addDependency(providesWrapper)
+				}
+			}
+		}
+	}
+
+	@Override
+	void run() {
+		initBeans()
+		prepareBeans()
+
+		Set<CipaNode> nodes = findBeans(CipaNode.class)
+		Set<CipaActivityWrapper> wrappers = new HashSet<>()
+		Map<CipaNode, List<CipaActivityWrapper>> activitiesByNode = new HashMap<>()
+		analyzeActivities(nodes, wrappers, activitiesByNode)
+
+		rawScript.echo("[CIPA] Executing activities...")
+		List<CipaNode> nodeList = new ArrayList<>(nodes)
+		def parallelNodeBranches = [:]
+		for (int i = 0; i < nodeList.size(); i++) {
+			CipaNode node = nodeList.get(i)
+			List<CipaActivityWrapper> nodeActivities = activitiesByNode.get(node)
+			if (nodeActivities.empty) {
+				rawScript.echo("[CIPA] WARNING: Node [${node}] has no activities!")
+			}
+			parallelNodeBranches["${i}-${node.label}"] = parallelNodeWithActivitiesBranch(node, nodeActivities)
+		}
+
+		parallelNodeBranches.failFast = true
+		rawScript.parallel(parallelNodeBranches)
+
+		rawScript.echo('[CIPA] Done - Summary of all activities:')
+
+		for (wrapper in wrappers) {
+			rawScript.echo("[CIPA] Activity: ${wrapper.description}")
+			rawScript.echo("[CIPA]     ${wrapper.buildStateHistoryString()}")
+		}
+
+		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', wrappers)
+	}
+
+	private Closure parallelNodeWithActivitiesBranch(CipaNode node, List<CipaActivityWrapper> nodeActivities) {
 		return {
-			script.waitUntil() {
+			def parallelActivitiesBranches = [:]
+			for (int i = 0; i < nodeActivities.size(); i++) {
+				CipaActivityWrapper activity = nodeActivities.get(i)
+				parallelActivitiesBranches["${i}-${activity.description}"] = parallelActivityRunBranch(activity)
+			}
+
+			nodeWithEnv(node) {
+				Throwable prepareThrowable = null
+				for (activity in nodeActivities) {
+					activity.prepareNode()
+					if (activity.prepareThrowable) {
+						prepareThrowable = activity.prepareThrowable
+						break
+					}
+				}
+				if (prepareThrowable) {
+					for (activity in nodeActivities) {
+						activity.prepareThrowable = prepareThrowable
+					}
+				} else {
+					parallelActivitiesBranches.failFast = true
+					rawScript.parallel(parallelActivitiesBranches)
+				}
+			}
+		}
+	}
+
+	private Closure parallelActivityRunBranch(CipaActivityWrapper activity) {
+		return {
+			rawScript.waitUntil() {
 				activity.readyToRunActivity()
 			}
 			activity.runActivity()
@@ -124,54 +337,24 @@ class Cipa implements Serializable {
 				PrintWriter pw = new PrintWriter(sw)
 				activity.failedThrowable.printStackTrace(pw)
 				pw.flush()
-				script.echo(sw.toString())
+				rawScript.echo(sw.toString())
 			}
 		}
-	}
-
-	void runActivities() {
-		script.echo("[CIPActivities] Running...")
-
-		def parallelNodeBranches = [:]
-		for (int i = 0; i < nodes.size(); i++) {
-			CipaNode node = nodes.get(i)
-			List<CipaActivity> nodeActivities = new ArrayList<>()
-			for (activity in activities) {
-				if (activity.node.is(node)) {
-					nodeActivities.add(activity)
-				}
-			}
-			parallelNodeBranches["${i}-${node.nodeLabel}"] = parallelNodeWithActivitiesBranch(node, nodeActivities)
-		}
-
-		script.stage('Pipeline') {
-			parallelNodeBranches.failFast = true
-			script.parallel(parallelNodeBranches)
-		}
-
-		script.echo("[CIPActivities] Done")
-
-		for (activity in activities) {
-			script.echo("[CIPActivities] Activity: ${activity.description}")
-			script.echo("[CIPActivities]     ${activity.buildStateHistoryString()}")
-		}
-
-		CipaActivity.throwOnAnyActivityFailure('Activities', activities)
 	}
 
 	private void nodeWithEnv(CipaNode node, Closure body) {
-		script.node(node.nodeLabel) {
-			script.echo('[CIPActivities] On host: ' + determineHostname())
-			def workspace = script.env.WORKSPACE
-			script.echo("[CIPActivities] workspace: ${workspace}")
+		rawScript.node(nodeLabelPrefixHolder.nodeLabelPrefix + node.label) {
+			rawScript.echo('[CIPA] On host: ' + determineHostname())
+			def workspace = rawScript.env.WORKSPACE
+			rawScript.echo("[CIPA] workspace: ${workspace}")
 
 			def envVars = []
 			def pathEntries = []
 			def configFiles = []
 
 			for (tool in tools) {
-				def toolHome = script.tool(name: tool.name, type: tool.type)
-				script.echo("[CIPActivities] Tool ${tool.name}: ${toolHome}")
+				def toolHome = rawScript.tool(name: tool.name, type: tool.type)
+				rawScript.echo("[CIPA] Tool ${tool.name}: ${toolHome}")
 				if (tool.dedicatedEnvVar) {
 					envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
 				}
@@ -180,67 +363,33 @@ class Cipa implements Serializable {
 				}
 				if (tool.is(toolMvn)) {
 					def mvnRepo = determineMvnRepo()
-					script.echo("[CIPActivities] mvnRepo: ${mvnRepo}")
+					rawScript.echo("[CIPA] mvnRepo: ${mvnRepo}")
 					envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
-					envVars.add("${ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${script.env[ENV_VAR___MVN_OPTIONS] ?: ''}")
+					envVars.add("${ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[ENV_VAR___MVN_OPTIONS] ?: ''}")
 				}
 				for (configFileEnvVar in tool.configFileEnvVars) {
-					configFiles.add(script.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
+					configFiles.add(rawScript.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
 				}
 			}
 
 			envVars.add('PATH+=' + pathEntries.join(':'))
 
-			script.withEnv(envVars) {
-				script.configFileProvider(configFiles) {
+			rawScript.withEnv(envVars) {
+				rawScript.configFileProvider(configFiles) {
 					body()
 				}
 			}
 		}
 	}
 
-	/**
-	 * Obtain first non-null value from params followed by env (params access will be prefixed with P_).
-	 * If required and both are null throw an exception otherwise return null.
-	 */
-	@NonCPS
-	def obtainValueFromParamsOrEnv(String name, boolean required = true) {
-		// P_ prefix needed otherwise params overwrite env
-		def value = script.params['P_' + name] ?: script.env.getEnvironment()[name] ?: null
-		if (value || !required) {
-			return value
-		}
-		throw new RuntimeException("${name} is neither in env nor in params")
-	}
-
 	String determineHostname() {
-		String hostnameRaw = script.sh(returnStdout: true, script: 'hostname')
+		String hostnameRaw = rawScript.sh(returnStdout: true, script: 'hostname')
 		return hostnameRaw.trim()
 	}
 
 	String determineMvnRepo() {
-		String workspace = script.env.WORKSPACE
+		String workspace = rawScript.env.WORKSPACE
 		return workspace + '/.repo'
-	}
-
-	/**
-	 * Determine SVN URL of current working directory.
-	 */
-	String determineSvnUrlOfCwd() {
-		String svnRev = script.sh(returnStdout: true, script: 'svn info | awk \'/^URL/{print $2}\'')
-		return svnRev
-	}
-
-	/**
-	 * Determine SVN Revision of current working directory.
-	 */
-	String determineSvnRevOfCwd() {
-		String svnRev = script.sh(returnStdout: true, script: 'svn info | awk \'/^Revision/{print $2}\'')
-		return svnRev
-	}
-
-	String determineProjectVersionOfCwd() {
-		return mvn(['org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate'], [], ['-N', '-Dexpression=project.version', '| grep -v \'\\[INFO\\]\' | tail -n 1 | tr -d \'\\r\\n\''], [], true)
 	}
 
 	String mvn(
@@ -250,10 +399,10 @@ class Cipa implements Serializable {
 			List<String> options = [],
 			boolean returnStdout = false) {
 		def allArguments = ['-B', '-V', '-e']
-		if (script.env[ENV_VAR___MVN_SETTINGS]) {
+		if (rawScript.env[ENV_VAR___MVN_SETTINGS]) {
 			allArguments.add('-s "${' + ENV_VAR___MVN_SETTINGS + '}"')
 		}
-		if (script.env[ENV_VAR___MVN_TOOLCHAINS]) {
+		if (rawScript.env[ENV_VAR___MVN_TOOLCHAINS]) {
 			allArguments.add('--global-toolchains "${' + ENV_VAR___MVN_TOOLCHAINS + '}"')
 		}
 		allArguments.add('-Dmaven.repo.local="${' + ENV_VAR___MVN_REPO + '}"')
@@ -267,14 +416,10 @@ class Cipa implements Serializable {
 
 		def optionsString = options.join(' ')
 
-		script.withEnv(["${ENV_VAR___MVN_OPTIONS}=${optionsString} ${script.env[ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
-			script.sh(script: 'printenv | sort')
-			return script.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
+		rawScript.withEnv(["${ENV_VAR___MVN_OPTIONS}=${optionsString} ${rawScript.env[ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
+			rawScript.sh(script: 'printenv | sort')
+			return rawScript.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
 		}
-	}
-
-	void cleanUpMvnRepo() {
-		mvn(['org.codehaus.mojo:build-helper-maven-plugin:1.7:remove-project-artifact'])
 	}
 
 }
