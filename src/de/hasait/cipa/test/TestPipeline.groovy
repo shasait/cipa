@@ -27,6 +27,7 @@ import de.hasait.cipa.Script
 import de.hasait.cipa.activity.CheckoutActivity
 import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.resource.CipaFileResource
+import de.hasait.cipa.resource.CipaResourceWithState
 
 /**
  *
@@ -53,8 +54,8 @@ class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActi
 		CipaNode node1 = cipa.newNode('node1')
 		CipaNode node2 = cipa.newNode('node2')
 
-		CipaFileResource mainCoResource = cipa.newFileResource(node1, 'mainco', 'CheckedOut')
-		cipa.addBean(new CheckoutActivity('MAIN', mainCoResource).excludeUser('autouser', 'evilUser'))
+		CipaResourceWithState<CipaFileResource> mainCodeCheckedOut = cipa.newFileResourceWithState(node1, 'mainCode', 'CheckedOut')
+		cipa.addBean(new CheckoutActivity('MAIN', mainCodeCheckedOut).excludeUser('autouser', 'evilUser'))
 	}
 
 	void run() {
@@ -62,17 +63,17 @@ class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActi
 	}
 
 	@Override
-	void contributeParameters(final JobParameterContainer container) {
+	void contributeParameters(JobParameterContainer container) {
 
 	}
 
 	@Override
-	void processParameters(final JobParameterValues values) {
+	void processParameters(JobParameterValues values) {
 
 	}
 
 	@Override
-	void runActivity(final String name, final Closure<?> body) {
+	void runActivity(String name, Closure<?> body) {
 		rawScript.setCustomBuildProperty(key: "${name}-StartTime", value: new Date())
 		try {
 			script.echo("runActivity ${name}...")
@@ -92,4 +93,5 @@ class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActi
 	int getRunActivityOrder() {
 		return 0
 	}
+
 }

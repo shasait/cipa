@@ -16,6 +16,8 @@
 
 package de.hasait.cipa
 
+import com.cloudbees.groovy.cps.NonCPS
+
 /**
  *
  */
@@ -29,50 +31,62 @@ class CipaTool implements Serializable {
 	private String addToPathWithSuffix
 	private String options
 
+	@NonCPS
 	String getName() {
 		return name
 	}
 
+	@NonCPS
 	void setName(String name) {
 		this.name = name
 	}
 
+	@NonCPS
 	String getType() {
 		return type
 	}
 
+	@NonCPS
 	void setType(String type) {
 		this.type = type
 	}
 
+	@NonCPS
 	String getDedicatedEnvVar() {
 		return dedicatedEnvVar
 	}
 
+	@NonCPS
 	void setDedicatedEnvVar(String dedicatedEnvVar) {
 		this.dedicatedEnvVar = dedicatedEnvVar
 	}
 
+	@NonCPS
 	String getAddToPathWithSuffix() {
 		return addToPathWithSuffix
 	}
 
+	@NonCPS
 	void setAddToPathWithSuffix(String addToPathWithSuffix) {
 		this.addToPathWithSuffix = addToPathWithSuffix
 	}
 
+	@NonCPS
 	void addConfigFileEnvVar(String envVar, String configFileId) {
 		configFileEnvVars.put(envVar, configFileId)
 	}
 
+	@NonCPS
 	Map<String, String> getConfigFileEnvVars() {
 		return configFileEnvVars
 	}
 
+	@NonCPS
 	String getOptions() {
 		return options
 	}
 
+	@NonCPS
 	void setOptions(final String options) {
 		this.options = options
 	}

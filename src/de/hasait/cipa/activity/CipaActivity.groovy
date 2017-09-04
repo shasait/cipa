@@ -17,7 +17,7 @@
 package de.hasait.cipa.activity
 
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.resource.CipaResource
+import de.hasait.cipa.resource.CipaResourceWithState
 
 /**
  *
@@ -26,9 +26,9 @@ interface CipaActivity {
 
 	void prepareNode()
 
-	Set<CipaResource> getRunRequires()
+	Set<CipaResourceWithState<?>> getRunRequires()
 
-	Set<CipaResource> getRunProvides()
+	Set<CipaResourceWithState<?>> getRunProvides()
 
 	CipaNode getNode()
 

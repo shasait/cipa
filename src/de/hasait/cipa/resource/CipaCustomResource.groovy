@@ -16,6 +16,7 @@
 
 package de.hasait.cipa.resource
 
+import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.CipaNode
 
 /**
@@ -26,9 +27,8 @@ class CipaCustomResource implements CipaResource, Serializable {
 	private final CipaNode node
 	private final String type
 	private final String id
-	private final String state
 
-	CipaCustomResource(CipaNode node, String type, String id, String state) {
+	CipaCustomResource(CipaNode node, String type, String id) {
 		this.node = node
 		if (!type || type.length() == 0) {
 			throw new IllegalArgumentException('type is null or empty')
@@ -38,33 +38,36 @@ class CipaCustomResource implements CipaResource, Serializable {
 			throw new IllegalArgumentException('id is null or empty')
 		}
 		this.id = id
-		this.state = state
 	}
 
 	@Override
+	@NonCPS
 	CipaNode getNode() {
 		return node
 	}
 
 	@Override
+	@NonCPS
 	String getDescription() {
 		if (node) {
-			return "Custom resource [${type}:${id}] on [${node}] in state [${state}]"
+			return "Custom resource [${type}:${id}] on [${node}]"
 		}
-		return "Global custom resource [${type}:${id}] in state [${state}]"
+		return "Global custom resource [${type}:${id}]"
 	}
 
+	@NonCPS
 	String getType() {
 		return type
 	}
 
+	@NonCPS
 	String getId() {
 		return id
 	}
 
-	String getState() {
-		return state
+	@NonCPS
+	String toString() {
+		return description
 	}
-
 
 }

@@ -16,8 +16,8 @@
 
 package de.hasait.cipa.resource
 
+import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.resource.CipaResource
 
 /**
  *
@@ -26,9 +26,8 @@ class CipaFileResource implements CipaResource, Serializable {
 
 	private final CipaNode node
 	private final String relDir
-	private final String state
 
-	CipaFileResource(CipaNode node, String relDir, String state) {
+	CipaFileResource(CipaNode node, String relDir) {
 		if (!node) {
 			throw new IllegalArgumentException('node is null')
 		}
@@ -36,29 +35,28 @@ class CipaFileResource implements CipaResource, Serializable {
 			throw new IllegalArgumentException('relDir is null or empty')
 		}
 
-		if (!state || state.length() == 0) {
-			throw new IllegalArgumentException('state is null or empty')
-		}
-
 		this.node = node
 		this.relDir = relDir
-		this.state = state
 	}
 
 	@Override
+	@NonCPS
 	CipaNode getNode() {
 		return node
 	}
 
 	@Override
+	@NonCPS
 	String getDescription() {
-		return "Files [${relDir}] on [${node}] in state [${state}]"
+		return "Files [${relDir}] on [${node}]"
 	}
 
+	@NonCPS
 	String getRelDir() {
 		return relDir
 	}
 
+	@NonCPS
 	String toString() {
 		return description
 	}

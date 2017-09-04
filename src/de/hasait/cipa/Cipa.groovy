@@ -26,6 +26,7 @@ import de.hasait.cipa.internal.CipaPrepareNodeLabelPrefix
 import de.hasait.cipa.resource.CipaCustomResource
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResource
+import de.hasait.cipa.resource.CipaResourceWithState
 
 /**
  *
@@ -109,15 +110,25 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	@NonCPS
-	CipaFileResource newFileResource(CipaNode node, String relDir, String state) {
-		CipaFileResource resource = new CipaFileResource(node, relDir, state)
-		return addBean(resource)
+	CipaResourceWithState<CipaFileResource> newFileResourceWithState(CipaNode node, String relDir, String state) {
+		CipaFileResource resource = new CipaFileResource(node, relDir)
+		addBean(resource)
+		CipaResourceWithState<CipaFileResource> resourceWithState = new CipaResourceWithState<CipaFileResource>(resource, state)
+		return addBean(resourceWithState)
 	}
 
 	@NonCPS
-	CipaCustomResource newCustomResource(CipaNode node = null, String type, String id, String state) {
-		CipaCustomResource resource = new CipaCustomResource(node, type, id, state)
-		return addBean(resource)
+	CipaResourceWithState<CipaCustomResource> newCustomResourceWithState(CipaNode node = null, String type, String id, String state) {
+		CipaCustomResource resource = new CipaCustomResource(node, type, id)
+		addBean(resource)
+		CipaResourceWithState<CipaCustomResource> resourceWithState = new CipaResourceWithState<CipaCustomResource>(resource, state)
+		return addBean(resourceWithState)
+	}
+
+	@NonCPS
+	public <R extends CipaResource> CipaResourceWithState<R> newResourceState(CipaResourceWithState<R> resourceWithState, String state) {
+		CipaResourceWithState<R> newResourceWithState = new CipaResourceWithState<R>(resourceWithState.resource, state)
+		return addBean(newResourceWithState)
 	}
 
 	CipaTool configureJDK(String version) {
@@ -177,8 +188,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			if (initRound > 100) {
 				throw new IllegalStateException("Init loop? ${inits}")
 			}
-			rawScript.echo("[CIPA] Initializing: ${inits}")
 			for (init in inits) {
+				rawScript.echo("[CIPA] Initializing: ${init}")
 				init.initCipa(this)
 				alreadyInitialized.add(init)
 			}
@@ -195,9 +206,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private void prepareBeans() {
 		rawScript.echo("[CIPA] Preparing...")
 		List<CipaPrepare> prepares = findBeansToPrepare()
-		rawScript.echo("[CIPA] Preparing: ${prepares}")
 
 		for (prepare in prepares) {
+			rawScript.echo("[CIPA] Preparing: ${prepare}")
 			prepare.prepareCipa(this)
 		}
 
@@ -212,14 +223,14 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	private void analyzeActivities(Set<CipaNode> nodes, Set<CipaActivityWrapper> wrappers, Map<CipaNode, List<CipaActivityWrapper>> activitiesByNode) {
-		Set<CipaResource> resources = findBeans(CipaResource.class)
+		Set<CipaResourceWithState<?>> resources = findBeans(CipaResourceWithState.class)
 
 		rawScript.echo("[CIPA] Analyzing activities...")
 		for (node in nodes) {
 			activitiesByNode.put(node, new ArrayList<>())
 		}
-		Map<CipaResource, List<CipaActivityWrapper>> activitiesRequires = new HashMap<>()
-		Map<CipaResource, List<CipaActivityWrapper>> activitiesProvides = new HashMap<>()
+		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesRequires = new HashMap<>()
+		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesProvides = new HashMap<>()
 		Set<CipaActivity> activities = findBeans(CipaActivity.class)
 		List<CipaAroundActivity> aroundActivities = findCipaAroundActivities()
 		for (activity in activities) {

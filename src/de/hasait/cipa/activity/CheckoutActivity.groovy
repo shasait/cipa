@@ -25,7 +25,7 @@ import de.hasait.cipa.JobParameterContribution
 import de.hasait.cipa.JobParameterValues
 import de.hasait.cipa.Script
 import de.hasait.cipa.resource.CipaFileResource
-import de.hasait.cipa.resource.CipaResource
+import de.hasait.cipa.resource.CipaResourceWithState
 
 class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivity, Serializable {
 
@@ -33,7 +33,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	private static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
 
 	private final String prefix
-	private final CipaFileResource coResource
+	private final CipaResourceWithState<CipaFileResource> coResource
 
 	private Script script
 	private def rawScript
@@ -45,7 +45,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private String scmRev
 
-	CheckoutActivity(String prefix, CipaFileResource coResource) {
+	CheckoutActivity(String prefix, CipaResourceWithState<CipaFileResource> coResource) {
 		this.prefix = prefix
 		this.coResource = coResource
 	}
@@ -80,25 +80,29 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	@Override
 	void prepareNode() {
-
+		// nop
 	}
 
 	@Override
-	Set<CipaResource> getRunRequires() {
+	@NonCPS
+	Set<CipaResourceWithState<?>> getRunRequires() {
 		return []
 	}
 
 	@Override
-	Set<CipaResource> getRunProvides() {
+	@NonCPS
+	Set<CipaResourceWithState<?>> getRunProvides() {
 		return [coResource]
 	}
 
 	@Override
+	@NonCPS
 	CipaNode getNode() {
-		return coResource.node
+		return coResource.resource.node
 	}
 
 	@Override
+	@NonCPS
 	String getDescription() {
 		return prefix + '-Checkout'
 	}
@@ -114,7 +118,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	}
 
 	private void checkout() {
-		script.dir(coResource.relDir) {
+		script.dir(coResource.resource.relDir) {
 			if (scmUrl.endsWith('.git')) {
 				List extensions = []
 				extensions.add([$class: 'CleanBeforeCheckout'])

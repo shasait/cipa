@@ -14,33 +14,43 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.resource
 
 import com.cloudbees.groovy.cps.NonCPS
 
 /**
  *
  */
-class CipaNode implements Serializable {
+class CipaResourceWithState<R extends CipaResource> implements Serializable {
 
-	private final String label
+	private final R resource
+	private final String state
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('!label')
+	CipaResourceWithState(R resource, String state) {
+		if (!resource) {
+			throw new IllegalArgumentException('resource is null')
 		}
-		this.label = label
+		this.resource = resource
+
+		if (!state || state.length() == 0) {
+			throw new IllegalArgumentException('state is null or empty')
+		}
+		this.state = state
 	}
 
 	@NonCPS
-	String getLabel() {
-		return label
+	R getResource() {
+		return resource
 	}
 
-	@Override
 	@NonCPS
-	String toString() {
-		return label
+	String getState() {
+		return state
+	}
+
+	@NonCPS
+	String getDescription() {
+		return "${resource.description} in state [${state}]"
 	}
 
 }
