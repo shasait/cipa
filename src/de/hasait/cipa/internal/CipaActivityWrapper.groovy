@@ -56,8 +56,8 @@ class CipaActivityWrapper implements Serializable {
 		return activity.node
 	}
 
-	String getDescription() {
-		return activity.description
+	String getName() {
+		return activity.name
 	}
 
 	@NonCPS
@@ -140,9 +140,9 @@ class CipaActivityWrapper implements Serializable {
 
 	private void runAroundActivity(int i) {
 		if (i < aroundActivities.size()) {
-			aroundActivities.get(i).runActivity(description, { runAroundActivity(i + 1) })
+			aroundActivities.get(i).runAroundActivity(activity, { runAroundActivity(i + 1) })
 		} else {
-			activity.run()
+			activity.runActivity()
 		}
 	}
 
@@ -165,7 +165,7 @@ class CipaActivityWrapper implements Serializable {
 				} else {
 					sb.append('; ')
 				}
-				sb.append(activity.description)
+				sb.append(activity.name)
 				sb.append(' = ')
 				if (activity.failedThrowable) {
 					sb.append(activity.failedThrowable.message)

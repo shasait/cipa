@@ -32,6 +32,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	private static final String PARAM___SCM_URL = '_SCM_URL'
 	private static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
 
+	private final String name
 	private final String prefix
 	private final CipaResourceWithState<CipaFileResource> coResource
 
@@ -45,7 +46,8 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private String scmRev
 
-	CheckoutActivity(String prefix, CipaResourceWithState<CipaFileResource> coResource) {
+	CheckoutActivity(String name, String prefix, CipaResourceWithState<CipaFileResource> coResource) {
+		this.name = name
 		this.prefix = prefix
 		this.coResource = coResource
 	}
@@ -68,19 +70,10 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 		scmCredentialsId = values.retrieveOptionalValue(prefix + PARAM___SCM_CREDENTIALS_ID, '')
 	}
 
-	/**
-	 * @param users Users excluded from polling.
-	 * @return this
-	 */
-	@NonCPS
-	CheckoutActivity excludeUser(String... users) {
-		scmExcludeUsers.addAll(users)
-		return this
-	}
-
 	@Override
-	void prepareNode() {
-		// nop
+	@NonCPS
+	String getName() {
+		return name
 	}
 
 	@Override
@@ -102,14 +95,29 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	}
 
 	@Override
-	@NonCPS
-	String getDescription() {
-		return prefix + '-Checkout'
+	void prepareNode() {
+		// nop
 	}
 
 	@Override
-	void run() {
+	void runActivity() {
 		checkout()
+	}
+
+	/**
+	 * @param users Users excluded from polling.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity excludeUser(String... users) {
+		scmExcludeUsers.addAll(users)
+		return this
+	}
+
+	@Override
+	@NonCPS
+	String toString() {
+		return "CheckoutActivity[${prefix},${coResource}]"
 	}
 
 	@NonCPS

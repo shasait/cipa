@@ -48,9 +48,10 @@ class CipaResourceWithState<R extends CipaResource> implements Serializable {
 		return state
 	}
 
+	@Override
 	@NonCPS
-	String getDescription() {
-		return "${resource.description} in state [${state}]"
+	String toString() {
+		return "${resource} in state [${state}]"
 	}
 
 }

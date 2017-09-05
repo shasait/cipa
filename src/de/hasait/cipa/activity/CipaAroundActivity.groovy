@@ -17,12 +17,12 @@
 package de.hasait.cipa.activity
 
 /**
- *
+ * Around Aspect for Activities.
  */
 interface CipaAroundActivity {
 
-	void runActivity(String name, Closure<?> body)
+	void runAroundActivity(CipaActivity activity, Closure<?> next)
 
-	int getRunActivityOrder()
+	int getRunAroundActivityOrder()
 
 }

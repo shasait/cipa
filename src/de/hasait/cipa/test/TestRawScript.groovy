@@ -21,125 +21,129 @@ package de.hasait.cipa.test
  */
 class TestRawScript {
 
-	private static void log(String message) {
-		System.out.println('[' + Thread.currentThread().name + ']' + message)
-	}
+    private static void log(String message) {
+        System.out.println('[' + Thread.currentThread().name + ']' + message)
+    }
 
-	def currentBuild = []
+    def currentBuild = ['number': 123, 'rawBuild': []]
 
-	def params = [:]
+    def params = [:]
 
-	Env env = new Env()
+    Env env = new Env()
 
-	void echo(String message) {
-		log('[echo] ' + message)
-	}
+    void echo(String message) {
+        log('[echo] ' + message)
+    }
 
-	void parallel(Map branches) {
-		log('[parallel] >>>')
-		List<Thread> threadGroup = new ArrayList<>()
-		for (branch in branches) {
-			if (Runnable.class.isInstance(branch.value)) {
-				threadGroup.add(new Thread((Runnable) branch.value, (String) branch.key))
-			}
-		}
-		threadGroup.each { it.start() }
-		threadGroup.each { it.join() }
-		log('[parallel] <<<')
-	}
+    String sh(Map args) {
+        log('[sh] ' + args)
+        return ''
+    }
 
-	void node(String label, Closure<?> body) {
-		log('[node] >>> ' + label)
-		body()
-		log('[node] <<< ' + label)
-	}
+    void parallel(Map branches) {
+        log('[parallel] >>>')
+        List<Thread> threadGroup = new ArrayList<>()
+        for (branch in branches) {
+            if (Runnable.class.isInstance(branch.value)) {
+                threadGroup.add(new Thread((Runnable) branch.value, (String) branch.key))
+            }
+        }
+        threadGroup.each { it.start() }
+        threadGroup.each { it.join() }
+        log('[parallel] <<<')
+    }
 
-	String sh(Map args) {
-		log('[sh] ' + args)
-		return ''
-	}
+    void node(String label, Closure<?> body) {
+        log('[node] >>> ' + label)
+        body()
+        log('[node] <<< ' + label)
+    }
 
-	void withEnv(List assignments, Closure<?> body) {
-		log('[withEnv] >>> ' + assignments)
-		body()
-		log('[withEnv] <<< ' + assignments)
-	}
+    void writeFile(Map args) {
+        log('[writeFile] ' + args)
+    }
 
-	Object string(Map args) {
-		return ['string': args]
-	}
+    void withEnv(List assignments, Closure<?> body) {
+        log('[withEnv] >>> ' + assignments)
+        body()
+        log('[withEnv] <<< ' + assignments)
+    }
 
-	Object logRotator(Map args) {
-		return ['logRotator': args]
-	}
+    void dir(String dir, Closure<?> body) {
+        log('[dir] >>> ' + dir)
+        body()
+        log('[dir] <<< ' + dir)
+    }
 
-	Object buildDiscarder(Object logRotator) {
-		return ['buildDiscarder': logRotator]
-	}
+    void waitUntil(Closure<Boolean> test) {
+        while (!test.call()) {
+            log('[waitUntil]')
+            Thread.sleep(1000)
+        }
+    }
 
-	Object parameters(List parameters) {
-		return ['parameters': parameters]
-	}
+    void checkout(Map args) {
+        log('[checkout] ' + args)
+    }
 
-	Object pipelineTriggers(Object arg0) {
-		return ['pipelineTriggers': arg0]
-	}
+    Object tool(Map args) {
+        return ['tool': args]
+    }
 
-	Object pollSCM(String cron) {
-		return ['pollSCM': cron]
-	}
+    Object string(Map args) {
+        return ['string': args]
+    }
 
-	void properties(List properties) {
-		log('[properties] ' + properties)
-	}
+    Object logRotator(Map args) {
+        return ['logRotator': args]
+    }
 
-	Object tool(Map args) {
-		return ['tool': args]
-	}
+    Object buildDiscarder(Object logRotator) {
+        return ['buildDiscarder': logRotator]
+    }
 
-	Object configFile(Map args) {
-		return ['configFile': args]
-	}
+    Object parameters(List parameters) {
+        return ['parameters': parameters]
+    }
 
-	void checkout(Map args) {
-		log('[checkout] ' + args)
-	}
+    Object pipelineTriggers(Object arg0) {
+        return ['pipelineTriggers': arg0]
+    }
 
-	void configFileProvider(List configFiles, Closure<?> body) {
-		log('[configFileProvider] >>> ' + configFiles)
-		body()
-		log('[configFileProvider] <<< ' + configFiles)
-	}
+    Object pollSCM(String cron) {
+        return ['pollSCM': cron]
+    }
 
-	void dir(String dir, Closure<?> body) {
-		log('[dir] >>> ' + dir)
-		body()
-		log('[dir] <<< ' + dir)
-	}
+    void properties(List properties) {
+        log('[properties] ' + properties)
+    }
 
-	void waitUntil(Closure<Boolean> test) {
-		while (!test.call()) {
-			log('[waitUntil]')
-			Thread.sleep(1000)
-		}
-	}
+    Object configFile(Map args) {
+        return ['configFile': args]
+    }
 
-	void setCustomBuildProperty(Map args) {
-		log('[setCustomBuildProperty] ' + args)
-	}
+    void configFileProvider(List configFiles, Closure<?> body) {
+        log('[configFileProvider] >>> ' + configFiles)
+        body()
+        log('[configFileProvider] <<< ' + configFiles)
+    }
 
-	class Env {
+    void setCustomBuildProperty(Map args) {
+        log('[setCustomBuildProperty] ' + args)
+    }
 
-		def environment = [:]
+    class Env {
 
-		def getProperty(String name) {
-			return environment[name]
-		}
+        def environment = [:]
 
-		void setProperty(String name, Object value) {
-			environment[name] = value
-		}
+        def getProperty(String name) {
+            return environment[name]
+        }
 
-	}
+        void setProperty(String name, Object value) {
+            environment[name] = value
+        }
+
+    }
 
 }

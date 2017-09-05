@@ -46,15 +46,6 @@ class CipaCustomResource implements CipaResource, Serializable {
 		return node
 	}
 
-	@Override
-	@NonCPS
-	String getDescription() {
-		if (node) {
-			return "Custom resource [${type}:${id}] on [${node}]"
-		}
-		return "Global custom resource [${type}:${id}]"
-	}
-
 	@NonCPS
 	String getType() {
 		return type
@@ -65,9 +56,13 @@ class CipaCustomResource implements CipaResource, Serializable {
 		return id
 	}
 
+	@Override
 	@NonCPS
 	String toString() {
-		return description
+		if (node) {
+			return "Resource [${type}:${id}] on [${node}]"
+		}
+		return "Global resource [${type}:${id}]"
 	}
 
 }

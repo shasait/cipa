@@ -218,7 +218,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	private List<CipaAroundActivity> findCipaAroundActivities() {
 		List<CipaAroundActivity> aroundActivities = new ArrayList<>(findBeans(CipaAroundActivity.class))
-		aroundActivities.sort({ it.runActivityOrder })
+		aroundActivities.sort({ it.runAroundActivityOrder })
 		return aroundActivities
 	}
 
@@ -243,7 +243,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			activitiesByNode.get(node).add(wrapper)
 			for (requires in activity.runRequires) {
 				if (!resources.contains(requires)) {
-					throw new IllegalStateException("Resource [${requires.description}] unknown - either create with cipa.new*Resource or register with addBean!")
+					throw new IllegalStateException("Resource [${requires}] unknown - either create with cipa.new*Resource or register with addBean!")
 				}
 				if (!activitiesRequires.containsKey(requires)) {
 					activitiesRequires.put(requires, new ArrayList<>())
@@ -252,7 +252,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			}
 			for (provides in activity.runProvides) {
 				if (!resources.contains(provides)) {
-					throw new IllegalStateException("Resource [${provides.description}] unknown - either create with cipa.new*Resource or register with addBean!")
+					throw new IllegalStateException("Resource [${provides}] unknown - either create with cipa.new*Resource or register with addBean!")
 				}
 				if (!activitiesProvides.containsKey(provides)) {
 					activitiesProvides.put(provides, new ArrayList<>())
@@ -262,7 +262,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 		for (requires in activitiesRequires) {
 			if (!activitiesProvides.containsKey(requires.key)) {
-				throw new IllegalArgumentException("Required resource [${requires.key.description}] not provided!")
+				throw new IllegalArgumentException("Required resource [${requires.key}] not provided!")
 			}
 			List<CipaActivityWrapper> providesWrappers = activitiesProvides.get(requires.key)
 			for (requiresWrapper in requires.value) {
@@ -279,7 +279,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		prepareBeans()
 
 		Set<CipaNode> nodes = findBeans(CipaNode.class)
-		Set<CipaActivityWrapper> wrappers = new HashSet<>()
+		Set<CipaActivityWrapper> wrappers = new LinkedHashSet<>()
 		Map<CipaNode, List<CipaActivityWrapper>> activitiesByNode = new HashMap<>()
 		analyzeActivities(nodes, wrappers, activitiesByNode)
 
@@ -301,7 +301,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		rawScript.echo('[CIPA] Done - Summary of all activities:')
 
 		for (wrapper in wrappers) {
-			rawScript.echo("[CIPA] Activity: ${wrapper.description}")
+			rawScript.echo("[CIPA] Activity: ${wrapper.name}")
 			rawScript.echo("[CIPA]     ${wrapper.buildStateHistoryString()}")
 		}
 
@@ -313,7 +313,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			def parallelActivitiesBranches = [:]
 			for (int i = 0; i < nodeActivities.size(); i++) {
 				CipaActivityWrapper activity = nodeActivities.get(i)
-				parallelActivitiesBranches["${i}-${activity.description}"] = parallelActivityRunBranch(activity)
+				parallelActivitiesBranches["${i}-${activity.name}"] = parallelActivityRunBranch(activity)
 			}
 
 			nodeWithEnv(node) {

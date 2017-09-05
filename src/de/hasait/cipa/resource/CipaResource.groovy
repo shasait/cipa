@@ -28,6 +28,4 @@ interface CipaResource {
 	 */
 	CipaNode getNode()
 
-	String getDescription()
-
 }

@@ -24,16 +24,31 @@ import de.hasait.cipa.resource.CipaResourceWithState
  */
 interface CipaActivity {
 
-	void prepareNode()
+	/**
+	 * @return The unique name (should be short).
+	 */
+	String getName()
 
+	/**
+	 * @return This activity can run as soon as these resources are available, i.e. provided by other activities.
+	 */
 	Set<CipaResourceWithState<?>> getRunRequires()
 
+	/**
+	 * @return These resources are available after this activity has run.
+	 */
 	Set<CipaResourceWithState<?>> getRunProvides()
 
 	CipaNode getNode()
 
-	String getDescription()
+	/**
+	 * Executed before any activity's #runActivity is called.
+	 */
+	void prepareNode()
 
-	void run()
+	/**
+	 * Perform the logic of the activity.
+	 */
+	void runActivity()
 
 }

@@ -45,20 +45,15 @@ class CipaFileResource implements CipaResource, Serializable {
 		return node
 	}
 
-	@Override
-	@NonCPS
-	String getDescription() {
-		return "Files [${relDir}] on [${node}]"
-	}
-
 	@NonCPS
 	String getRelDir() {
 		return relDir
 	}
 
+	@Override
 	@NonCPS
 	String toString() {
-		return description
+		return "Files [${relDir}] on node [${node}]"
 	}
 
 }

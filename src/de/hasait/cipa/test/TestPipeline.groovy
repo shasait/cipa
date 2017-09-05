@@ -25,6 +25,7 @@ import de.hasait.cipa.JobParameterContribution
 import de.hasait.cipa.JobParameterValues
 import de.hasait.cipa.Script
 import de.hasait.cipa.activity.CheckoutActivity
+import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
@@ -34,7 +35,7 @@ import de.hasait.cipa.resource.CipaResourceWithState
  */
 class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActivity, Serializable {
 
-	private Cipa cipa
+	private final Cipa cipa
 	private Script script
 	private def rawScript
 
@@ -55,7 +56,7 @@ class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActi
 		CipaNode node2 = cipa.newNode('node2')
 
 		CipaResourceWithState<CipaFileResource> mainCodeCheckedOut = cipa.newFileResourceWithState(node1, 'mainCode', 'CheckedOut')
-		cipa.addBean(new CheckoutActivity('MAIN', mainCodeCheckedOut).excludeUser('autouser', 'evilUser'))
+		cipa.addBean(new CheckoutActivity('Checkout', 'MAIN', mainCodeCheckedOut).excludeUser('autouser', 'robot'))
 	}
 
 	void run() {
@@ -73,24 +74,24 @@ class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActi
 	}
 
 	@Override
-	void runActivity(String name, Closure<?> body) {
-		rawScript.setCustomBuildProperty(key: "${name}-StartTime", value: new Date())
+	void runAroundActivity(CipaActivity activity, Closure<?> next) {
+		rawScript.setCustomBuildProperty(key: "${activity.name}-StartTime", value: new Date())
 		try {
-			script.echo("runActivity ${name}...")
-			body()
+			script.echo("runAroundActivity ${activity.name}...")
+			next.call()
 		} catch (err) {
-			script.echo("[Jenkinsfile] runActivity caught: ${err}")
-			script.echo("[Jenkinsfile] runActivity caught: ${err?.class}")
-			rawScript.setCustomBuildProperty(key: "${name}-Failed", value: err.toString())
+			script.echo("runAroundActivity caught: ${err}")
+			script.echo("runAroundActivity caught: ${err?.class}")
+			rawScript.setCustomBuildProperty(key: "${activity.name}-Failed", value: err.toString())
 			throw err
 		} finally {
-			rawScript.setCustomBuildProperty(key: "${name}-EndTime", value: new Date())
+			rawScript.setCustomBuildProperty(key: "${activity.name}-EndTime", value: new Date())
 		}
 	}
 
 	@Override
 	@NonCPS
-	int getRunActivityOrder() {
+	int getRunAroundActivityOrder() {
 		return 0
 	}
 
