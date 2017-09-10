@@ -80,4 +80,12 @@ class Script implements Serializable {
 		rawScript.timeout(timeOutInMinutes, body)
 	}
 
+	void writeFile(String filepath, String content, String encoding = 'UTF-8') {
+		rawScript.writeFile(encoding: encoding, file: filepath, text: content)
+	}
+
+	String readFile(String filepath, String encoding = 'UTF-8') {
+		return rawScript.readFile(encoding: encoding, file: filepath)
+	}
+
 }
