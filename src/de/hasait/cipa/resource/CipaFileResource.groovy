@@ -53,7 +53,7 @@ class CipaFileResource implements CipaResource, Serializable {
 	@Override
 	@NonCPS
 	String toString() {
-		return "Files [${relDir}] on node [${node}]"
+		return "Files[${relDir}] on ${node}"
 	}
 
 }

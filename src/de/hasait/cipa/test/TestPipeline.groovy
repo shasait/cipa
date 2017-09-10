@@ -20,20 +20,20 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.JobParameterContainer
-import de.hasait.cipa.JobParameterContribution
-import de.hasait.cipa.JobParameterValues
 import de.hasait.cipa.Script
 import de.hasait.cipa.activity.CheckoutActivity
 import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaAroundActivity
+import de.hasait.cipa.activity.StashFilesActivity
+import de.hasait.cipa.activity.UnstashFilesActivity
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
+import de.hasait.cipa.resource.CipaStashResource
 
 /**
  *
  */
-class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActivity, Serializable {
+class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 
 	private final Cipa cipa
 	private Script script
@@ -42,6 +42,13 @@ class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActi
 	TestPipeline(rawScript) {
 		cipa = new Cipa(rawScript)
 		cipa.addBean(this)
+
+		CipaNode node1 = cipa.newNode('node1')
+		CipaNode node2 = cipa.newNode('node2')
+		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').checkedOutFiles
+		CipaResourceWithState<CipaStashResource> mainStash = new StashFilesActivity(cipa, 'StashMain', mainCheckedOutFiles).stash
+		new UnstashFilesActivity(cipa, "UnstashMain", mainStash, node2)
+
 	}
 
 	@Override
@@ -50,27 +57,12 @@ class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActi
 		rawScript = script.rawScript
 
 		cipa.configureJDK('JDK8')
-		cipa.configureMaven('M3', 'ciserver-settings.xml', 'ciserver-toolchains.xml').setOptions('-Xms1g -Xmx4g -XX:ReservedCodeCacheSize=256m -Dproject.build.sourceEncoding=UTF-8 -Dfile.encoding=UTF-8 -Dmaven.compile.fork=true')
-
-		CipaNode node1 = cipa.newNode('node1')
-		CipaNode node2 = cipa.newNode('node2')
-
-		CipaResourceWithState<CipaFileResource> mainCodeCheckedOut = cipa.newFileResourceWithState(node1, 'mainCode', 'CheckedOut')
-		cipa.addBean(new CheckoutActivity('Checkout', 'MAIN', mainCodeCheckedOut).excludeUser('autouser', 'robot'))
+		cipa.configureMaven('M3', 'ciserver-settings.xml', 'ciserver-toolchains.xml')
+				.setOptions('-Xms1g -Xmx4g -XX:ReservedCodeCacheSize=256m -Dproject.build.sourceEncoding=UTF-8 -Dfile.encoding=UTF-8 -Dmaven.compile.fork=true')
 	}
 
 	void run() {
 		cipa.run()
-	}
-
-	@Override
-	void contributeParameters(JobParameterContainer container) {
-
-	}
-
-	@Override
-	void processParameters(JobParameterValues values) {
-
 	}
 
 	@Override
@@ -93,6 +85,18 @@ class TestPipeline implements CipaInit, JobParameterContribution, CipaAroundActi
 	@NonCPS
 	int getRunAroundActivityOrder() {
 		return 0
+	}
+
+	static void main(String[] args) {
+		System.out.println("Test")
+
+		TestRawScript rawScript = new TestRawScript()
+		rawScript.env.MAIN_SCM_URL = 'scm://somewhere.git'
+		rawScript.env.MAIN_SCM_CREDENTIALS_ID = 'somecreds'
+		rawScript.env.NODE_LABEL_PREFIX = 'nlprefix-'
+
+		TestPipeline testPipeline = new TestPipeline(rawScript)
+		testPipeline.run()
 	}
 
 }

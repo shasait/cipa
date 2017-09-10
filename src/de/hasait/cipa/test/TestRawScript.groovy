@@ -75,6 +75,10 @@ class TestRawScript {
         log('[dir] <<< ' + dir)
     }
 
+    void deleteDir() {
+        log('[deleteDir]')
+    }
+
     void waitUntil(Closure<Boolean> test) {
         while (!test.call()) {
             log('[waitUntil]')
@@ -84,6 +88,14 @@ class TestRawScript {
 
     void checkout(Map args) {
         log('[checkout] ' + args)
+    }
+
+    void stash(Map args) {
+        log('[stash] ' + args)
+    }
+
+    void unstash(Map args) {
+        log('[unstash] ' + args)
     }
 
     Object tool(Map args) {

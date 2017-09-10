@@ -27,6 +27,7 @@ import de.hasait.cipa.resource.CipaCustomResource
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResource
 import de.hasait.cipa.resource.CipaResourceWithState
+import de.hasait.cipa.resource.CipaStashResource
 
 /**
  *
@@ -58,12 +59,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			throw new IllegalArgumentException('rawScript is null')
 		}
 		this.rawScript = rawScript
-		this.script = new Script(rawScript)
-		addBean(script)
+		script = addBean(new Script(rawScript))
 		addBean(new CipaPrepareEnv())
 		addBean(new CipaPrepareJobParameters())
-		nodeLabelPrefixHolder = new CipaPrepareNodeLabelPrefix()
-		addBean(nodeLabelPrefixHolder)
+		nodeLabelPrefixHolder = addBean(new CipaPrepareNodeLabelPrefix())
 	}
 
 	@Override
@@ -105,30 +104,30 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	CipaNode newNode(String nodeLabel) {
-		CipaNode node = new CipaNode(nodeLabel)
-		return addBean(node)
+		return addBean(new CipaNode(nodeLabel))
 	}
 
 	@NonCPS
 	CipaResourceWithState<CipaFileResource> newFileResourceWithState(CipaNode node, String relDir, String state) {
-		CipaFileResource resource = new CipaFileResource(node, relDir)
-		addBean(resource)
-		CipaResourceWithState<CipaFileResource> resourceWithState = new CipaResourceWithState<CipaFileResource>(resource, state)
-		return addBean(resourceWithState)
+		CipaFileResource resource = addBean(new CipaFileResource(node, relDir))
+		return addBean(new CipaResourceWithState<CipaFileResource>(resource, state))
+	}
+
+	@NonCPS
+	CipaResourceWithState<CipaStashResource> newStashResourceWithState(String id, String srcRelDir, String state) {
+		CipaStashResource resource = addBean(new CipaStashResource(id, srcRelDir))
+		return addBean(new CipaResourceWithState<CipaStashResource>(resource, state))
 	}
 
 	@NonCPS
 	CipaResourceWithState<CipaCustomResource> newCustomResourceWithState(CipaNode node = null, String type, String id, String state) {
-		CipaCustomResource resource = new CipaCustomResource(node, type, id)
-		addBean(resource)
-		CipaResourceWithState<CipaCustomResource> resourceWithState = new CipaResourceWithState<CipaCustomResource>(resource, state)
-		return addBean(resourceWithState)
+		CipaCustomResource resource = addBean(new CipaCustomResource(node, type, id))
+		return addBean(new CipaResourceWithState<CipaCustomResource>(resource, state))
 	}
 
 	@NonCPS
 	public <R extends CipaResource> CipaResourceWithState<R> newResourceState(CipaResourceWithState<R> resourceWithState, String state) {
-		CipaResourceWithState<R> newResourceWithState = new CipaResourceWithState<R>(resourceWithState.resource, state)
-		return addBean(newResourceWithState)
+		return addBean(new CipaResourceWithState<R>(resourceWithState.resource, state))
 	}
 
 	CipaTool configureJDK(String version) {
@@ -143,6 +142,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		return toolJdk
 	}
 
+	@NonCPS
 	CipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
 		if (!toolMvn) {
 			toolMvn = new CipaTool()
@@ -161,6 +161,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		return toolMvn
 	}
 
+	@NonCPS
 	CipaTool configureTool(String name, String type) {
 		CipaTool tool = new CipaTool()
 		tool.name = name
@@ -236,14 +237,14 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		for (activity in activities) {
 			CipaNode node = activity.node
 			if (!activitiesByNode.containsKey(node)) {
-				throw new IllegalStateException("Node [${node}] unknown - either create with cipa.newNode or register with addBean!")
+				throw new IllegalStateException("${node} unknown - either create with cipa.newNode or register with addBean!")
 			}
 			CipaActivityWrapper wrapper = new CipaActivityWrapper(this, activity, aroundActivities)
 			wrappers.add(wrapper)
 			activitiesByNode.get(node).add(wrapper)
 			for (requires in activity.runRequires) {
 				if (!resources.contains(requires)) {
-					throw new IllegalStateException("Resource [${requires}] unknown - either create with cipa.new*Resource or register with addBean!")
+					throw new IllegalStateException("${requires} unknown - either create with cipa.new* or register with addBean!")
 				}
 				if (!activitiesRequires.containsKey(requires)) {
 					activitiesRequires.put(requires, new ArrayList<>())
@@ -252,7 +253,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			}
 			for (provides in activity.runProvides) {
 				if (!resources.contains(provides)) {
-					throw new IllegalStateException("Resource [${provides}] unknown - either create with cipa.new*Resource or register with addBean!")
+					throw new IllegalStateException("${provides} unknown - either create with cipa.new* or register with addBean!")
 				}
 				if (!activitiesProvides.containsKey(provides)) {
 					activitiesProvides.put(provides, new ArrayList<>())
@@ -262,7 +263,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 		for (requires in activitiesRequires) {
 			if (!activitiesProvides.containsKey(requires.key)) {
-				throw new IllegalArgumentException("Required resource [${requires.key}] not provided!")
+				throw new IllegalArgumentException("Required ${requires.key} not provided by any activity!")
 			}
 			List<CipaActivityWrapper> providesWrappers = activitiesProvides.get(requires.key)
 			for (requiresWrapper in requires.value) {
@@ -290,7 +291,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			CipaNode node = nodeList.get(i)
 			List<CipaActivityWrapper> nodeActivities = activitiesByNode.get(node)
 			if (nodeActivities.empty) {
-				rawScript.echo("[CIPA] WARNING: Node [${node}] has no activities!")
+				rawScript.echo("[CIPA] WARNING: ${node} has no activities!")
 			}
 			parallelNodeBranches["${i}-${node.label}"] = parallelNodeWithActivitiesBranch(node, nodeActivities)
 		}
@@ -417,13 +418,13 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			allArguments.add('--global-toolchains "${' + ENV_VAR___MVN_TOOLCHAINS + '}"')
 		}
 		allArguments.add('-Dmaven.repo.local="${' + ENV_VAR___MVN_REPO + '}"')
-		if (!profiles.isEmpty()) {
+		if (!profiles.empty) {
 			allArguments.add('-P' + profiles.join(','))
 		}
 		allArguments.addAll(goals)
 		allArguments.addAll(arguments)
 
-		def allArgumentsString = allArguments.isEmpty() ? '' : allArguments.join(' ')
+		def allArgumentsString = allArguments.empty ? '' : allArguments.join(' ')
 
 		def optionsString = options.join(' ')
 

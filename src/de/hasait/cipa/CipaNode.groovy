@@ -27,7 +27,7 @@ class CipaNode implements Serializable {
 
 	CipaNode(String label) {
 		if (!label) {
-			throw new IllegalArgumentException('!label')
+			throw new IllegalArgumentException('label is null')
 		}
 		this.label = label
 	}
@@ -40,7 +40,7 @@ class CipaNode implements Serializable {
 	@Override
 	@NonCPS
 	String toString() {
-		return label
+		return "Node[${label}]"
 	}
 
 }

@@ -34,7 +34,8 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private final String name
 	private final String prefix
-	private final CipaResourceWithState<CipaFileResource> coResource
+	private final String prefixUpperCase
+	private final CipaResourceWithState<CipaFileResource> checkedOutFiles
 
 	private Script script
 	private def rawScript
@@ -46,28 +47,38 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private String scmRev
 
-	CheckoutActivity(String name, String prefix, CipaResourceWithState<CipaFileResource> coResource) {
+	CheckoutActivity(Cipa cipa, String name, String prefix, CipaNode node) {
 		this.name = name
 		this.prefix = prefix
-		this.coResource = coResource
+		this.prefixUpperCase = prefix.toUpperCase()
+		this.checkedOutFiles = cipa.newFileResourceWithState(node, prefix + 'Files', 'CheckedOut')
+		cipa.addBean(this)
+	}
+
+	@NonCPS
+	CipaResourceWithState<CipaFileResource> getCheckedOutFiles() {
+		return checkedOutFiles
 	}
 
 	@Override
 	void initCipa(Cipa cipa) {
+		cipa.addBean(checkedOutFiles.resource)
+		cipa.addBean(checkedOutFiles)
+
 		script = cipa.findBean(Script.class)
 		rawScript = script.rawScript
 	}
 
 	@Override
 	void contributeParameters(JobParameterContainer container) {
-		container.addStringParameter(prefix + PARAM___SCM_URL, '', prefix + '-SCM-URL for checkout')
-		container.addStringParameter(prefix + PARAM___SCM_CREDENTIALS_ID, '', prefix + '-SCM-Credentials needed for checkout')
+		container.addStringParameter(prefixUpperCase + PARAM___SCM_URL, '', prefix + '-SCM-URL for checkout')
+		container.addStringParameter(prefixUpperCase + PARAM___SCM_CREDENTIALS_ID, '', prefix + '-SCM-Credentials needed for checkout')
 	}
 
 	@Override
 	void processParameters(JobParameterValues values) {
-		scmUrl = values.retrieveRequiredValue(prefix + PARAM___SCM_URL)
-		scmCredentialsId = values.retrieveOptionalValue(prefix + PARAM___SCM_CREDENTIALS_ID, '')
+		scmUrl = values.retrieveRequiredValue(prefixUpperCase + PARAM___SCM_URL)
+		scmCredentialsId = values.retrieveOptionalValue(prefixUpperCase + PARAM___SCM_CREDENTIALS_ID, '')
 	}
 
 	@Override
@@ -85,13 +96,13 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	@Override
 	@NonCPS
 	Set<CipaResourceWithState<?>> getRunProvides() {
-		return [coResource]
+		return [checkedOutFiles]
 	}
 
 	@Override
 	@NonCPS
 	CipaNode getNode() {
-		return coResource.resource.node
+		return checkedOutFiles.resource.node
 	}
 
 	@Override
@@ -117,7 +128,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	@Override
 	@NonCPS
 	String toString() {
-		return "CheckoutActivity[${prefix},${coResource}]"
+		return "CheckoutActivity[${prefix},${checkedOutFiles}]"
 	}
 
 	@NonCPS
@@ -126,7 +137,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	}
 
 	private void checkout() {
-		script.dir(coResource.resource.relDir) {
+		script.dir(checkedOutFiles.resource.relDir) {
 			if (scmUrl.endsWith('.git')) {
 				List extensions = []
 				extensions.add([$class: 'CleanBeforeCheckout'])

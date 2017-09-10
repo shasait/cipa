@@ -54,4 +54,10 @@ class CipaResourceWithState<R extends CipaResource> implements Serializable {
 		return "${resource} in state [${state}]"
 	}
 
+	@NonCPS
+	CipaResourceWithState<R> newState(String state) {
+		CipaResourceWithState<R> newResourceWithState = new CipaResourceWithState<R>(resource, state)
+		return newResourceWithState
+	}
+
 }

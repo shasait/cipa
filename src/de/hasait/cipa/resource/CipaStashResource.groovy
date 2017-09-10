@@ -14,22 +14,47 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.test
+package de.hasait.cipa.resource
+
+import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.CipaNode
+
 /**
  *
  */
-class TestMain {
+class CipaStashResource implements CipaResource, Serializable {
 
-	static void main(String[] args) {
-		System.out.println("Test")
+	private final String id
+	private final String srcRelDir
 
-		TestRawScript rawScript = new TestRawScript()
-		rawScript.env.MAIN_SCM_URL = 'scm://somewhere.git'
-		rawScript.env.MAIN_SCM_CREDENTIALS_ID = 'somecreds'
-		rawScript.env.NODE_LABEL_PREFIX = 'nlprefix-'
+	CipaStashResource(String id, String srcRelDir) {
+		if (!id || id.length() == 0) {
+			throw new IllegalArgumentException('id is null or empty')
+		}
+		this.id = id
+		this.srcRelDir = srcRelDir
+	}
 
-		TestPipeline testPipeline = new TestPipeline(rawScript)
-		testPipeline.run()
+	@Override
+	@NonCPS
+	CipaNode getNode() {
+		return null
+	}
+
+	@NonCPS
+	String getId() {
+		return id
+	}
+
+	@NonCPS
+	String getSrcRelDir() {
+		return srcRelDir
+	}
+
+	@Override
+	@NonCPS
+	String toString() {
+		return "Stash[${id}]"
 	}
 
 }

@@ -60,9 +60,9 @@ class CipaCustomResource implements CipaResource, Serializable {
 	@NonCPS
 	String toString() {
 		if (node) {
-			return "Resource [${type}:${id}] on [${node}]"
+			return "Resource[${type}:${id}] on ${node}"
 		}
-		return "Global resource [${type}:${id}]"
+		return "Global Resource[${type}:${id}]"
 	}
 
 }
