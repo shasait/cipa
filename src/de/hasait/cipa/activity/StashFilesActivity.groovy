@@ -36,6 +36,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	private Script script
 	private def rawScript
 
+	@NonCPS
 	private static String relDir(CipaResourceWithState<CipaFileResource> files, String subDir) {
 		return files.resource.relDir + (subDir ? '/' + subDir : '')
 	}
@@ -49,11 +50,12 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 		String relDir = relDir(files, subDir)
 		String stashId = files.resource.node.label + '_' + relDir.replace('/', '_')
 		this.stash = cipa.newStashResourceWithState(stashId, relDir, files.state)
+
 		cipa.addBean(this)
 	}
 
 	@NonCPS
-	CipaResourceWithState<CipaStashResource> getStash() {
+	CipaResourceWithState<CipaStashResource> getProvidedStash() {
 		return stash
 	}
 
@@ -94,7 +96,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 
 	@Override
 	void runActivity() {
-		script.echo('Stashing ${files}...')
+		script.echo("Stashing ${files}...")
 
 		script.dir(relDir(files, subDir)) {
 			rawScript.stash(name: stash.resource.id)

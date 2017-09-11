@@ -50,13 +50,15 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	CheckoutActivity(Cipa cipa, String name, String prefix, CipaNode node) {
 		this.name = name
 		this.prefix = prefix
+
 		this.prefixUpperCase = prefix.toUpperCase()
 		this.checkedOutFiles = cipa.newFileResourceWithState(node, prefix + 'Files', 'CheckedOut')
+
 		cipa.addBean(this)
 	}
 
 	@NonCPS
-	CipaResourceWithState<CipaFileResource> getCheckedOutFiles() {
+	CipaResourceWithState<CipaFileResource> getProvidedCheckedOutFiles() {
 		return checkedOutFiles
 	}
 

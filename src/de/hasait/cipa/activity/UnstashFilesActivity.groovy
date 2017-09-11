@@ -41,11 +41,12 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, Serializable {
 		this.stash = stash
 
 		this.files = cipa.newFileResourceWithState(node, relDir ?: stash.resource.srcRelDir, stash.state)
+
 		cipa.addBean(this)
 	}
 
 	@NonCPS
-	CipaResourceWithState<CipaFileResource> getFiles() {
+	CipaResourceWithState<CipaFileResource> getProvidedFiles() {
 		return files
 	}
 
@@ -90,7 +91,7 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, Serializable {
 
 	@Override
 	void runActivity() {
-		script.echo('Unstashing ${stash} into ${files}...')
+		script.echo("Unstashing ${stash} into ${files}...")
 
 		script.dir(files.resource.relDir) {
 			rawScript.unstash(name: stash.resource.id)
