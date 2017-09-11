@@ -25,18 +25,18 @@ import de.hasait.cipa.CipaNode
 class CipaFileResource implements CipaResource, Serializable {
 
 	private final CipaNode node
-	private final String relDir
+	private final String path
 
-	CipaFileResource(CipaNode node, String relDir) {
+	CipaFileResource(CipaNode node, String path) {
 		if (!node) {
 			throw new IllegalArgumentException('node is null')
 		}
-		if (!relDir || relDir.length() == 0) {
+		if (!path || path.length() == 0) {
 			throw new IllegalArgumentException('relDir is null or empty')
 		}
 
 		this.node = node
-		this.relDir = relDir
+		this.path = path
 	}
 
 	@Override
@@ -46,14 +46,14 @@ class CipaFileResource implements CipaResource, Serializable {
 	}
 
 	@NonCPS
-	String getRelDir() {
-		return relDir
+	String getPath() {
+		return path
 	}
 
 	@Override
 	@NonCPS
 	String toString() {
-		return "Files[${relDir}] on ${node}"
+		return "Files[${path}] on ${node}"
 	}
 
 }

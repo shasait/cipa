@@ -84,7 +84,7 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	void prepareNode() {
 		script.echo('Deleting ${files}...')
 
-		script.dir(files.resource.relDir) {
+		script.dir(files.resource.path) {
 			script.deleteDir()
 		}
 	}
@@ -93,7 +93,7 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	void runActivity() {
 		script.echo("Unstashing ${stash} into ${files}...")
 
-		script.dir(files.resource.relDir) {
+		script.dir(files.resource.path) {
 			rawScript.unstash(name: stash.resource.id)
 		}
 	}

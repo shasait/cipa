@@ -38,7 +38,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 
 	@NonCPS
 	private static String relDir(CipaResourceWithState<CipaFileResource> files, String subDir) {
-		return files.resource.relDir + (subDir ? '/' + subDir : '')
+		return files.resource.path + (subDir ? '/' + subDir : '')
 	}
 
 	StashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> files, String subDir = '') {
