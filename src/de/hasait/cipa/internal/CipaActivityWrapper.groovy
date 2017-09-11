@@ -40,7 +40,7 @@ class CipaActivityWrapper implements Serializable {
 
 	private final Date creationDate
 	private Throwable prepareThrowable
-	private Date runningDate
+	private Date startedDate
 	private Date finishedDate
 	private Throwable failedThrowable
 
@@ -80,8 +80,8 @@ class CipaActivityWrapper implements Serializable {
 		this.prepareThrowable = prepareThrowable
 	}
 
-	Date getRunningDate() {
-		return runningDate
+	Date getStartedDate() {
+		return startedDate
 	}
 
 	Date getFinishedDate() {
@@ -96,9 +96,9 @@ class CipaActivityWrapper implements Serializable {
 		StringBuilder sb = new StringBuilder()
 		sb.append('Created: ')
 		sb.append(format(creationDate))
-		if (runningDate) {
-			sb.append(' | Running: ')
-			sb.append(format(runningDate))
+		if (startedDate) {
+			sb.append(' | Started: ')
+			sb.append(format(startedDate))
 			if (finishedDate) {
 				sb.append(' | Finished: ')
 				sb.append(format(finishedDate))
@@ -127,7 +127,7 @@ class CipaActivityWrapper implements Serializable {
 			throw new IllegalStateException('prepareThrowable')
 		}
 		try {
-			runningDate = new Date()
+			startedDate = new Date()
 			throwOnAnyActivityFailure('Dependencies', dependsOn)
 			runAroundActivity(0)
 
