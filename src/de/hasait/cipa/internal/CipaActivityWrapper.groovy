@@ -18,9 +18,9 @@ package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
+import de.hasait.cipa.CipaNode
 import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaAroundActivity
-import de.hasait.cipa.CipaNode
 
 import java.text.SimpleDateFormat
 
@@ -28,6 +28,7 @@ class CipaActivityWrapper implements Serializable {
 
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat('yyyy-MM-dd\' \'HH:mm:ss\' \'Z')
 
+	@NonCPS
 	private static String format(Date date) {
 		return date ? DATE_FORMAT.format(date) : ''
 	}
@@ -36,7 +37,7 @@ class CipaActivityWrapper implements Serializable {
 	private final CipaActivity activity
 	private final List<CipaAroundActivity> aroundActivities
 
-	private final Set<CipaActivityWrapper> dependsOn = new HashSet<>()
+	private final Set<CipaActivityWrapper> dependsOn = new LinkedHashSet<>()
 
 	private final Date creationDate
 	private Throwable prepareThrowable
@@ -52,10 +53,12 @@ class CipaActivityWrapper implements Serializable {
 		creationDate = new Date()
 	}
 
+	@NonCPS
 	CipaNode getNode() {
 		return activity.node
 	}
 
+	@NonCPS
 	String getName() {
 		return activity.name
 	}
@@ -65,14 +68,30 @@ class CipaActivityWrapper implements Serializable {
 		dependsOn.add(activity)
 	}
 
+	@NonCPS
+	String dependenciesToString() {
+		String result = null
+		for (dependency in dependsOn) {
+			if (!result) {
+				result = dependency.name
+			} else {
+				result += ", ${dependency.name}"
+			}
+		}
+		return result ?: ''
+	}
+
+	@NonCPS
 	Date getCreationDate() {
 		return creationDate
 	}
 
+	@NonCPS
 	Throwable getPrepareThrowable() {
 		return prepareThrowable
 	}
 
+	@NonCPS
 	void setPrepareThrowable(Throwable prepareThrowable) {
 		if (!prepareThrowable) {
 			throw new IllegalArgumentException('!prepareThrowable')
@@ -80,18 +99,22 @@ class CipaActivityWrapper implements Serializable {
 		this.prepareThrowable = prepareThrowable
 	}
 
+	@NonCPS
 	Date getStartedDate() {
 		return startedDate
 	}
 
+	@NonCPS
 	Date getFinishedDate() {
 		return finishedDate
 	}
 
+	@NonCPS
 	Throwable getFailedThrowable() {
 		return failedThrowable
 	}
 
+	@NonCPS
 	String buildStateHistoryString() {
 		StringBuilder sb = new StringBuilder()
 		sb.append('Created: ')

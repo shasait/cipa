@@ -14,39 +14,39 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.activity
+package de.hasait.cipa.test
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.Script
+import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
-import de.hasait.cipa.resource.CipaStashResource
 
-class UnstashFilesActivity implements CipaInit, CipaActivity, Serializable {
+class TestWriterActivity implements CipaInit, CipaActivity, Serializable {
 
 	private final Cipa cipa
 	private final String name
-	private final CipaResourceWithState<CipaStashResource> stash
-	private final CipaResourceWithState<CipaFileResource> files
+	private final CipaResourceWithState<CipaFileResource> filesIn
+	private final CipaResourceWithState<CipaFileResource> filesOut
 
 	private Script script
 
-	UnstashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaStashResource> stash, CipaNode node, String relDir = null) {
+	TestWriterActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState) {
 		this.cipa = cipa
 		this.name = name
-		this.stash = stash
+		this.filesIn = filesIn
 
-		this.files = cipa.newFileResourceWithState(node, relDir ?: stash.resource.srcRelDir, stash.state)
+		this.filesOut = cipa.newResourceState(filesIn, newState)
 
 		cipa.addBean(this)
 	}
 
 	@NonCPS
-	CipaResourceWithState<CipaFileResource> getProvidedFiles() {
-		return files
+	CipaResourceWithState<CipaFileResource> getProvidedFilesOut() {
+		return filesOut
 	}
 
 	@Override
@@ -63,49 +63,40 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	@Override
 	@NonCPS
 	Set<CipaResourceWithState<?>> getRunRequiresRead() {
-		return [stash]
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresWrite() {
 		return []
 	}
 
 	@Override
 	@NonCPS
+	Set<CipaResourceWithState<?>> getRunRequiresWrite() {
+		return [filesIn]
+	}
+
+	@Override
+	@NonCPS
 	Set<CipaResourceWithState<?>> getRunProvides() {
-		return [files]
+		return [filesOut]
 	}
 
 	@Override
 	@NonCPS
 	CipaNode getNode() {
-		return files.resource.node
+		return filesIn.resource.node
 	}
 
 	@Override
 	void prepareNode() {
-		script.echo('Deleting ${files}...')
-
-		script.dir(files.resource.path) {
-			script.deleteDir()
-		}
 	}
 
 	@Override
 	void runActivity() {
-		script.echo("Unstashing ${stash} into ${files.resource}...")
-
-		script.dir(files.resource.path) {
-			script.unstash(stash.resource.id)
-		}
+		script.echo("Test ${filesIn} and ${filesOut}")
 	}
 
 	@Override
 	@NonCPS
 	String toString() {
-		return "Unstash ${stash} into ${files.resource}"
+		return "Test ${filesIn} and ${filesOut}"
 	}
 
 }

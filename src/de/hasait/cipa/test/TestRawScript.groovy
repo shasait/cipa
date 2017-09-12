@@ -98,6 +98,10 @@ class TestRawScript {
         log('[unstash] ' + args)
     }
 
+    void unstash(String arg) {
+        log('[unstash] ' + arg)
+    }
+
     Object tool(Map args) {
         return ['tool': args]
     }

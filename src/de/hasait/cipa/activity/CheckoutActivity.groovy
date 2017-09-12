@@ -59,6 +59,16 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 		cipa.addBean(this)
 	}
 
+	/**
+	 * @param users Users excluded from polling.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity excludeUser(String... users) {
+		scmExcludeUsers.addAll(users)
+		return this
+	}
+
 	@NonCPS
 	CipaResourceWithState<CipaFileResource> getProvidedCheckedOutFiles() {
 		return checkedOutFiles
@@ -93,7 +103,13 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	@Override
 	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequires() {
+	Set<CipaResourceWithState<?>> getRunRequiresRead() {
+		return []
+	}
+
+	@Override
+	@NonCPS
+	Set<CipaResourceWithState<?>> getRunRequiresWrite() {
 		return []
 	}
 
@@ -117,16 +133,6 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	@Override
 	void runActivity() {
 		checkout()
-	}
-
-	/**
-	 * @param users Users excluded from polling.
-	 * @return this
-	 */
-	@NonCPS
-	CheckoutActivity excludeUser(String... users) {
-		scmExcludeUsers.addAll(users)
-		return this
 	}
 
 	@Override

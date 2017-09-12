@@ -88,4 +88,12 @@ class Script implements Serializable {
 		return rawScript.readFile(encoding: encoding, file: filepath)
 	}
 
+	void stash(String id, Set<String> includes = [], Set<String> excludes = [], boolean useDefaultExcludes = true, boolean allowEmpty = false) {
+		rawScript.stash(name: id, includes: includes.join(','), excludes: excludes.join(','), useDefaultExcludes: useDefaultExcludes, allowEmpty: allowEmpty)
+	}
+
+	void unstash(String id) {
+		rawScript.unstash(id)
+	}
+
 }

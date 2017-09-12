@@ -54,6 +54,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
 
+	boolean debug = false
+
 	Cipa(rawScript) {
 		if (!rawScript) {
 			throw new IllegalArgumentException('rawScript is null')
@@ -223,14 +225,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		return aroundActivities
 	}
 
+	@NonCPS
 	private void analyzeActivities(Set<CipaNode> nodes, Set<CipaActivityWrapper> wrappers, Map<CipaNode, List<CipaActivityWrapper>> activitiesByNode) {
 		Set<CipaResourceWithState<?>> resources = findBeans(CipaResourceWithState.class)
 
-		rawScript.echo("[CIPA] Analyzing activities...")
 		for (node in nodes) {
 			activitiesByNode.put(node, new ArrayList<>())
 		}
-		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesRequires = new HashMap<>()
+		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesRequiresRead = new HashMap<>()
+		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesRequiresWrite = new HashMap<>()
 		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesProvides = new HashMap<>()
 		Set<CipaActivity> activities = findBeans(CipaActivity.class)
 		List<CipaAroundActivity> aroundActivities = findCipaAroundActivities()
@@ -242,14 +245,23 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			CipaActivityWrapper wrapper = new CipaActivityWrapper(this, activity, aroundActivities)
 			wrappers.add(wrapper)
 			activitiesByNode.get(node).add(wrapper)
-			for (requires in activity.runRequires) {
+			for (requires in activity.runRequiresRead) {
 				if (!resources.contains(requires)) {
 					throw new IllegalStateException("${requires} unknown - either create with cipa.new* or register with addBean!")
 				}
-				if (!activitiesRequires.containsKey(requires)) {
-					activitiesRequires.put(requires, new ArrayList<>())
+				if (!activitiesRequiresRead.containsKey(requires)) {
+					activitiesRequiresRead.put(requires, new ArrayList<>())
 				}
-				activitiesRequires.get(requires).add(wrapper)
+				activitiesRequiresRead.get(requires).add(wrapper)
+			}
+			for (requires in activity.runRequiresWrite) {
+				if (!resources.contains(requires)) {
+					throw new IllegalStateException("${requires} unknown - either create with cipa.new* or register with addBean!")
+				}
+				if (!activitiesRequiresWrite.containsKey(requires)) {
+					activitiesRequiresWrite.put(requires, new ArrayList<>())
+				}
+				activitiesRequiresWrite.get(requires).add(wrapper)
 			}
 			for (provides in activity.runProvides) {
 				if (!resources.contains(provides)) {
@@ -261,7 +273,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				activitiesProvides.get(provides).add(wrapper)
 			}
 		}
-		for (requires in activitiesRequires) {
+		for (requires in activitiesRequiresRead) {
 			if (!activitiesProvides.containsKey(requires.key)) {
 				throw new IllegalArgumentException("Required ${requires.key} not provided by any activity!")
 			}
@@ -270,6 +282,32 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				for (providesWrapper in providesWrappers) {
 					requiresWrapper.addDependency(providesWrapper)
 				}
+			}
+		}
+		for (requires in activitiesRequiresWrite) {
+			if (!activitiesProvides.containsKey(requires.key)) {
+				throw new IllegalArgumentException("Required ${requires.key} not provided by any activity!")
+			}
+			List<CipaActivityWrapper> providesWrappers = activitiesProvides.get(requires.key)
+			List<CipaActivityWrapper> readers = activitiesRequiresRead.get(requires.key)
+			CipaActivityWrapper lastWriter = null
+			for (requiresWrapper in requires.value) {
+				// Chain writers
+				if (lastWriter) {
+					requiresWrapper.addDependency(lastWriter)
+				}
+				else if (readers) {
+					// Execute all readers before any writer, if there was already a writer we only depend on it
+					for (reader in readers) {
+						requiresWrapper.addDependency(reader)
+					}
+				} else {
+					// readers already depend on providers, so only add if no readers
+					for (providesWrapper in providesWrappers) {
+						requiresWrapper.addDependency(providesWrapper)
+					}
+				}
+				lastWriter = requiresWrapper
 			}
 		}
 	}
@@ -282,7 +320,16 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		Set<CipaNode> nodes = findBeans(CipaNode.class)
 		Set<CipaActivityWrapper> wrappers = new LinkedHashSet<>()
 		Map<CipaNode, List<CipaActivityWrapper>> activitiesByNode = new HashMap<>()
+
+		rawScript.echo("[CIPA] Analyzing activities...")
 		analyzeActivities(nodes, wrappers, activitiesByNode)
+		if (debug) {
+			String msg = "[CIPA-Debug] Printing dependencies...\n"
+			for (wrapper in wrappers) {
+				msg += "${wrapper.name} -> ${wrapper.dependenciesToString()}\n"
+			}
+			rawScript.echo(msg)
+		}
 
 		rawScript.echo("[CIPA] Executing activities...")
 		List<CipaNode> nodeList = new ArrayList<>(nodes)

@@ -34,7 +34,9 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	private final CipaResourceWithState<CipaStashResource> stash
 
 	private Script script
-	private def rawScript
+
+	private Set<String> fileIncludes = new LinkedHashSet<>()
+	private Set<String> fileExcludes = new LinkedHashSet<>()
 
 	@NonCPS
 	private static String relDir(CipaResourceWithState<CipaFileResource> files, String subDir) {
@@ -54,6 +56,26 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 		cipa.addBean(this)
 	}
 
+	/**
+	 * @param includes File include patterns.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity include(String... includes) {
+		fileIncludes.addAll(includes)
+		return this
+	}
+
+	/**
+	 * @param excludes File exclude patterns.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity exclude(String... excludes) {
+		fileExcludes.addAll(excludes)
+		return this
+	}
+
 	@NonCPS
 	CipaResourceWithState<CipaStashResource> getProvidedStash() {
 		return stash
@@ -62,7 +84,6 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	@Override
 	void initCipa(Cipa cipa) {
 		script = cipa.findBean(Script.class)
-		rawScript = script.rawScript
 	}
 
 	@Override
@@ -73,8 +94,14 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 
 	@Override
 	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequires() {
+	Set<CipaResourceWithState<?>> getRunRequiresRead() {
 		return [files]
+	}
+
+	@Override
+	@NonCPS
+	Set<CipaResourceWithState<?>> getRunRequiresWrite() {
+		return []
 	}
 
 	@Override
@@ -99,7 +126,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 		script.echo("Stashing ${files}...")
 
 		script.dir(relDir(files, subDir)) {
-			rawScript.stash(name: stash.resource.id)
+			script.stash(stash.resource.id, fileIncludes, fileExcludes)
 		}
 	}
 

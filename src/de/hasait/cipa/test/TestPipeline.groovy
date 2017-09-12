@@ -41,14 +41,20 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 
 	TestPipeline(rawScript) {
 		cipa = new Cipa(rawScript)
+		cipa.debug = true
 		cipa.addBean(this)
 
 		CipaNode node1 = cipa.newNode('node1')
 		CipaNode node2 = cipa.newNode('node2')
 		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').providedCheckedOutFiles
 		CipaResourceWithState<CipaStashResource> mainStash = new StashFilesActivity(cipa, 'StashMain', mainCheckedOutFiles).providedStash
-		new UnstashFilesActivity(cipa, "UnstashMain", mainStash, node2)
-
+		CipaResourceWithState<CipaFileResource> files = new UnstashFilesActivity(cipa, "UnstashMain", mainStash, node2).providedFiles
+		new TestReaderActivity(cipa, "TestR1", files, "StateR1")
+		new TestReaderActivity(cipa, "TestR2", files, "StateR2")
+		new TestReaderActivity(cipa, "TestR3", files, "StateR3")
+		new TestWriterActivity(cipa, "TestW1", files, "StateW1")
+		new TestWriterActivity(cipa, "TestW2", files, "StateW2")
+		new TestWriterActivity(cipa, "TestW3", files, "StateW3")
 	}
 
 	@Override

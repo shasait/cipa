@@ -20,7 +20,7 @@ import de.hasait.cipa.CipaNode
 import de.hasait.cipa.resource.CipaResourceWithState
 
 /**
- *
+ * An activity is the core part of a Cipa pipeline. It requires resources for execution and provides resources afterwards.
  */
 interface CipaActivity {
 
@@ -30,12 +30,17 @@ interface CipaActivity {
 	String getName()
 
 	/**
-	 * @return This activity can run as soon as these resources are available, i.e. provided by other activities.
+	 * @return The required resources for reading; can be empty.
 	 */
-	Set<CipaResourceWithState<?>> getRunRequires()
+	Set<CipaResourceWithState<?>> getRunRequiresRead()
 
 	/**
-	 * @return These resources are available after this activity has run.
+	 * @return The required resources for writing; can be empty.
+	 */
+	Set<CipaResourceWithState<?>> getRunRequiresWrite()
+
+	/**
+	 * @return These resources are available after this activity has run; can be empty.
 	 */
 	Set<CipaResourceWithState<?>> getRunProvides()
 
