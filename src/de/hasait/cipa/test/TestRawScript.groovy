@@ -102,6 +102,10 @@ class TestRawScript {
         log('[unstash] ' + arg)
     }
 
+    void junit(String arg) {
+        log('[junit] ' + arg)
+    }
+
     Object tool(Map args) {
         return ['tool': args]
     }
