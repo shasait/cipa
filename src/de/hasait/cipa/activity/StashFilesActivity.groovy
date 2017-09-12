@@ -61,7 +61,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	 * @return this
 	 */
 	@NonCPS
-	CheckoutActivity include(String... includes) {
+	StashFilesActivity include(String... includes) {
 		fileIncludes.addAll(includes)
 		return this
 	}
@@ -71,7 +71,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	 * @return this
 	 */
 	@NonCPS
-	CheckoutActivity exclude(String... excludes) {
+	StashFilesActivity exclude(String... excludes) {
 		fileExcludes.addAll(excludes)
 		return this
 	}
