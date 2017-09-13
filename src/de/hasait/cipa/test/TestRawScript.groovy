@@ -16,6 +16,8 @@
 
 package de.hasait.cipa.test
 
+import java.util.regex.Pattern
+
 /**
  *
  */
@@ -30,6 +32,8 @@ class TestRawScript {
     def params = [:]
 
     Env env = new Env()
+
+    Map<String, String> readFileContents = [:]
 
     void echo(String message) {
         log('[echo] ' + message)
@@ -57,6 +61,19 @@ class TestRawScript {
         log('[node] >>> ' + label)
         body()
         log('[node] <<< ' + label)
+    }
+
+    String readFile(Map args) {
+        log('[readFile] ' + args)
+        String file = args['file']
+        if (file) {
+            for (e in readFileContents) {
+                if (Pattern.compile(e.key).matcher(file).matches()) {
+                    return e.value
+                }
+            }
+        }
+        return null
     }
 
     void writeFile(Map args) {
@@ -100,6 +117,12 @@ class TestRawScript {
 
     void unstash(String arg) {
         log('[unstash] ' + arg)
+    }
+
+    void stage(String stage, Closure<?> body) {
+        log('[stage] >>> ' + stage)
+        body()
+        log('[stage] <<< ' + stage)
     }
 
     void junit(String arg) {
