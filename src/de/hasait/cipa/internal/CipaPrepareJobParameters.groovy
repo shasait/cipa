@@ -18,7 +18,6 @@ package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaBeanContainer
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaPrepare
 import de.hasait.cipa.JobParameterContainer

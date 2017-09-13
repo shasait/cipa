@@ -96,4 +96,8 @@ class Script implements Serializable {
 		rawScript.unstash(id)
 	}
 
+	void sleep(int seconds) {
+		rawScript.sleep(seconds)
+	}
+
 }

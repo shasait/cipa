@@ -91,6 +91,7 @@ class TestReaderActivity implements CipaInit, CipaActivity, Serializable {
 	@Override
 	void runActivity() {
 		script.echo("Test ${filesIn} and ${filesOut}")
+		script.sleep(20)
 	}
 
 	@Override

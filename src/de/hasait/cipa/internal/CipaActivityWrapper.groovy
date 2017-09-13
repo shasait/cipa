@@ -69,16 +69,8 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	@NonCPS
-	String dependenciesToString() {
-		String result = null
-		for (dependency in dependsOn) {
-			if (!result) {
-				result = dependency.name
-			} else {
-				result += ", ${dependency.name}"
-			}
-		}
-		return result ?: ''
+	Set<CipaActivityWrapper> getDependencies() {
+		return dependsOn
 	}
 
 	@NonCPS
@@ -143,8 +135,9 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	void runActivity() {
-		if (!readyToRunActivity()) {
-			throw new IllegalStateException('!readyToRunActivity')
+		String notFinishedDependency = readyToRunActivity()
+		if (notFinishedDependency) {
+			throw new IllegalStateException("!readyToRunActivity: ${notFinishedDependency}")
 		}
 		if (prepareThrowable) {
 			throw new IllegalStateException('prepareThrowable')
@@ -169,14 +162,17 @@ class CipaActivityWrapper implements Serializable {
 		}
 	}
 
-	boolean readyToRunActivity() {
+	/**
+	 * @return null if ready; otherwise the name of an non-finished dependency.
+	 */
+	String readyToRunActivity() {
 		for (dependency in dependsOn) {
 			if (!dependency.finishedDate && !dependency.prepareThrowable) {
-				return false
+				return dependency.name
 			}
 		}
 
-		return true
+		return null
 	}
 
 	static void throwOnAnyActivityFailure(String msgPrefix, Set<CipaActivityWrapper> activities) {
