@@ -73,7 +73,8 @@ class Script implements Serializable {
 	}
 
 	String shAsUser(String username, String script, boolean returnStdout = false) {
-		return sh('echo "' + script.replace('"', '\\"') + '" | ssh -T -o "BatchMode yes" ' + username + '@localhost', returnStdout)
+		String escapedScript = script.replace('\\', '\\\\').replace('"', '\\"')
+		return sh('echo "' + escapedScript + '" | ssh -T -o "BatchMode yes" ' + username + '@localhost', returnStdout)
 	}
 
 	void timeout(int timeOutInMinutes, Closure<?> body) {

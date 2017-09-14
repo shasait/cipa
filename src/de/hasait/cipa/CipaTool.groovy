@@ -91,4 +91,13 @@ class CipaTool implements Serializable {
 		this.options = options
 	}
 
+	@NonCPS
+	List<List<String>> buildConfigFileEnvVarsList() {
+		List<List<String>> result = new ArrayList<>()
+		for (configFileEnvVar in configFileEnvVars) {
+			result.add([configFileEnvVar.key, configFileEnvVar.value])
+		}
+		return result
+	}
+
 }

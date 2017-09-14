@@ -28,6 +28,9 @@ import groovy.json.JsonSlurper
  */
 class CipaPrepareEnv implements CipaInit, CipaPrepare, Serializable {
 
+	private static final String ENV_BEGIN_MARKER = 'vvv additionalEnv.json vvv'
+	private static final String ENV_END_MARKER = '^^^ additionalEnv.json ^^^'
+
 	private Script script
 	private def rawScript
 
@@ -45,12 +48,21 @@ class CipaPrepareEnv implements CipaInit, CipaPrepare, Serializable {
 
 	@Override
 	void prepareCipa(Cipa cipa) {
-		script.echo('populateEnvFromJobDescription')
+		script.echo('Populating env from descriptions...')
 
-		String jobDescriptionEnvStartKey = 'vvv additionalEnv.json vvv'
-		String jobDescriptionEnvEndKey = '^^^ additionalEnv.json ^^^'
+		List<String> descriptions = collectDescriptions()
+		List<List<Object>> envAssignments = extractEnvAssignments(descriptions)
 
+		for (envAssignment in envAssignments) {
+			script.echo("Adding ${envAssignment[0]} to env with value: ${envAssignment[1]}")
+			rawScript.env[(String) envAssignment[0]] = envAssignment[1]
+		}
+	}
+
+	@NonCPS
+	private List<String> collectDescriptions() {
 		List<String> descriptions = new ArrayList<>()
+		// start with Job
 		def current = rawScript.currentBuild.rawBuild.parent
 		while (current != null && current.hasProperty('description')) {
 			def description = current.description
@@ -59,26 +71,34 @@ class CipaPrepareEnv implements CipaInit, CipaPrepare, Serializable {
 			}
 			current = current.hasProperty('parent') ? current.parent : null
 		}
+		return descriptions
+	}
+
+	@NonCPS
+	private List<List<Object>> extractEnvAssignments(List<String> descriptions) {
+		List<List<Object>> envAssignments = new ArrayList<>()
 
 		for (description in descriptions.reverse()) {
-			int ioBeginOfStartKey = description.indexOf(jobDescriptionEnvStartKey)
+			int ioBeginOfStartKey = description.indexOf(ENV_BEGIN_MARKER)
 			if (ioBeginOfStartKey >= 0) {
-				int ioAfterStartKey = ioBeginOfStartKey + jobDescriptionEnvStartKey.length()
-				int ioAfterEndKey = description.lastIndexOf(jobDescriptionEnvEndKey)
+				int ioAfterStartKey = ioBeginOfStartKey + ENV_BEGIN_MARKER.length()
+				int ioAfterEndKey = description.lastIndexOf(ENV_END_MARKER)
 				if (ioAfterStartKey < ioAfterEndKey) {
 					String additionalEnvJSON = description.substring(ioAfterStartKey, ioAfterEndKey)
-					script.echo('additionalEnv.json:')
-					script.echo(additionalEnvJSON)
 					def additionalEnv = new JsonSlurper().parseText(additionalEnvJSON)
 					if (additionalEnv instanceof Map) {
-						for (additionalEnvEntry in additionalEnv) {
-							script.echo("Adding ${additionalEnvEntry.key} to env with value: ${additionalEnvEntry.value}")
-							rawScript.env[additionalEnvEntry.key] = additionalEnvEntry.value
+						Map additionalEnvMap = additionalEnv
+						for (additionalEnvEntry in additionalEnvMap) {
+							if (additionalEnvEntry.key instanceof String) {
+								envAssignments.add([additionalEnvEntry.key, additionalEnvEntry.value])
+							}
 						}
 					}
 				}
 			}
 		}
+
+		return envAssignments
 	}
 
 }

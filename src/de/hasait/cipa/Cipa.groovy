@@ -50,8 +50,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private CipaTool toolJdk
 	private CipaTool toolMvn
 
-	private final Set<CipaTool> tools = new LinkedHashSet<>()
-
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
 
 	boolean debug = false
@@ -77,29 +75,42 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@Override
 	@NonCPS
 	public <T> Set<T> findBeans(Class<T> type) {
-		Set<T> result = new LinkedHashSet<>()
+		Set<T> results = new LinkedHashSet<>()
 		for (bean in beans) {
 			if (type.isInstance(bean)) {
-				result.add((T) bean)
+				results.add((T) bean)
 			}
 		}
-		return result
+		return results
+	}
+
+	@Override
+	@NonCPS
+	public <T> List<T> findBeansAsList(Class<T> type) {
+		List<T> results = new ArrayList<>()
+		for (bean in beans) {
+			if (type.isInstance(bean)) {
+				results.add((T) bean)
+			}
+		}
+		return results
 	}
 
 	@Override
 	@NonCPS
 	public <T> T findBean(Class<T> type, boolean optional = false) {
-		Set<T> results = findBeans(type)
-		Iterator<T> resultsI = results.iterator()
-		if (!resultsI.hasNext()) {
-			if (optional) {
-				return null
+		T result = null
+		for (bean in beans) {
+			if (type.isInstance(bean)) {
+				if (!result) {
+					result = (T) bean
+				} else {
+					throw new IllegalStateException("Multiple beans found: ${type}")
+				}
 			}
-			throw new IllegalStateException("No bean found: ${type}")
 		}
-		T result = resultsI.next()
-		if (resultsI.hasNext()) {
-			throw new IllegalStateException("Multiple beans found: ${type}")
+		if (!result) {
+			throw new IllegalStateException("No bean found: ${type}")
 		}
 		return result
 	}
@@ -135,7 +146,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	CipaTool configureJDK(String version) {
 		if (!toolJdk) {
 			toolJdk = new CipaTool()
-			tools.add(toolJdk)
+			addBean(toolJdk)
 		}
 		toolJdk.name = version
 		toolJdk.type = 'hudson.model.JDK'
@@ -148,7 +159,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	CipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
 		if (!toolMvn) {
 			toolMvn = new CipaTool()
-			tools.add(toolMvn)
+			addBean(toolMvn)
 		}
 		toolMvn.name = version
 		toolMvn.type = 'hudson.tasks.Maven$MavenInstallation'
@@ -168,13 +179,13 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		CipaTool tool = new CipaTool()
 		tool.name = name
 		tool.type = type
-		tools.add(tool)
+		addBean(tool)
 		return tool
 	}
 
 	@NonCPS
-	private Set<CipaInit> findBeansToInitialize() {
-		Set<CipaInit> inits = findBeans(CipaInit.class)
+	private List<CipaInit> findBeansToInitialize() {
+		List<CipaInit> inits = findBeansAsList(CipaInit.class)
 		inits.removeAll(alreadyInitialized)
 		return inits
 	}
@@ -183,7 +194,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		rawScript.echo("[CIPA] Initializing...")
 		int initRound = 0
 		while (true) {
-			Set<CipaInit> inits = findBeansToInitialize()
+			List<CipaInit> inits = findBeansToInitialize()
 			if (inits.empty) {
 				break
 			}
@@ -201,8 +212,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	private List<CipaPrepare> findBeansToPrepare() {
-		List<CipaPrepare> prepares = new ArrayList<>(findBeans(CipaPrepare.class))
-		prepares.sort({ it.prepareCipaOrder })
+		List<CipaPrepare> prepares = findBeansAsList(CipaPrepare.class)
+		prepares.sort { it.prepareCipaOrder }
 		return prepares
 	}
 
@@ -220,13 +231,13 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	private List<CipaAroundActivity> findCipaAroundActivities() {
-		List<CipaAroundActivity> aroundActivities = new ArrayList<>(findBeans(CipaAroundActivity.class))
+		List<CipaAroundActivity> aroundActivities = findBeansAsList(CipaAroundActivity.class)
 		aroundActivities.sort({ it.runAroundActivityOrder })
 		return aroundActivities
 	}
 
 	@NonCPS
-	private void analyzeActivities(Set<CipaNode> nodes, Set<CipaActivityWrapper> wrappers, Map<CipaNode, List<CipaActivityWrapper>> wrappersByNode) {
+	private void analyzeActivities(List<CipaNode> nodes, List<CipaActivityWrapper> wrappers, Map<CipaNode, List<CipaActivityWrapper>> wrappersByNode) {
 		Set<CipaResourceWithState<?>> resources = findBeans(CipaResourceWithState.class)
 
 		for (node in nodes) {
@@ -311,63 +322,67 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 	}
 
+	@NonCPS
+	private String produceDot(List<CipaNode> nodes, List<CipaActivityWrapper> wrappers, Map<CipaNode, List<CipaActivityWrapper>> wrappersByNode) {
+		StringBuilder dotContent = new StringBuilder()
+		dotContent << '\n'
+		dotContent << 'digraph pipeline {\n'
+		Map<CipaActivityWrapper, String> nodeNames = new HashMap<>()
+		int activityI = 0
+		for (wrapper in wrappers) {
+			nodeNames.put(wrapper, "a${activityI++}")
+		}
+		int nodeI = 0
+		for (node in nodes) {
+			dotContent << "subgraph cluster_node${nodeI++} {\n"
+			dotContent << "label=\"${node.label}\";\n"
+			for (wrapper in wrappersByNode.get(node)) {
+				dotContent << "${nodeNames.get(wrapper)}[label=\"${wrapper.name}\"];\n"
+			}
+			dotContent << '}\n'
+		}
+		dotContent << 'start;\n'
+		for (wrapper in wrappers) {
+			Set<CipaActivityWrapper> dependencies = wrapper.dependencies
+			if (dependencies.empty) {
+				dotContent << "start -> ${nodeNames.get(wrapper)};\n"
+			} else {
+				for (dependency in dependencies) {
+					dotContent << "${nodeNames.get(dependency)} -> ${nodeNames.get(wrapper)};\n"
+				}
+			}
+		}
+		dotContent << '}\n'
+		return dotContent.toString()
+	}
+
 	@Override
 	void run() {
 		initBeans()
 		prepareBeans()
 
-		Set<CipaNode> nodes = findBeans(CipaNode.class)
-		Set<CipaActivityWrapper> wrappers = new LinkedHashSet<>()
+		List<CipaNode> nodes = findBeansAsList(CipaNode.class)
+		List<CipaActivityWrapper> wrappers = new ArrayList<>()
 		Map<CipaNode, List<CipaActivityWrapper>> wrappersByNode = new HashMap<>()
 
 		rawScript.echo("[CIPA] Analyzing activities...")
 		analyzeActivities(nodes, wrappers, wrappersByNode)
 
 		if (debug) {
-			rawScript.echo("[CIPA-Debug] Printing dependencies...")
-
-			StringBuilder dotContent = new StringBuilder()
-			dotContent << '\n'
-			dotContent << 'digraph pipeline {\n'
-			Map<CipaActivityWrapper, String> nodeNames = new HashMap<>()
-			int activityI = 0
-			for (wrapper in wrappers) {
-				nodeNames.put(wrapper, "a${activityI++}")
-			}
-			int nodeI = 0
-			for (node in nodes) {
-				dotContent << "subgraph cluster_node${nodeI++} {\n"
-				dotContent << "label=\"${node.label}\";\n"
-				for (wrapper in wrappersByNode.get(node)) {
-					dotContent << "${nodeNames.get(wrapper)}[label=\"${wrapper.name}\"];\n"
-				}
-				dotContent << '}\n'
-			}
-			dotContent << 'start;\n'
-			for (wrapper in wrappers) {
-				Set<CipaActivityWrapper> dependencies = wrapper.dependencies
-				if (dependencies.empty) {
-					dotContent << "start -> ${nodeNames.get(wrapper)};\n"
-				} else {
-					for (dependency in dependencies) {
-						dotContent << "${nodeNames.get(dependency)} -> ${nodeNames.get(wrapper)};\n"
-					}
-				}
-			}
-			dotContent << '}\n'
-			rawScript.echo(dotContent.toString())
+			rawScript.echo("[CIPA-Debug] Printing dependencies in DOT format:")
+			String dotContent = produceDot(nodes, wrappers, wrappersByNode)
+			rawScript.echo(dotContent)
 		}
 
 		rawScript.echo("[CIPA] Executing activities...")
-		List<CipaNode> nodeList = new ArrayList<>(nodes)
 		def parallelNodeBranches = [:]
-		for (int i = 0; i < nodeList.size(); i++) {
-			CipaNode node = nodeList.get(i)
+		for (int nodeI = 0; nodeI < nodes.size(); nodeI++) {
+			CipaNode node = nodes.get(nodeI)
 			List<CipaActivityWrapper> nodeWrappers = wrappersByNode.get(node)
 			if (nodeWrappers.empty) {
 				rawScript.echo("[CIPA] WARNING: ${node} has no activities!")
 			}
-			parallelNodeBranches["${i}-${node.label}"] = parallelNodeWithActivitiesBranch(node, nodeWrappers)
+			parallelNodeBranches["${nodeI}-${node.label}"] = parallelNodeWithActivitiesBranch(nodeI, node, nodeWrappers)
 		}
 
 		parallelNodeBranches.failFast = true
@@ -383,12 +398,12 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', wrappers)
 	}
 
-	private Closure parallelNodeWithActivitiesBranch(CipaNode node, List<CipaActivityWrapper> nodeActivities) {
+	private Closure parallelNodeWithActivitiesBranch(int nodeI, CipaNode node, List<CipaActivityWrapper> nodeActivities) {
 		return {
 			def parallelActivitiesBranches = [:]
-			for (int i = 0; i < nodeActivities.size(); i++) {
-				CipaActivityWrapper activity = nodeActivities.get(i)
-				parallelActivitiesBranches["${i}-${activity.name}"] = parallelActivityRunBranch(activity)
+			for (int activityI = 0; activityI < nodeActivities.size(); activityI++) {
+				CipaActivityWrapper activity = nodeActivities.get(activityI)
+				parallelActivitiesBranches["${nodeI}-${activityI}-${activity.name}"] = parallelActivityRunBranch(activity)
 			}
 
 			nodeWithEnv(node) {
@@ -445,6 +460,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			def pathEntries = []
 			def configFiles = []
 
+			List<CipaTool> tools = findBeansAsList(CipaTool.class)
 			for (tool in tools) {
 				def toolHome = rawScript.tool(name: tool.name, type: tool.type)
 				rawScript.echo("[CIPA] Tool ${tool.name}: ${toolHome}")
@@ -460,8 +476,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
 					envVars.add("${ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[ENV_VAR___MVN_OPTIONS] ?: ''}")
 				}
-				for (configFileEnvVar in tool.configFileEnvVars) {
-					configFiles.add(rawScript.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
+
+				List<List<String>> configFileEnvVarsList = tool.buildConfigFileEnvVarsList()
+				for (configFileEnvVar in configFileEnvVarsList) {
+					configFiles.add(rawScript.configFile(fileId: configFileEnvVar[1], variable: configFileEnvVar[0]))
 				}
 			}
 

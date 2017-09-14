@@ -165,6 +165,7 @@ class CipaActivityWrapper implements Serializable {
 	/**
 	 * @return null if ready; otherwise the name of an non-finished dependency.
 	 */
+	@NonCPS
 	String readyToRunActivity() {
 		for (dependency in dependsOn) {
 			if (!dependency.finishedDate && !dependency.prepareThrowable) {
@@ -175,21 +176,22 @@ class CipaActivityWrapper implements Serializable {
 		return null
 	}
 
-	static void throwOnAnyActivityFailure(String msgPrefix, Set<CipaActivityWrapper> activities) {
+	@NonCPS
+	static void throwOnAnyActivityFailure(String msgPrefix, Collection<CipaActivityWrapper> wrappers) {
 		StringBuilder sb = null
-		for (activity in activities) {
-			if (activity.failedThrowable || activity.prepareThrowable) {
+		for (wrapper in wrappers) {
+			if (wrapper.failedThrowable || wrapper.prepareThrowable) {
 				if (!sb) {
 					sb = new StringBuilder(msgPrefix + ' failed: [')
 				} else {
 					sb.append('; ')
 				}
-				sb.append(activity.name)
+				sb.append(wrapper.name)
 				sb.append(' = ')
-				if (activity.failedThrowable) {
-					sb.append(activity.failedThrowable.message)
+				if (wrapper.failedThrowable) {
+					sb.append(wrapper.failedThrowable.message)
 				} else {
-					sb.append(activity.prepareThrowable.message)
+					sb.append(wrapper.prepareThrowable.message)
 				}
 			}
 		}

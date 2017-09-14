@@ -48,17 +48,17 @@ class CipaPrepareJobParameters implements CipaInit, CipaPrepare, JobParameterCon
 
 	@Override
 	void prepareCipa(Cipa cipa) {
-		Set<JobParameterContribution> parameterContributions = cipa.findBeans(JobParameterContribution.class)
+		List<JobParameterContribution> parameterContributions = cipa.findBeansAsList(JobParameterContribution.class)
 
-		script.echo('contributeParameters')
+		script.echo("Collecting parameters via ${JobParameterContribution.class.simpleName}s...")
 		for (JobParameterContribution parameterContribution in parameterContributions) {
 			parameterContribution.contributeParameters(this)
 		}
 
-		script.echo('updateJobProperties')
+		script.echo('Updating job properties...')
 		updateJobProperties()
 
-		script.echo('processParameters')
+		script.echo('Processing parameters...')
 		for (JobParameterContribution parameterContribution in parameterContributions) {
 			parameterContribution.processParameters(this)
 		}

@@ -25,6 +25,8 @@ interface CipaBeanContainer {
 
 	public <T> Set<T> findBeans(Class<T> type)
 
+	public <T> List<T> findBeansAsList(Class<T> type)
+
 	public <T> T findBean(Class<T> type, boolean optional)
 
 	public <T> T findBean(Class<T> type)
