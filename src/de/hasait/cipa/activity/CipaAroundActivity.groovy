@@ -16,10 +16,14 @@
 
 package de.hasait.cipa.activity
 
+import de.hasait.cipa.internal.CipaActivityWrapper
+
 /**
  * Around Aspect for Activities.
  */
 interface CipaAroundActivity {
+
+	void handleDependencyErrors(CipaActivity activity, List<CipaActivityWrapper> failedDependencies, Closure<?> next)
 
 	void runAroundActivity(CipaActivity activity, Closure<?> next)
 

@@ -388,14 +388,18 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		parallelNodeBranches.failFast = true
 		rawScript.parallel(parallelNodeBranches)
 
-		rawScript.echo('[CIPA] Done - Summary of all activities:')
-
-		for (wrapper in wrappers) {
-			rawScript.echo("[CIPA] Activity: ${wrapper.name}")
-			rawScript.echo("[CIPA]     ${wrapper.buildStateHistoryString()}")
-		}
-
+		rawScript.echo(buildRunSummary(wrappers))
 		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', wrappers)
+	}
+
+	@NonCPS
+	private String buildRunSummary(List<CipaActivityWrapper> wrappers) {
+		StringBuilder sb = new StringBuilder()
+		sb.append('[CIPA] Done\nSummary of all activities:\n')
+		for (wrapper in wrappers) {
+			sb.append("- ${wrapper.name}\n    ${wrapper.buildStateHistoryString()}\n")
+		}
+		return sb.toString()
 	}
 
 	private Closure parallelNodeWithActivitiesBranch(int nodeI, CipaNode node, List<CipaActivityWrapper> nodeActivities) {
@@ -430,6 +434,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private Closure parallelActivityRunBranch(CipaActivityWrapper activity) {
 		return {
 			int countWait = 0
+			// TODO replace with sth silent
 			rawScript.waitUntil() {
 				countWait++
 				String notFinishedDependency = activity.readyToRunActivity()

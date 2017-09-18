@@ -26,6 +26,7 @@ import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
+import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
@@ -69,6 +70,12 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 
 	void run() {
 		cipa.run()
+	}
+
+	@Override
+	void handleDependencyErrors(final CipaActivity activity, final List<CipaActivityWrapper> failedDependencies, final Closure<?> next) {
+		rawScript.setCustomBuildProperty(key: "${activity.name}-DepsFailed", value: failedDependencies.size())
+		next.call()
 	}
 
 	@Override

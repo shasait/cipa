@@ -144,7 +144,12 @@ class CipaActivityWrapper implements Serializable {
 		}
 		try {
 			startedDate = new Date()
-			throwOnAnyActivityFailure('Dependencies', dependsOn)
+
+			List<CipaActivityWrapper> failedDependencies = collectFailedActivities(dependsOn)
+			if (!failedDependencies.empty) {
+				handleDependencyErrors(0, failedDependencies)
+			}
+
 			runAroundActivity(0)
 
 			finishedDate = new Date()
@@ -154,9 +159,21 @@ class CipaActivityWrapper implements Serializable {
 		}
 	}
 
+	private void handleDependencyErrors(int i, List<CipaActivityWrapper> failedDependencies) {
+		if (i < aroundActivities.size()) {
+			aroundActivities.get(i).handleDependencyErrors(activity, failedDependencies, {
+				handleDependencyErrors(i + 1, failedDependencies)
+			})
+		} else {
+			throwOnAnyActivityFailure('Dependencies', failedDependencies)
+		}
+	}
+
 	private void runAroundActivity(int i) {
 		if (i < aroundActivities.size()) {
-			aroundActivities.get(i).runAroundActivity(activity, { runAroundActivity(i + 1) })
+			aroundActivities.get(i).runAroundActivity(activity, {
+				runAroundActivity(i + 1)
+			})
 		} else {
 			activity.runActivity()
 		}
@@ -177,28 +194,38 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	@NonCPS
-	static void throwOnAnyActivityFailure(String msgPrefix, Collection<CipaActivityWrapper> wrappers) {
-		StringBuilder sb = null
+	static List<CipaActivityWrapper> collectFailedActivities(Collection<CipaActivityWrapper> wrappers) {
+		List<CipaActivityWrapper> failed = new ArrayList<>()
 		for (wrapper in wrappers) {
 			if (wrapper.failedThrowable || wrapper.prepareThrowable) {
-				if (!sb) {
-					sb = new StringBuilder(msgPrefix + ' failed: [')
-				} else {
-					sb.append('; ')
-				}
-				sb.append(wrapper.name)
-				sb.append(' = ')
-				if (wrapper.failedThrowable) {
-					sb.append(wrapper.failedThrowable.message)
-				} else {
-					sb.append(wrapper.prepareThrowable.message)
-				}
+				failed.add(wrapper)
 			}
 		}
+		return failed
+	}
 
-		if (sb) {
-			sb.append(']')
-			throw new RuntimeException(sb.toString())
+	@NonCPS
+	static String buildExceptionMessage(String msgPrefix, Collection<CipaActivityWrapper> failed) {
+		if (!failed || failed.empty) {
+			return null
+		}
+
+		StringBuilder sb = new StringBuilder(msgPrefix + ' failed: [')
+		sb.append(
+				failed.collect {
+					return "${it.name} = ${it.prepareThrowable ? it.prepareThrowable.message : it.failedThrowable.message}"
+				}.join('; ')
+		)
+		sb.append(']')
+		return sb.toString()
+	}
+
+	@NonCPS
+	static void throwOnAnyActivityFailure(String msgPrefix, Collection<CipaActivityWrapper> wrappers) {
+		List<CipaActivityWrapper> failed = collectFailedActivities(wrappers)
+		String msg = buildExceptionMessage(msgPrefix, failed)
+		if (msg) {
+			throw new RuntimeException(msg)
 		}
 	}
 
