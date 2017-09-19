@@ -130,6 +130,10 @@ class TestRawScript {
 		log('[junit] ' + arg)
 	}
 
+	void archiveArtifacts(Map args) {
+		log('[archiveArtifacts] ' + args)
+	}
+
 	Object tool(Map args) {
 		return ['tool': args]
 	}
