@@ -20,7 +20,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaPrepare
-import de.hasait.cipa.Script
+import de.hasait.cipa.PScript
 import groovy.json.JsonSlurper
 
 /**
@@ -31,12 +31,12 @@ class CipaPrepareEnv implements CipaInit, CipaPrepare, Serializable {
 	private static final String ENV_BEGIN_MARKER = 'vvv additionalEnv.json vvv'
 	private static final String ENV_END_MARKER = '^^^ additionalEnv.json ^^^'
 
-	private Script script
+	private PScript script
 	private def rawScript
 
 	@Override
 	void initCipa(Cipa cipa) {
-		script = cipa.findBean(Script.class)
+		script = cipa.findBean(PScript.class)
 		rawScript = script.rawScript
 	}
 

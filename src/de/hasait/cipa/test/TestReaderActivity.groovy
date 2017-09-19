@@ -20,7 +20,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.Script
+import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
@@ -32,7 +32,7 @@ class TestReaderActivity implements CipaInit, CipaActivity, Serializable {
 	private final CipaResourceWithState<CipaFileResource> filesIn
 	private final CipaResourceWithState<CipaFileResource> filesOut
 
-	private Script script
+	private PScript script
 
 	TestReaderActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState) {
 		this.cipa = cipa
@@ -51,7 +51,7 @@ class TestReaderActivity implements CipaInit, CipaActivity, Serializable {
 
 	@Override
 	void initCipa(Cipa cipa) {
-		script = cipa.findBean(Script.class)
+		script = cipa.findBean(PScript.class)
 	}
 
 	@Override

@@ -23,7 +23,7 @@ import de.hasait.cipa.CipaNode
 import de.hasait.cipa.JobParameterContainer
 import de.hasait.cipa.JobParameterContribution
 import de.hasait.cipa.JobParameterValues
-import de.hasait.cipa.Script
+import de.hasait.cipa.PScript
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
@@ -38,7 +38,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	private final String idUpperCase
 	private final CipaResourceWithState<CipaFileResource> checkedOutFiles
 
-	private Script script
+	private PScript script
 	private def rawScript
 
 	private String scmUrl
@@ -79,7 +79,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 		cipa.addBean(checkedOutFiles.resource)
 		cipa.addBean(checkedOutFiles)
 
-		script = cipa.findBean(Script.class)
+		script = cipa.findBean(PScript.class)
 		rawScript = script.rawScript
 	}
 

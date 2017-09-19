@@ -20,7 +20,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.Script
+import de.hasait.cipa.PScript
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
@@ -33,7 +33,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	private final String subDir
 	private final CipaResourceWithState<CipaStashResource> stash
 
-	private Script script
+	private PScript script
 
 	private Set<String> fileIncludes = new LinkedHashSet<>()
 	private Set<String> fileExcludes = new LinkedHashSet<>()
@@ -83,7 +83,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 
 	@Override
 	void initCipa(Cipa cipa) {
-		script = cipa.findBean(Script.class)
+		script = cipa.findBean(PScript.class)
 	}
 
 	@Override

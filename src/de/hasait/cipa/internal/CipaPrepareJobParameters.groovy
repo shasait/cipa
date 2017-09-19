@@ -23,20 +23,20 @@ import de.hasait.cipa.CipaPrepare
 import de.hasait.cipa.JobParameterContainer
 import de.hasait.cipa.JobParameterContribution
 import de.hasait.cipa.JobParameterValues
-import de.hasait.cipa.Script
+import de.hasait.cipa.PScript
 
 class CipaPrepareJobParameters implements CipaInit, CipaPrepare, JobParameterContainer, JobParameterValues, Serializable {
 
 	private static final String PARAM_PREFIX = 'P_'
 
-	private Script script
+	private PScript script
 	private def rawScript
 
 	private final List parameters = []
 
 	@Override
 	void initCipa(Cipa cipa) {
-		script = cipa.findBean(Script.class)
+		script = cipa.findBean(PScript.class)
 		rawScript = script.rawScript
 	}
 

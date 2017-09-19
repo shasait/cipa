@@ -42,7 +42,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private static final String ENV_VAR___MVN_OPTIONS = 'MAVEN_OPTS'
 
 	private final def rawScript
-	private final Script script
+	private final PScript script
 	private final CipaPrepareNodeLabelPrefix nodeLabelPrefixHolder
 
 	private final Set<Object> beans = new LinkedHashSet<>()
@@ -59,7 +59,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			throw new IllegalArgumentException('rawScript is null')
 		}
 		this.rawScript = rawScript
-		script = addBean(new Script(rawScript))
+		script = addBean(new PScript(rawScript))
 		addBean(new CipaPrepareEnv())
 		addBean(new CipaPrepareJobParameters())
 		nodeLabelPrefixHolder = addBean(new CipaPrepareNodeLabelPrefix())

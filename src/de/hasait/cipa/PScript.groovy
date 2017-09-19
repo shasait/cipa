@@ -17,13 +17,13 @@
 package de.hasait.cipa
 
 /**
- * Wrapper for WorkflowScript.
+ * Wrapper for pipeline script allowing access to well known steps.
  */
-class Script implements Serializable {
+class PScript implements Serializable {
 
 	def rawScript
 
-	Script(rawScript) {
+	PScript(rawScript) {
 		this.rawScript = rawScript
 	}
 

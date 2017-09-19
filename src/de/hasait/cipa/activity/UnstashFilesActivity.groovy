@@ -20,7 +20,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.Script
+import de.hasait.cipa.PScript
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
@@ -32,7 +32,7 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	private final CipaResourceWithState<CipaStashResource> stash
 	private final CipaResourceWithState<CipaFileResource> files
 
-	private Script script
+	private PScript script
 
 	UnstashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaStashResource> stash, CipaNode node, String relDir = null) {
 		this.cipa = cipa
@@ -51,7 +51,7 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, Serializable {
 
 	@Override
 	void initCipa(Cipa cipa) {
-		script = cipa.findBean(Script.class)
+		script = cipa.findBean(PScript.class)
 	}
 
 	@Override

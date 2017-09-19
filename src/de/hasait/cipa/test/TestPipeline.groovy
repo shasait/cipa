@@ -20,7 +20,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.Script
+import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CheckoutActivity
 import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaAroundActivity
@@ -37,7 +37,7 @@ import de.hasait.cipa.resource.CipaStashResource
 class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 
 	private final Cipa cipa
-	private Script script
+	private PScript script
 	private def rawScript
 
 	TestPipeline(rawScript) {
@@ -60,7 +60,7 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 
 	@Override
 	void initCipa(Cipa cipa) {
-		script = cipa.findBean(Script.class)
+		script = cipa.findBean(PScript.class)
 		rawScript = script.rawScript
 
 		cipa.configureJDK('JDK8')
