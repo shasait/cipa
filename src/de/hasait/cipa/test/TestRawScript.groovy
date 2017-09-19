@@ -58,7 +58,7 @@ class TestRawScript {
 		log('[parallel] <<<')
 	}
 
-	void node(String label, Closure<?> body) {
+	void node(String label = '<none>', Closure<?> body) {
 		log('[node] >>> ' + label)
 		body()
 		log('[node] <<< ' + label)
