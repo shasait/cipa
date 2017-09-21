@@ -37,7 +37,7 @@ class CipaActivityWrapper implements Serializable {
 	private final CipaActivity activity
 	private final List<CipaAroundActivity> aroundActivities
 
-	private final Set<CipaActivityWrapper> dependsOn = new LinkedHashSet<>()
+	private final Map<CipaActivityWrapper, Boolean> dependsOn = new LinkedHashMap<>()
 
 	private final Date creationDate
 	private Throwable prepareThrowable
@@ -64,13 +64,13 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	@NonCPS
-	void addDependency(CipaActivityWrapper activity) {
-		dependsOn.add(activity)
+	void addDependency(CipaActivityWrapper activity, boolean propagateFailure = true) {
+		dependsOn.put(activity, propagateFailure)
 	}
 
 	@NonCPS
-	Set<CipaActivityWrapper> getDependencies() {
-		return dependsOn
+	Set<Map.Entry<CipaActivityWrapper, Boolean>> getDependencies() {
+		return dependsOn.entrySet()
 	}
 
 	@NonCPS
@@ -145,7 +145,7 @@ class CipaActivityWrapper implements Serializable {
 		try {
 			startedDate = new Date()
 
-			List<CipaActivityWrapper> failedDependencies = collectFailedActivities(dependsOn)
+			List<CipaActivityWrapper> failedDependencies = collectFailedActivitiesMap(dependsOn)
 			if (!failedDependencies.empty) {
 				handleDependencyErrors(0, failedDependencies)
 			}
@@ -184,13 +184,24 @@ class CipaActivityWrapper implements Serializable {
 	 */
 	@NonCPS
 	String readyToRunActivity() {
-		for (dependency in dependsOn) {
+		for (dependency in dependsOn.keySet()) {
 			if (!dependency.finishedDate && !dependency.prepareThrowable) {
 				return dependency.name
 			}
 		}
 
 		return null
+	}
+
+	@NonCPS
+	static List<CipaActivityWrapper> collectFailedActivitiesMap(Map<CipaActivityWrapper, Boolean> wrappers) {
+		Set<CipaActivityWrapper> inheritFailures = new LinkedHashSet<>()
+		for (wrapper in wrappers) {
+			if (wrapper.value.booleanValue()) {
+				inheritFailures.add(wrapper.key)
+			}
+		}
+		return collectFailedActivities(inheritFailures)
 	}
 
 	@NonCPS

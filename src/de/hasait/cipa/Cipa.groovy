@@ -305,18 +305,17 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			for (requiresWrapper in requires.value) {
 				// Chain writers
 				if (lastWriter) {
-					requiresWrapper.addDependency(lastWriter)
+					requiresWrapper.addDependency(lastWriter, false)
 				} else if (readers) {
 					// Execute all readers before any writer, if there was already a writer we only depend on it
 					for (reader in readers) {
-						requiresWrapper.addDependency(reader)
-					}
-				} else {
-					// readers already depend on providers, so only add if no readers
-					for (providesWrapper in providesWrappers) {
-						requiresWrapper.addDependency(providesWrapper)
+						requiresWrapper.addDependency(reader, false)
 					}
 				}
+				for (providesWrapper in providesWrappers) {
+					requiresWrapper.addDependency(providesWrapper)
+				}
+
 				lastWriter = requiresWrapper
 			}
 		}
@@ -343,12 +342,16 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 		dotContent << 'start;\n'
 		for (wrapper in wrappers) {
-			Set<CipaActivityWrapper> dependencies = wrapper.dependencies
+			Set<Map.Entry<CipaActivityWrapper, Boolean>> dependencies = wrapper.dependencies
 			if (dependencies.empty) {
 				dotContent << "start -> ${nodeNames.get(wrapper)};\n"
 			} else {
 				for (dependency in dependencies) {
-					dotContent << "${nodeNames.get(dependency)} -> ${nodeNames.get(wrapper)};\n"
+					dotContent << "${nodeNames.get(dependency.key)} -> ${nodeNames.get(wrapper)}"
+					if (!dependency.value.booleanValue()) {
+						dotContent << ' [style = dotted]'
+					}
+					dotContent << ';\n'
 				}
 			}
 		}
