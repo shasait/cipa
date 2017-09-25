@@ -52,6 +52,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
 
+	private String dotContent
+
 	boolean debug = false
 
 	Cipa(rawScript) {
@@ -359,6 +361,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		return dotContent.toString()
 	}
 
+	@NonCPS
+	String getDotContent() {
+		return dotContent
+	}
+
 	@Override
 	void run() {
 		initBeans()
@@ -371,9 +378,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		rawScript.echo("[CIPA] Analyzing activities...")
 		analyzeActivities(nodes, wrappers, wrappersByNode)
 
+		dotContent = produceDot(nodes, wrappers, wrappersByNode)
+
 		if (debug) {
 			rawScript.echo("[CIPA-Debug] Printing dependencies in DOT format:")
-			String dotContent = produceDot(nodes, wrappers, wrappersByNode)
 			rawScript.echo(dotContent)
 		}
 
