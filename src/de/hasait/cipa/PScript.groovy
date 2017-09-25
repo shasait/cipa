@@ -30,8 +30,13 @@ class PScript implements Serializable {
 	}
 
 	String determineHostname() {
-		def hostnameRaw = rawScript.sh(returnStdout: true, script: 'hostname')
+		String hostnameRaw = rawScript.sh(returnStdout: true, script: 'hostname')
 		return hostnameRaw.trim()
+	}
+
+	String determineMvnRepo() {
+		String workspace = rawScript.env.WORKSPACE
+		return workspace + '/.repo'
 	}
 
 	/**
@@ -114,6 +119,36 @@ class PScript implements Serializable {
 
 	Run<?, ?> getCurrentRawBuild() {
 		return rawScript.currentBuild.rawBuild
+	}
+
+	String mvn(
+			List<String> goals,
+			List<String> profiles = [],
+			List<String> arguments = [],
+			List<String> options = [],
+			boolean returnStdout = false) {
+		def allArguments = ['-B', '-V', '-e']
+		if (rawScript.env[Cipa.ENV_VAR___MVN_SETTINGS]) {
+			allArguments.add('-s "${' + Cipa.ENV_VAR___MVN_SETTINGS + '}"')
+		}
+		if (rawScript.env[Cipa.ENV_VAR___MVN_TOOLCHAINS]) {
+			allArguments.add('--global-toolchains "${' + Cipa.ENV_VAR___MVN_TOOLCHAINS + '}"')
+		}
+		allArguments.add('-Dmaven.repo.local="${' + Cipa.ENV_VAR___MVN_REPO + '}"')
+		if (!profiles.empty) {
+			allArguments.add('-P' + profiles.join(','))
+		}
+		allArguments.addAll(goals)
+		allArguments.addAll(arguments)
+
+		def allArgumentsString = allArguments.empty ? '' : allArguments.join(' ')
+
+		def optionsString = options.join(' ')
+
+		rawScript.withEnv(["${Cipa.ENV_VAR___MVN_OPTIONS}=${optionsString} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
+			rawScript.sh(script: 'printenv | sort | tee mvn.log')
+			return rawScript.sh(script: "mvn ${allArgumentsString} | tee -a mvn.log", returnStdout: returnStdout)
+		}
 	}
 
 }

@@ -34,12 +34,12 @@ import de.hasait.cipa.resource.CipaStashResource
  */
 class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
-	private static final String ENV_VAR___JDK_HOME = 'JAVA_HOME'
-	private static final String ENV_VAR___MVN_HOME = 'M2_HOME'
-	private static final String ENV_VAR___MVN_REPO = 'MVN_REPO'
-	private static final String ENV_VAR___MVN_SETTINGS = 'MVN_SETTINGS'
-	private static final String ENV_VAR___MVN_TOOLCHAINS = 'MVN_TOOLCHAINS'
-	private static final String ENV_VAR___MVN_OPTIONS = 'MAVEN_OPTS'
+	static final String ENV_VAR___JDK_HOME = 'JAVA_HOME'
+	static final String ENV_VAR___MVN_HOME = 'M2_HOME'
+	static final String ENV_VAR___MVN_REPO = 'MVN_REPO'
+	static final String ENV_VAR___MVN_SETTINGS = 'MVN_SETTINGS'
+	static final String ENV_VAR___MVN_TOOLCHAINS = 'MVN_TOOLCHAINS'
+	static final String ENV_VAR___MVN_OPTIONS = 'MAVEN_OPTS'
 
 	private final def rawScript
 	private final PScript script
@@ -468,8 +468,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private void nodeWithEnv(CipaNode node, Closure body) {
 		rawScript.node(nodeLabelPrefixHolder.nodeLabelPrefix + node.label) {
-			rawScript.echo('[CIPA] On host: ' + determineHostname())
-			def workspace = rawScript.env.WORKSPACE
+			rawScript.echo('[CIPA] On host: ' + script.determineHostname())
+			String workspace = rawScript.env.WORKSPACE
 			rawScript.echo("[CIPA] workspace: ${workspace}")
 
 			def envVars = []
@@ -487,7 +487,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					pathEntries.add("${toolHome}${tool.addToPathWithSuffix}")
 				}
 				if (tool.is(toolMvn)) {
-					def mvnRepo = determineMvnRepo()
+					String mvnRepo = script.determineMvnRepo()
 					rawScript.echo("[CIPA] mvnRepo: ${mvnRepo}")
 					envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
 					envVars.add("${ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[ENV_VAR___MVN_OPTIONS] ?: ''}")
@@ -506,46 +506,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					body()
 				}
 			}
-		}
-	}
-
-	String determineHostname() {
-		String hostnameRaw = rawScript.sh(returnStdout: true, script: 'hostname')
-		return hostnameRaw.trim()
-	}
-
-	String determineMvnRepo() {
-		String workspace = rawScript.env.WORKSPACE
-		return workspace + '/.repo'
-	}
-
-	String mvn(
-			List<String> goals,
-			List<String> profiles = [],
-			List<String> arguments = [],
-			List<String> options = [],
-			boolean returnStdout = false) {
-		def allArguments = ['-B', '-V', '-e']
-		if (rawScript.env[ENV_VAR___MVN_SETTINGS]) {
-			allArguments.add('-s "${' + ENV_VAR___MVN_SETTINGS + '}"')
-		}
-		if (rawScript.env[ENV_VAR___MVN_TOOLCHAINS]) {
-			allArguments.add('--global-toolchains "${' + ENV_VAR___MVN_TOOLCHAINS + '}"')
-		}
-		allArguments.add('-Dmaven.repo.local="${' + ENV_VAR___MVN_REPO + '}"')
-		if (!profiles.empty) {
-			allArguments.add('-P' + profiles.join(','))
-		}
-		allArguments.addAll(goals)
-		allArguments.addAll(arguments)
-
-		def allArgumentsString = allArguments.empty ? '' : allArguments.join(' ')
-
-		def optionsString = options.join(' ')
-
-		rawScript.withEnv(["${ENV_VAR___MVN_OPTIONS}=${optionsString} ${rawScript.env[ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
-			rawScript.sh(script: 'printenv | sort')
-			return rawScript.sh(script: "mvn ${allArgumentsString}", returnStdout: returnStdout)
 		}
 	}
 
