@@ -175,7 +175,8 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 				} else if (scmBranch.startsWith(SBT_TAG)) {
 					branch += 'refs/tags/' + scmBranch.substring(SBT_TAG.length())
 				} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
-					branch += 'refs/heads/' + script.currentRawBuild.parent.parent.name
+					String folderName = script.currentRawBuild.parent.parent.name
+					branch += 'refs/heads/' + folderName
 				}
 
 				List extensions = []
@@ -205,7 +206,12 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 				} else if (scmBranch.startsWith(SBT_TAG)) {
 					scmUrl += '/tag/' + scmBranch.substring(SBT_TAG.length())
 				} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
-					scmUrl += '/branches/' + script.currentRawBuild.parent.parent.name
+					String folderName = script.currentRawBuild.parent.parent.name
+					if (folderName == 'trunk') {
+						scmUrl += '/trunk'
+					} else {
+						scmUrl += '/branches/' + folderName
+					}
 				}
 				if (subFolder) {
 					scmUrl += '/' + subFolder
