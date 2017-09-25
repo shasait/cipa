@@ -33,10 +33,10 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	private final String subDir
 	private final CipaResourceWithState<CipaStashResource> stash
 
-	private PScript script
-
 	private Set<String> fileIncludes = new LinkedHashSet<>()
 	private Set<String> fileExcludes = new LinkedHashSet<>()
+
+	private PScript script
 
 	@NonCPS
 	private static String relDir(CipaResourceWithState<CipaFileResource> files, String subDir) {
