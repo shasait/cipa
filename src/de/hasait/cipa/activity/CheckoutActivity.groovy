@@ -98,7 +98,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	void contributeParameters(JobParameterContainer container) {
 		container.addStringParameter(idUpperCase + PARAM___SCM_URL, '', "${id}-SCM-URL for checkout (Git if ending in .git, otherwise SVN)")
 		container.addStringParameter(idUpperCase + PARAM___SCM_CREDENTIALS_ID, '', "${id}-SCM-Credentials needed for checkout")
-		container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH, '', "${id}-SCM-Branch for checkout (${SBT_TRUNK};${SBT_BRANCH}<name>;${SBT_TAG}<name>;${SBT_BRANCH_FROM_FOLDER};${SBT_NONE})")
+		container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH, '', "${id}-SCM-Branch for checkout (${SBT_TRUNK};${SBT_BRANCH}<i>name</i>;${SBT_TAG}<i>name</i>;${SBT_BRANCH_FROM_FOLDER};${SBT_NONE})")
 	}
 
 	@Override
