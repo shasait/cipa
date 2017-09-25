@@ -16,6 +16,8 @@
 
 package de.hasait.cipa
 
+import hudson.model.Run
+
 /**
  * Wrapper for pipeline script allowing access to well known steps.
  */
@@ -99,6 +101,19 @@ class PScript implements Serializable {
 
 	void sleep(int seconds) {
 		rawScript.sleep(seconds)
+	}
+
+	void archiveArtifacts(String artifacts, String excludes = null, boolean allowEmptyArchive = false, boolean fingerprint = false, boolean onlyIfSuccessful = false, boolean defaultExcludes = true, boolean caseSensitive = true) {
+		rawScript.archiveArtifacts(allowEmptyArchive: allowEmptyArchive, artifacts: artifacts, caseSensitive: caseSensitive, defaultExcludes: defaultExcludes, excludes: excludes, fingerprint: fingerprint, onlyIfSuccessful: onlyIfSuccessful)
+	}
+
+
+	int getCurrentBuildNumber() {
+		return rawScript.currentBuild.number
+	}
+
+	Run<?, ?> getCurrentRawBuild() {
+		return rawScript.currentBuild.rawBuild
 	}
 
 }
