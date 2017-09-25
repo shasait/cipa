@@ -35,6 +35,7 @@ class TestRawScript {
 	Env env = new Env()
 
 	Map<String, String> readFileContents = [:]
+	Map<String, String> shResults = [:]
 
 	void echo(String message) {
 		log('[echo] ' + message)
@@ -42,6 +43,16 @@ class TestRawScript {
 
 	String sh(Map args) {
 		log('[sh] ' + args)
+
+		String script = args['script']
+		if (script) {
+			for (e in shResults) {
+				if (Pattern.compile(e.key).matcher(script).matches()) {
+					return e.value
+				}
+			}
+		}
+
 		return ''
 	}
 
