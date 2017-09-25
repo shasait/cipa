@@ -204,7 +204,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 				} else if (scmBranch.startsWith(SBT_BRANCH)) {
 					scmUrl += '/branches/' + scmBranch.substring(SBT_BRANCH.length())
 				} else if (scmBranch.startsWith(SBT_TAG)) {
-					scmUrl += '/tag/' + scmBranch.substring(SBT_TAG.length())
+					scmUrl += '/tags/' + scmBranch.substring(SBT_TAG.length())
 				} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
 					String folderName = script.currentRawBuild.parent.parent.name
 					if (folderName == 'trunk') {
