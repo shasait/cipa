@@ -31,11 +31,20 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private static final String PARAM___SCM_URL = '_SCM_URL'
 	private static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
+	private static final String PARAM___SCM_BRANCH = '_SCM_BRANCH'
+
+	private static final String SBT_TRUNK = 'trunk'
+	private static final String SBT_BRANCH = 'branch:'
+	private static final String SBT_TAG = 'tag:'
+	private static final String SBT_BRANCH_FROM_FOLDER = 'branch-from-folder'
+	private static final String SBT_NONE = 'none'
 
 	private final Cipa cipa
 	private final String name
 	private final String id
 	private final String idUpperCase
+	private final String subFolder
+
 	private final CipaResourceWithState<CipaFileResource> checkedOutFiles
 
 	private PScript script
@@ -43,17 +52,19 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private String scmUrl
 	private String scmCredentialsId
+	private String scmBranch
 
 	private Set<String> scmExcludeUsers = new LinkedHashSet<>()
 
 	private String scmRev
 
-	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node) {
+	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node, String subFolder = null) {
 		this.cipa = cipa
 		this.name = name
 		this.id = id
-
 		this.idUpperCase = id.toUpperCase()
+		this.subFolder = subFolder
+
 		this.checkedOutFiles = cipa.newFileResourceWithState(node, "${id}Files", 'CheckedOut')
 
 		cipa.addBean(this)
@@ -85,14 +96,20 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	@Override
 	void contributeParameters(JobParameterContainer container) {
-		container.addStringParameter(idUpperCase + PARAM___SCM_URL, '', "${id}-SCM-URL for checkout")
+		container.addStringParameter(idUpperCase + PARAM___SCM_URL, '', "${id}-SCM-URL for checkout (Git if ending in .git, otherwise SVN)")
 		container.addStringParameter(idUpperCase + PARAM___SCM_CREDENTIALS_ID, '', "${id}-SCM-Credentials needed for checkout")
+		container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH, '', "${id}-SCM-Branch for checkout (${SBT_TRUNK};${SBT_BRANCH}<name>;${SBT_TAG}<name>;${SBT_BRANCH_FROM_FOLDER};${SBT_NONE})")
 	}
 
 	@Override
 	void processParameters(JobParameterValues values) {
 		scmUrl = values.retrieveRequiredValue(idUpperCase + PARAM___SCM_URL)
 		scmCredentialsId = values.retrieveOptionalValue(idUpperCase + PARAM___SCM_CREDENTIALS_ID, '')
+		scmBranch = values.retrieveOptionalValue(idUpperCase + PARAM___SCM_BRANCH, SBT_NONE)
+
+		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch == SBT_NONE)) {
+			throw new RuntimeException("Parameter ${idUpperCase + PARAM___SCM_BRANCH} invalid: ${scmBranch}")
+		}
 	}
 
 	@Override
@@ -149,14 +166,29 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	private void checkout() {
 		script.dir(checkedOutFiles.resource.path) {
 			if (scmUrl.endsWith('.git')) {
+				// Git
+				String branch = '*/master'
+				if (scmBranch == SBT_TRUNK) {
+					branch = 'refs/heads/master'
+				} else if (scmBranch.startsWith(SBT_BRANCH)) {
+					branch += 'refs/heads/' + scmBranch.substring(SBT_BRANCH.length())
+				} else if (scmBranch.startsWith(SBT_TAG)) {
+					branch += 'refs/tags/' + scmBranch.substring(SBT_TAG.length())
+				} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
+					branch += 'refs/heads/' + script.currentRawBuild.parent.parent.name
+				}
+
 				List extensions = []
 				extensions.add([$class: 'CleanBeforeCheckout'])
 				if (!scmExcludeUsers.empty) {
 					extensions.add([$class: 'UserExclusion', excludedUsers: buildExcludeUsersValue()])
 				}
+				if (subFolder) {
+					extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: [[path: subFolder]]])
+				}
 				rawScript.checkout([
 						$class                           : 'GitSCM',
-						branches                         : [[name: '*/master']],
+						branches                         : [[name: branch]],
 						doGenerateSubmoduleConfigurations: false,
 						extensions                       : extensions,
 						submoduleCfg                     : [],
@@ -165,6 +197,20 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 				scmRev = script.determineGitRevOfCwd()
 			} else {
+				// Subversion
+				if (scmBranch == SBT_TRUNK) {
+					scmUrl += '/trunk'
+				} else if (scmBranch.startsWith(SBT_BRANCH)) {
+					scmUrl += '/branches/' + scmBranch.substring(SBT_BRANCH.length())
+				} else if (scmBranch.startsWith(SBT_TAG)) {
+					scmUrl += '/tag/' + scmBranch.substring(SBT_TAG.length())
+				} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
+					scmUrl += '/branches/' + script.currentRawBuild.parent.parent.name
+				}
+				if (subFolder) {
+					scmUrl += '/' + subFolder
+				}
+
 				rawScript.checkout([
 						$class                : 'SubversionSCM',
 						additionalCredentials : [],
@@ -192,6 +238,16 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 			script.echo("${id}-scmUrl = ${scmUrl}")
 			script.echo("${id}-scmRev = ${scmRev}")
 		}
+	}
+
+	@NonCPS
+	String getCheckedOutScmUrl() {
+		return scmUrl
+	}
+
+	@NonCPS
+	String getCheckedOutScmRev() {
+		return scmRev
 	}
 
 }
