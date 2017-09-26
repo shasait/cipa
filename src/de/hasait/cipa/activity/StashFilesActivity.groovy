@@ -25,10 +25,11 @@ import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
 
-class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
+class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStage, Serializable {
 
 	private final Cipa cipa
 	private final String name
+	private final boolean withStage
 	private final CipaResourceWithState<CipaFileResource> files
 	private final String subDir
 	private final CipaResourceWithState<CipaStashResource> stash
@@ -43,9 +44,10 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 		return files.resource.path + (subDir ? '/' + subDir : '')
 	}
 
-	StashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> files, String subDir = '') {
+	StashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> files, String subDir = '', boolean withStage = false) {
 		this.cipa = cipa
 		this.name = name
+		this.withStage = withStage
 		this.files = files
 		this.subDir = subDir
 
@@ -54,6 +56,18 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 		this.stash = cipa.newStashResourceWithState(stashId, relDir, files.state)
 
 		cipa.addBean(this)
+	}
+
+	@Override
+	@NonCPS
+	String getName() {
+		return name
+	}
+
+	@Override
+	@NonCPS
+	boolean isWithStage() {
+		return withStage
 	}
 
 	/**
@@ -84,12 +98,6 @@ class StashFilesActivity implements CipaInit, CipaActivity, Serializable {
 	@Override
 	void initCipa(Cipa cipa) {
 		script = cipa.findBean(PScript.class)
-	}
-
-	@Override
-	@NonCPS
-	String getName() {
-		return name
 	}
 
 	@Override

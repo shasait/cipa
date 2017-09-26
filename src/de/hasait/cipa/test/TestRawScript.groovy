@@ -28,7 +28,7 @@ class TestRawScript {
 		System.out.println('[' + Thread.currentThread().name + ']' + message)
 	}
 
-	def currentBuild = ['number': 123, 'rawBuild': [:]]
+	def currentBuild = ['number': 123]
 
 	def params = [:]
 

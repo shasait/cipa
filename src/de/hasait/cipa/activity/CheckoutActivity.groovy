@@ -27,7 +27,7 @@ import de.hasait.cipa.PScript
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
-class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivity, Serializable {
+class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivity, CipaActivityWithStage, Serializable {
 
 	private static final String PARAM___SCM_URL = '_SCM_URL'
 	private static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
@@ -41,6 +41,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private final Cipa cipa
 	private final String name
+	private final boolean withStage
 	private final String id
 	private final String idUpperCase
 	private final String subFolder
@@ -58,9 +59,10 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private String scmRev
 
-	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node, String subFolder = null) {
+	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node, String subFolder = null, boolean withStage = true) {
 		this.cipa = cipa
 		this.name = name
+		this.withStage = withStage
 		this.id = id
 		this.idUpperCase = id.toUpperCase()
 		this.subFolder = subFolder
@@ -68,6 +70,18 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 		this.checkedOutFiles = cipa.newFileResourceWithState(node, "${id}Files", 'CheckedOut')
 
 		cipa.addBean(this)
+	}
+
+	@Override
+	@NonCPS
+	String getName() {
+		return name
+	}
+
+	@Override
+	@NonCPS
+	boolean isWithStage() {
+		return withStage
 	}
 
 	/**
@@ -110,12 +124,6 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch == SBT_NONE)) {
 			throw new RuntimeException("Parameter ${idUpperCase + PARAM___SCM_BRANCH} invalid: ${scmBranch}")
 		}
-	}
-
-	@Override
-	@NonCPS
-	String getName() {
-		return name
 	}
 
 	@Override

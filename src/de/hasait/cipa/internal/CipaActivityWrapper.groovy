@@ -18,7 +18,6 @@ package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaNode
 import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaAroundActivity
 
@@ -34,7 +33,7 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	private final Cipa cipa
-	private final CipaActivity activity
+	final CipaActivity activity
 	private final List<CipaAroundActivity> aroundActivities
 
 	private final Map<CipaActivityWrapper, Boolean> dependsOn = new LinkedHashMap<>()
@@ -44,6 +43,7 @@ class CipaActivityWrapper implements Serializable {
 	private Date startedDate
 	private Date finishedDate
 	private Throwable failedThrowable
+	private boolean dependencyFailure
 
 	CipaActivityWrapper(Cipa cipa, CipaActivity activity, List<CipaAroundActivity> aroundActivities) {
 		this.cipa = cipa
@@ -51,16 +51,6 @@ class CipaActivityWrapper implements Serializable {
 		this.aroundActivities = aroundActivities
 
 		creationDate = new Date()
-	}
-
-	@NonCPS
-	CipaNode getNode() {
-		return activity.node
-	}
-
-	@NonCPS
-	String getName() {
-		return activity.name
 	}
 
 	@NonCPS
@@ -107,6 +97,11 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	@NonCPS
+	boolean isDependencyFailure() {
+		return dependencyFailure
+	}
+
+	@NonCPS
 	String buildStateHistoryString() {
 		StringBuilder sb = new StringBuilder()
 		sb.append('Created: ')
@@ -147,7 +142,12 @@ class CipaActivityWrapper implements Serializable {
 
 			List<CipaActivityWrapper> failedDependencies = collectFailedActivitiesMap(dependsOn)
 			if (!failedDependencies.empty) {
-				handleDependencyErrors(0, failedDependencies)
+				try {
+					handleDependencyFailures(0, failedDependencies)
+				} catch (Throwable dependencyThrowable) {
+					dependencyFailure = true
+					throw dependencyThrowable
+				}
 			}
 
 			runAroundActivity(0)
@@ -159,10 +159,10 @@ class CipaActivityWrapper implements Serializable {
 		}
 	}
 
-	private void handleDependencyErrors(int i, List<CipaActivityWrapper> failedDependencies) {
+	private void handleDependencyFailures(int i, List<CipaActivityWrapper> failedDependencies) {
 		if (i < aroundActivities.size()) {
-			aroundActivities.get(i).handleDependencyErrors(activity, failedDependencies, {
-				handleDependencyErrors(i + 1, failedDependencies)
+			aroundActivities.get(i).handleDependencyFailures(this, failedDependencies, {
+				handleDependencyFailures(i + 1, failedDependencies)
 			})
 		} else {
 			throwOnAnyActivityFailure('Dependencies', failedDependencies)
@@ -171,7 +171,7 @@ class CipaActivityWrapper implements Serializable {
 
 	private void runAroundActivity(int i) {
 		if (i < aroundActivities.size()) {
-			aroundActivities.get(i).runAroundActivity(activity, {
+			aroundActivities.get(i).runAroundActivity(this, {
 				runAroundActivity(i + 1)
 			})
 		} else {
@@ -186,7 +186,7 @@ class CipaActivityWrapper implements Serializable {
 	String readyToRunActivity() {
 		for (dependency in dependsOn.keySet()) {
 			if (!dependency.finishedDate && !dependency.prepareThrowable) {
-				return dependency.name
+				return dependency.activity.name
 			}
 		}
 
@@ -224,7 +224,7 @@ class CipaActivityWrapper implements Serializable {
 		StringBuilder sb = new StringBuilder(msgPrefix + ' failed: [')
 		sb.append(
 				failed.collect {
-					return "${it.name} = ${it.prepareThrowable ? it.prepareThrowable.message : it.failedThrowable.message}"
+					return "${it.activity.name} = ${it.prepareThrowable ? it.prepareThrowable.message : it.failedThrowable.message}"
 				}.join('; ')
 		)
 		sb.append(']')

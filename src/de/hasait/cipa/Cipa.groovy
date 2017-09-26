@@ -17,8 +17,7 @@
 package de.hasait.cipa
 
 import com.cloudbees.groovy.cps.NonCPS
-import de.hasait.cipa.activity.CipaActivity
-import de.hasait.cipa.activity.CipaAroundActivity
+import de.hasait.cipa.activity.CipaAfterActivities
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaPrepareEnv
 import de.hasait.cipa.internal.CipaPrepareJobParameters
@@ -52,7 +51,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
 
-	private String dotContent
+	CipaRunContext runContext
 
 	boolean debug = false
 
@@ -231,165 +230,24 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		initBeans()
 	}
 
-	@NonCPS
-	private List<CipaAroundActivity> findCipaAroundActivities() {
-		List<CipaAroundActivity> aroundActivities = findBeansAsList(CipaAroundActivity.class)
-		aroundActivities.sort({ it.runAroundActivityOrder })
-		return aroundActivities
-	}
-
-	@NonCPS
-	private void analyzeActivities(List<CipaNode> nodes, List<CipaActivityWrapper> wrappers, Map<CipaNode, List<CipaActivityWrapper>> wrappersByNode) {
-		Set<CipaResourceWithState<?>> resources = findBeans(CipaResourceWithState.class)
-
-		for (node in nodes) {
-			wrappersByNode.put(node, new ArrayList<>())
-		}
-		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesRequiresRead = new HashMap<>()
-		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesRequiresWrite = new HashMap<>()
-		Map<CipaResourceWithState<?>, List<CipaActivityWrapper>> activitiesProvides = new HashMap<>()
-		Set<CipaActivity> activities = findBeans(CipaActivity.class)
-		List<CipaAroundActivity> aroundActivities = findCipaAroundActivities()
-		for (activity in activities) {
-			CipaNode node = activity.node
-			if (!wrappersByNode.containsKey(node)) {
-				throw new IllegalStateException("${node} unknown - either create with cipa.newNode or register with addBean!")
-			}
-			CipaActivityWrapper wrapper = new CipaActivityWrapper(this, activity, aroundActivities)
-			wrappers.add(wrapper)
-			wrappersByNode.get(node).add(wrapper)
-			for (requires in activity.runRequiresRead) {
-				if (!resources.contains(requires)) {
-					throw new IllegalStateException("${requires} unknown - either create with cipa.new* or register with addBean!")
-				}
-				if (!activitiesRequiresRead.containsKey(requires)) {
-					activitiesRequiresRead.put(requires, new ArrayList<>())
-				}
-				activitiesRequiresRead.get(requires).add(wrapper)
-			}
-			for (requires in activity.runRequiresWrite) {
-				if (!resources.contains(requires)) {
-					throw new IllegalStateException("${requires} unknown - either create with cipa.new* or register with addBean!")
-				}
-				if (!activitiesRequiresWrite.containsKey(requires)) {
-					activitiesRequiresWrite.put(requires, new ArrayList<>())
-				}
-				activitiesRequiresWrite.get(requires).add(wrapper)
-			}
-			for (provides in activity.runProvides) {
-				if (!resources.contains(provides)) {
-					throw new IllegalStateException("${provides} unknown - either create with cipa.new* or register with addBean!")
-				}
-				if (!activitiesProvides.containsKey(provides)) {
-					activitiesProvides.put(provides, new ArrayList<>())
-				}
-				activitiesProvides.get(provides).add(wrapper)
-			}
-		}
-		for (requires in activitiesRequiresRead) {
-			if (!activitiesProvides.containsKey(requires.key)) {
-				throw new IllegalArgumentException("Required ${requires.key} not provided by any activity!")
-			}
-			List<CipaActivityWrapper> providesWrappers = activitiesProvides.get(requires.key)
-			for (requiresWrapper in requires.value) {
-				for (providesWrapper in providesWrappers) {
-					requiresWrapper.addDependency(providesWrapper)
-				}
-			}
-		}
-		for (requires in activitiesRequiresWrite) {
-			if (!activitiesProvides.containsKey(requires.key)) {
-				throw new IllegalArgumentException("Required ${requires.key} not provided by any activity!")
-			}
-			List<CipaActivityWrapper> providesWrappers = activitiesProvides.get(requires.key)
-			List<CipaActivityWrapper> readers = activitiesRequiresRead.get(requires.key)
-			CipaActivityWrapper lastWriter = null
-			for (requiresWrapper in requires.value) {
-				// Chain writers
-				if (lastWriter) {
-					requiresWrapper.addDependency(lastWriter, false)
-				} else if (readers) {
-					// Execute all readers before any writer, if there was already a writer we only depend on it
-					for (reader in readers) {
-						requiresWrapper.addDependency(reader, false)
-					}
-				}
-				for (providesWrapper in providesWrappers) {
-					requiresWrapper.addDependency(providesWrapper)
-				}
-
-				lastWriter = requiresWrapper
-			}
-		}
-	}
-
-	@NonCPS
-	private String produceDot(List<CipaNode> nodes, List<CipaActivityWrapper> wrappers, Map<CipaNode, List<CipaActivityWrapper>> wrappersByNode) {
-		StringBuilder dotContent = new StringBuilder()
-		dotContent << '\n'
-		dotContent << 'digraph pipeline {\n'
-		Map<CipaActivityWrapper, String> nodeNames = new HashMap<>()
-		int activityI = 0
-		for (wrapper in wrappers) {
-			nodeNames.put(wrapper, "a${activityI++}")
-		}
-		int nodeI = 0
-		for (node in nodes) {
-			dotContent << "subgraph cluster_node${nodeI++} {\n"
-			dotContent << "label=\"${node.label}\";\n"
-			for (wrapper in wrappersByNode.get(node)) {
-				dotContent << "${nodeNames.get(wrapper)}[label=\"${wrapper.name}\"];\n"
-			}
-			dotContent << '}\n'
-		}
-		dotContent << 'start;\n'
-		for (wrapper in wrappers) {
-			Set<Map.Entry<CipaActivityWrapper, Boolean>> dependencies = wrapper.dependencies
-			if (dependencies.empty) {
-				dotContent << "start -> ${nodeNames.get(wrapper)};\n"
-			} else {
-				for (dependency in dependencies) {
-					dotContent << "${nodeNames.get(dependency.key)} -> ${nodeNames.get(wrapper)}"
-					if (!dependency.value.booleanValue()) {
-						dotContent << ' [style = dotted]'
-					}
-					dotContent << ';\n'
-				}
-			}
-		}
-		dotContent << '}\n'
-		return dotContent.toString()
-	}
-
-	@NonCPS
-	String getDotContent() {
-		return dotContent
-	}
-
 	@Override
 	void run() {
 		initBeans()
 		prepareBeans()
 
-		List<CipaNode> nodes = findBeansAsList(CipaNode.class)
-		List<CipaActivityWrapper> wrappers = new ArrayList<>()
-		Map<CipaNode, List<CipaActivityWrapper>> wrappersByNode = new HashMap<>()
-
-		rawScript.echo("[CIPA] Analyzing activities...")
-		analyzeActivities(nodes, wrappers, wrappersByNode)
-
-		dotContent = produceDot(nodes, wrappers, wrappersByNode)
+		rawScript.echo("[CIPA] Creating RunContext...")
+		runContext = new CipaRunContext(this)
 
 		if (debug) {
 			rawScript.echo("[CIPA-Debug] Printing dependencies in DOT format:")
-			rawScript.echo(dotContent)
+			rawScript.echo(runContext.dotContent)
 		}
 
 		rawScript.echo("[CIPA] Executing activities...")
 		def parallelNodeBranches = [:]
-		for (int nodeI = 0; nodeI < nodes.size(); nodeI++) {
-			CipaNode node = nodes.get(nodeI)
-			List<CipaActivityWrapper> nodeWrappers = wrappersByNode.get(node)
+		for (int nodeI = 0; nodeI < runContext.nodes.size(); nodeI++) {
+			CipaNode node = runContext.nodes.get(nodeI)
+			List<CipaActivityWrapper> nodeWrappers = runContext.wrappersByNode.get(node)
 			if (nodeWrappers.empty) {
 				rawScript.echo("[CIPA] WARNING: ${node} has no activities!")
 			}
@@ -399,67 +257,74 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		parallelNodeBranches.failFast = true
 		rawScript.parallel(parallelNodeBranches)
 
-		rawScript.echo(buildRunSummary(wrappers))
-		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', wrappers)
+		rawScript.echo(buildRunSummary())
+		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
 	}
 
 	@NonCPS
-	private String buildRunSummary(List<CipaActivityWrapper> wrappers) {
+	private String buildRunSummary() {
 		StringBuilder sb = new StringBuilder()
 		sb.append('[CIPA] Done\nSummary of all activities:\n')
-		for (wrapper in wrappers) {
-			sb.append("- ${wrapper.name}\n    ${wrapper.buildStateHistoryString()}\n")
+		for (wrapper in runContext.wrappers) {
+			sb.append("- ${wrapper.activity.name}\n    ${wrapper.buildStateHistoryString()}\n")
 		}
 		return sb.toString()
 	}
 
-	private Closure parallelNodeWithActivitiesBranch(int nodeI, CipaNode node, List<CipaActivityWrapper> nodeActivities) {
+	private Closure parallelNodeWithActivitiesBranch(int nodeI, CipaNode node, List<CipaActivityWrapper> nodeWrappers) {
 		return {
 			def parallelActivitiesBranches = [:]
-			for (int activityI = 0; activityI < nodeActivities.size(); activityI++) {
-				CipaActivityWrapper activity = nodeActivities.get(activityI)
-				parallelActivitiesBranches["${nodeI}-${activityI}-${activity.name}"] = parallelActivityRunBranch(activity)
+			for (int activityI = 0; activityI < nodeWrappers.size(); activityI++) {
+				CipaActivityWrapper wrapper = nodeWrappers.get(activityI)
+				parallelActivitiesBranches["${nodeI}-${activityI}-${wrapper.activity.name}"] = parallelActivityRunBranch(wrapper)
 			}
 
 			nodeWithEnv(node) {
 				Throwable prepareThrowable = null
-				for (activity in nodeActivities) {
-					activity.prepareNode()
-					if (activity.prepareThrowable) {
-						prepareThrowable = activity.prepareThrowable
+				for (wrapper in nodeWrappers) {
+					wrapper.prepareNode()
+					if (wrapper.prepareThrowable) {
+						prepareThrowable = wrapper.prepareThrowable
 						break
 					}
 				}
 				if (prepareThrowable) {
-					for (activity in nodeActivities) {
-						activity.prepareThrowable = prepareThrowable
+					for (wrapper in nodeWrappers) {
+						wrapper.prepareThrowable = prepareThrowable
 					}
 				} else {
 					parallelActivitiesBranches.failFast = true
 					rawScript.parallel(parallelActivitiesBranches)
+
+					if (runContext.allFinished) {
+						List<CipaAfterActivities> afters = findBeansAsList(CipaAfterActivities.class)
+						for (CipaAfterActivities after in afters) {
+							after.afterCipaActivities()
+						}
+					}
 				}
 			}
 		}
 	}
 
-	private Closure parallelActivityRunBranch(CipaActivityWrapper activity) {
+	private Closure parallelActivityRunBranch(CipaActivityWrapper wrapper) {
 		return {
 			int countWait = 0
 			// TODO replace with sth silent
 			rawScript.waitUntil() {
 				countWait++
-				String notFinishedDependency = activity.readyToRunActivity()
+				String notFinishedDependency = wrapper.readyToRunActivity()
 				if (countWait > 10 && notFinishedDependency) {
-					rawScript.echo("Activity [${activity.name}] still waits for dependency [${notFinishedDependency}] (and may be more)")
+					rawScript.echo("Activity [${wrapper.activity.name}] still waits for dependency [${notFinishedDependency}] (and may be more)")
 					countWait = 0
 				}
 				return notFinishedDependency == null
 			}
-			activity.runActivity()
-			if (activity.failedThrowable) {
+			wrapper.runActivity()
+			if (wrapper.failedThrowable) {
 				StringWriter sw = new StringWriter()
 				PrintWriter pw = new PrintWriter(sw)
-				activity.failedThrowable.printStackTrace(pw)
+				wrapper.failedThrowable.printStackTrace(pw)
 				pw.flush()
 				rawScript.echo(sw.toString())
 			}

@@ -15,18 +15,11 @@
  */
 
 package de.hasait.cipa.activity
-
-import de.hasait.cipa.internal.CipaActivityWrapper
-
 /**
- * Around Aspect for Activities.
+ *
  */
-interface CipaAroundActivity {
+interface CipaAfterActivities {
 
-	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next)
-
-	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next)
-
-	int getRunAroundActivityOrder()
+	void afterCipaActivities()
 
 }

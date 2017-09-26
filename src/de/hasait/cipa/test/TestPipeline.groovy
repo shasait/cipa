@@ -22,9 +22,9 @@ import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CheckoutActivity
-import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaAroundActivity
-import de.hasait.cipa.activity.CreateActivityGraphActivity
+import de.hasait.cipa.activity.UpdateGraphAroundActivity
+import de.hasait.cipa.activity.StageAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
 import de.hasait.cipa.internal.CipaActivityWrapper
@@ -49,7 +49,9 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 		CipaNode node1 = cipa.newNode('node1')
 		CipaNode node2 = cipa.newNode('node2')
 
-		new CreateActivityGraphActivity(cipa, node1)
+		cipa.addBean(new StageAroundActivity())
+		cipa.addBean(new UpdateGraphAroundActivity())
+
 		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').providedCheckedOutFiles
 		CipaResourceWithState<CipaStashResource> mainStash = new StashFilesActivity(cipa, 'StashMain', mainCheckedOutFiles).providedStash
 		CipaResourceWithState<CipaFileResource> files = new UnstashFilesActivity(cipa, "UnstashMain", mainStash, node2).providedFiles
@@ -76,24 +78,25 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	}
 
 	@Override
-	void handleDependencyErrors(final CipaActivity activity, final List<CipaActivityWrapper> failedDependencies, final Closure<?> next) {
-		rawScript.setCustomBuildProperty(key: "${activity.name}-DepsFailed", value: failedDependencies.size())
+	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
+		rawScript.setCustomBuildProperty(key: "${wrapper.activity.name}-DepsFailed", value: failedDependencyWrappers.size())
 		next.call()
 	}
 
 	@Override
-	void runAroundActivity(CipaActivity activity, Closure<?> next) {
-		rawScript.setCustomBuildProperty(key: "${activity.name}-StartTime", value: new Date())
+	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
+		String name = wrapper.activity.name
+		rawScript.setCustomBuildProperty(key: "${name}-StartTime", value: new Date())
 		try {
-			script.echo("runAroundActivity ${activity.name}...")
+			script.echo("runAroundActivity ${name}...")
 			next.call()
 		} catch (err) {
 			script.echo("runAroundActivity caught: ${err}")
 			script.echo("runAroundActivity caught: ${err?.class}")
-			rawScript.setCustomBuildProperty(key: "${activity.name}-Failed", value: err.toString())
+			rawScript.setCustomBuildProperty(key: "${name}-Failed", value: err.toString())
 			throw err
 		} finally {
-			rawScript.setCustomBuildProperty(key: "${activity.name}-EndTime", value: new Date())
+			rawScript.setCustomBuildProperty(key: "${name}-EndTime", value: new Date())
 		}
 	}
 
@@ -101,18 +104,6 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	@NonCPS
 	int getRunAroundActivityOrder() {
 		return 0
-	}
-
-	static void main(String[] args) {
-		System.out.println("Test")
-
-		TestRawScript rawScript = new TestRawScript()
-		rawScript.env.MAIN_SCM_URL = 'scm://somewhere.git'
-		rawScript.env.MAIN_SCM_CREDENTIALS_ID = 'somecreds'
-		rawScript.env.NODE_LABEL_PREFIX = 'nlprefix-'
-
-		TestPipeline testPipeline = new TestPipeline(rawScript)
-		testPipeline.run()
 	}
 
 }

@@ -16,6 +16,9 @@
 
 package de.hasait.cipa
 
+import com.cloudbees.groovy.cps.NonCPS
+import groovy.json.JsonSlurper
+import hudson.model.Job
 import hudson.model.Run
 
 /**
@@ -88,6 +91,10 @@ class PScript implements Serializable {
 		rawScript.timeout(timeOutInMinutes, body)
 	}
 
+	void stage(String name, Closure<?> body) {
+		rawScript.stage(name, body)
+	}
+
 	void writeFile(String filepath, String content, String encoding = 'UTF-8') {
 		rawScript.writeFile(encoding: encoding, file: filepath, text: content)
 	}
@@ -112,11 +119,12 @@ class PScript implements Serializable {
 		rawScript.archiveArtifacts(allowEmptyArchive: allowEmptyArchive, artifacts: artifacts, caseSensitive: caseSensitive, defaultExcludes: defaultExcludes, excludes: excludes, fingerprint: fingerprint, onlyIfSuccessful: onlyIfSuccessful)
 	}
 
-
+	@NonCPS
 	int getCurrentBuildNumber() {
 		return rawScript.currentBuild.number
 	}
 
+	@NonCPS
 	Run<?, ?> getCurrentRawBuild() {
 		return rawScript.currentBuild.rawBuild
 	}
@@ -149,6 +157,51 @@ class PScript implements Serializable {
 			rawScript.sh(script: 'printenv | sort | tee mvn.log')
 			return rawScript.sh(script: "mvn ${allArgumentsString} | tee -a mvn.log", returnStdout: returnStdout)
 		}
+	}
+
+	@NonCPS
+	List<String> collectDescriptions(Job<?, ?> job = currentRawBuild.parent) {
+		List<String> descriptions = new ArrayList<>()
+		// start with Job
+		def current = job
+		while (current != null && current.hasProperty('description')) {
+			def description = current.description
+			if (description instanceof String) {
+				descriptions.add(description)
+			}
+			current = current.hasProperty('parent') ? current.parent : null
+		}
+		return descriptions
+	}
+
+	@NonCPS
+	Map<String, Object> parseJsonBlocks(List<String> descriptions, String blockId) {
+		String blockBeginMarker = "vvv ${blockId}.json vvv"
+		String blockEndMarker = "^^^ ${blockId}.json ^^^"
+
+		Map<String, Object> result = new LinkedHashMap<>()
+
+		for (description in descriptions.reverse()) {
+			int ioBeginOfStartKey = description.indexOf(blockBeginMarker)
+			if (ioBeginOfStartKey >= 0) {
+				int ioAfterStartKey = ioBeginOfStartKey + blockBeginMarker.length()
+				int ioAfterEndKey = description.lastIndexOf(blockEndMarker)
+				if (ioAfterStartKey < ioAfterEndKey) {
+					String additionalEnvJSON = description.substring(ioAfterStartKey, ioAfterEndKey)
+					Object parsedObject = new JsonSlurper().parseText(additionalEnvJSON)
+					if (parsedObject instanceof Map) {
+						Map<?, ?> parsedMap = (Map<?, ?>) parsedObject
+						for (parsedMapEntry in parsedMap) {
+							if (parsedMapEntry.key instanceof String) {
+								result.put((String) parsedMapEntry.key, parsedMapEntry.value)
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return result
 	}
 
 }
