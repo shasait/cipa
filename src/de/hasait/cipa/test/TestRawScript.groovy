@@ -104,6 +104,12 @@ class TestRawScript {
 		log('[dir] <<< ' + dir)
 	}
 
+	void wrap(Map args, Closure<?> body) {
+		log('[wrap] >>> ' + args)
+		body()
+		log('[wrap] <<< ' + args)
+	}
+
 	void deleteDir() {
 		log('[deleteDir]')
 	}
