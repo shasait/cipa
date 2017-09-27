@@ -197,6 +197,10 @@ class TestRawScript {
 		log('[setCustomBuildProperty] ' + args)
 	}
 
+	void setJUnitCounts(Map args) {
+		log('[setJUnitCounts] ' + args)
+	}
+
 	void sleep(int seconds) {
 		log('[sleep] ' + seconds)
 		Thread.sleep(TimeUnit.SECONDS.toMillis(seconds))
