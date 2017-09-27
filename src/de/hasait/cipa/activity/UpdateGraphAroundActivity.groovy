@@ -23,7 +23,6 @@ import de.hasait.cipa.PScript
 import de.hasait.cipa.internal.CipaActivityWrapper
 
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
 
@@ -48,26 +47,39 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 	}
 
 	@Override
-	void handleDependencyFailures(
-			CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
-		updateGraph()
-		next.call()
-	}
-
-	@Override
-	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
+	void beforeActivityStarted(CipaActivityWrapper wrapper) {
 		if (!svnContentHolder.get()) {
 			if (initCalled.compareAndSet(false, true)) {
 				init()
 			}
 		}
+	}
 
-		try {
-			next.call()
-		} finally {
-			// Rate limit this call
-			updateGraph()
-		}
+	@Override
+	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
+		next.call()
+	}
+
+	@Override
+	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
+		updateGraph()
+		next.call()
+	}
+
+	@Override
+	void afterActivityFinished(CipaActivityWrapper wrapper) {
+		updateGraph()
+	}
+
+	@Override
+	@NonCPS
+	int getRunAroundActivityOrder() {
+		return 1000
+	}
+
+	@Override
+	void afterCipaActivities() {
+		updateGraph()
 	}
 
 	private void init() {
@@ -116,17 +128,6 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 				// ignore
 			}
 		}
-	}
-
-	@Override
-	@NonCPS
-	int getRunAroundActivityOrder() {
-		return 1000
-	}
-
-	@Override
-	void afterCipaActivities() {
-		updateGraph()
 	}
 
 }

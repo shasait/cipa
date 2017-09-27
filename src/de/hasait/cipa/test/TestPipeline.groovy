@@ -23,10 +23,10 @@ import de.hasait.cipa.CipaNode
 import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CheckoutActivity
 import de.hasait.cipa.activity.CipaAroundActivity
-import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.activity.StageAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
+import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
@@ -78,6 +78,10 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	}
 
 	@Override
+	void beforeActivityStarted(CipaActivityWrapper wrapper) {
+	}
+
+	@Override
 	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
 		rawScript.setCustomBuildProperty(key: "${wrapper.activity.name}-DepsFailed", value: failedDependencyWrappers.size())
 		next.call()
@@ -98,6 +102,10 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 		} finally {
 			rawScript.setCustomBuildProperty(key: "${name}-EndTime", value: new Date())
 		}
+	}
+
+	@Override
+	void afterActivityFinished(CipaActivityWrapper wrapper) {
 	}
 
 	@Override

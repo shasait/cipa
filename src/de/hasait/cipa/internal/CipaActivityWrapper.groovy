@@ -137,6 +137,11 @@ class CipaActivityWrapper implements Serializable {
 		if (prepareThrowable) {
 			throw new IllegalStateException('prepareThrowable')
 		}
+
+		for (CipaAroundActivity aroundActivity in aroundActivities) {
+			aroundActivity.beforeActivityStarted(this)
+		}
+
 		try {
 			startedDate = new Date()
 
@@ -156,6 +161,10 @@ class CipaActivityWrapper implements Serializable {
 		} catch (Throwable throwable) {
 			failedThrowable = throwable
 			finishedDate = new Date()
+		}
+
+		for (CipaAroundActivity aroundActivity in aroundActivities) {
+			aroundActivity.afterActivityFinished(this)
 		}
 	}
 

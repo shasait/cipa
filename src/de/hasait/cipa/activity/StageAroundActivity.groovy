@@ -47,6 +47,11 @@ class StageAroundActivity implements CipaInit, CipaAroundActivity, Serializable 
 	}
 
 	@Override
+	void beforeActivityStarted(CipaActivityWrapper wrapper) {
+		// nop
+	}
+
+	@Override
 	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
 		next.call()
 	}
@@ -66,6 +71,11 @@ class StageAroundActivity implements CipaInit, CipaAroundActivity, Serializable 
 		} else {
 			next.call()
 		}
+	}
+
+	@Override
+	void afterActivityFinished(CipaActivityWrapper wrapper) {
+		// nop
 	}
 
 }

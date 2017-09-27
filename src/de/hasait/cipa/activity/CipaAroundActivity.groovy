@@ -19,14 +19,33 @@ package de.hasait.cipa.activity
 import de.hasait.cipa.internal.CipaActivityWrapper
 
 /**
- * Around Aspect for Activities.
+ * Aspects for Activities.
  */
 interface CipaAroundActivity {
 
+	/**
+	 * Before startTime is set.
+	 */
+	void beforeActivityStarted(CipaActivityWrapper wrapper)
+
+	/**
+	 * Any dependency failed.
+	 */
 	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next)
 
+	/**
+	 * Around run of activity.
+	 */
 	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next)
 
+	/**
+	 * After finishedTime was set.
+	 */
+	void afterActivityFinished(CipaActivityWrapper wrapper)
+
+	/**
+	 * @return Value for ordering: Higher means later in chain.
+	 */
 	int getRunAroundActivityOrder()
 
 }
