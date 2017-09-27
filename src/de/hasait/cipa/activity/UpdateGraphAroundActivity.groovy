@@ -51,6 +51,7 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 	void handleDependencyFailures(
 			CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
 		updateGraph()
+		next.call()
 	}
 
 	@Override
