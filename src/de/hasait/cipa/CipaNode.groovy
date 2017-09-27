@@ -25,6 +25,11 @@ class CipaNode implements Serializable {
 
 	private final String label
 
+	/**
+	 * Hostname - only available while executing of activities.
+	 */
+	String runtimeHostname
+
 	CipaNode(String label) {
 		if (!label) {
 			throw new IllegalArgumentException('label is null')

@@ -333,7 +333,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private void nodeWithEnv(CipaNode node, Closure body) {
 		rawScript.node(nodeLabelPrefixHolder.nodeLabelPrefix + node.label) {
-			rawScript.echo('[CIPA] On host: ' + script.determineHostname())
+			node.runtimeHostname = script.determineHostname()
+			rawScript.echo('[CIPA] On host: ' + node.runtimeHostname)
 			String workspace = rawScript.env.WORKSPACE
 			rawScript.echo("[CIPA] workspace: ${workspace}")
 
