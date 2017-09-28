@@ -93,6 +93,8 @@ class TestWriterActivity implements CipaInit, CipaActivity, Serializable {
 	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("Test ${filesIn} and ${filesOut}")
 
+		runContext.addJUnitTestResults(null, '.*STest')
+
 		if (Math.random() < 0.2) {
 			runContext.addFailedTest('Evil Test', 3)
 		}

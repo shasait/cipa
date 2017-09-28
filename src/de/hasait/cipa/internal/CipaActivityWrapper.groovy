@@ -170,10 +170,13 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	}
 
 	@Override
-	@NonCPS
-	void addJunitTestResults(String includeRegex, String excludeRegex) {
+	void addJUnitTestResults(String includeRegex, String excludeRegex) {
 		script.rawScript.junit('**/target/surefire-reports/*.xml')
+		applyJUnitTestResults(includeRegex, excludeRegex)
+	}
 
+	@NonCPS
+	void applyJUnitTestResults(String includeRegex, String excludeRegex) {
 		Pattern includePattern = includeRegex && includeRegex.trim().length() > 0 ? Pattern.compile(includeRegex) : null
 		Pattern excludePattern = excludeRegex && excludeRegex.trim().length() > 0 ? Pattern.compile(excludeRegex) : null
 
@@ -195,7 +198,7 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 					testResultAction.passedTests.findAll(patternFilter).each { addPassedTest(it.description) }
 				}
 				if (testResultAction.failedTests) {
-					testResultAction.failedTests.findAll(patternFilter).each { addFailedTest(it.description, it.failedSince) }
+					testResultAction.failedTests.findAll(patternFilter).each { addFailedTest(it.description, it.age) }
 				}
 			}
 		}

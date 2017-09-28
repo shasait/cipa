@@ -18,6 +18,8 @@ package de.hasait.cipa.test
 
 import hudson.model.Job
 import hudson.model.Run
+import hudson.tasks.junit.CaseResult
+import hudson.tasks.junit.TestResultAction
 import org.mockito.Mockito
 
 /**
@@ -29,6 +31,11 @@ class TestPipelineTest {
 		System.out.println("Test")
 
 		Run run = Mockito.mock(Run)
+		TestResultAction testResultAction = Mockito.mock(TestResultAction)
+		CaseResult caseResult1 = Mockito.mock(CaseResult)
+		Mockito.when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
+		Mockito.when(testResultAction.getPassedTests()).thenReturn([caseResult1])
+		Mockito.when(run.getAction(TestResultAction.class)).thenReturn(testResultAction)
 		Job job = Mockito.mock(Job)
 
 		TestRawScript rawScript = new TestRawScript()

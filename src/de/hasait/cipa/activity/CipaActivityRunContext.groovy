@@ -30,6 +30,6 @@ interface CipaActivityRunContext {
 
 	void addFailedTest(String description, int failingAge)
 
-	void addJunitTestResults(String includeRegex, String excludeRegex)
+	void addJUnitTestResults(String includeRegex, String excludeRegex)
 
 }
