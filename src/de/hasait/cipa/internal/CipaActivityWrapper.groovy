@@ -172,6 +172,8 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	@Override
 	@NonCPS
 	void addJunitTestResults(String includeRegex, String excludeRegex) {
+		script.rawScript.junit('**/target/surefire-reports/*.xml')
+
 		Pattern includePattern = includeRegex && includeRegex.trim().length() > 0 ? Pattern.compile(includeRegex) : null
 		Pattern excludePattern = excludeRegex && excludeRegex.trim().length() > 0 ? Pattern.compile(excludeRegex) : null
 
