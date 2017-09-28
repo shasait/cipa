@@ -26,6 +26,8 @@ import hudson.model.Run
  */
 class PScript implements Serializable {
 
+	static final String MVN_LOG = 'mvn.log'
+
 	def rawScript
 
 	PScript(rawScript) {
@@ -167,8 +169,8 @@ class PScript implements Serializable {
 		def optionsString = options.join(' ')
 
 		rawScript.withEnv(["${Cipa.ENV_VAR___MVN_OPTIONS}=${optionsString} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
-			rawScript.sh(script: 'printenv | sort | tee mvn.log')
-			return rawScript.sh(script: "mvn ${allArgumentsString} | tee -a mvn.log", returnStdout: returnStdout)
+			rawScript.sh(script: "printenv | sort | tee ${MVN_LOG}")
+			return rawScript.sh(script: "mvn ${allArgumentsString} | tee -a ${MVN_LOG}", returnStdout: returnStdout)
 		}
 	}
 

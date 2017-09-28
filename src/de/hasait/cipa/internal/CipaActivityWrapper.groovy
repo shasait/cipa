@@ -202,9 +202,15 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	}
 
 	@Override
-	void archiveLogFile(String path, String title) {
-		script.archiveArtifacts(path)
-		logfiles.add(new CipaLogFile(path, title))
+	void archiveLogFile(String srcPath, String title = null) {
+		script.archiveArtifacts(srcPath)
+		logfiles.add(new CipaLogFile(srcPath, title))
+	}
+
+	@Override
+	void archiveMvnLogFile(String tgtPath, String title = null) {
+		script.sh("mv -vf ${PScript.MVN_LOG} \"${tgtPath}\"")
+		archiveLogFile(tgtPath, title)
 	}
 
 	@NonCPS

@@ -18,7 +18,13 @@ package de.hasait.cipa.activity
 
 interface CipaActivityRunContext {
 
-	void archiveLogFile(String path, String title)
+	void archiveLogFile(String srcPath)
+
+	void archiveLogFile(String srcPath, String title)
+
+	void archiveMvnLogFile(String tgtPath)
+
+	void archiveMvnLogFile(String tgtPath, String title)
 
 	void addPassedTest(String description)
 

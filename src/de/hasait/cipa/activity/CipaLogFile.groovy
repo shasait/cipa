@@ -23,7 +23,7 @@ class CipaLogFile implements Serializable {
 	private final String path
 	private final String title
 
-	CipaLogFile(String path, String title = null) {
+	CipaLogFile(String path, String title) {
 		this.path = path
 		this.title = title ?: path
 	}
