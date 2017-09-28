@@ -156,7 +156,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	}
 
 	@Override
-	void runActivity() {
+	void runActivity(CipaActivityRunContext runContext) {
 		checkout()
 	}
 

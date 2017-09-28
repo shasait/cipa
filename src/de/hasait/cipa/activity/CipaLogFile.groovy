@@ -16,36 +16,26 @@
 
 package de.hasait.cipa.activity
 
-import de.hasait.cipa.internal.CipaActivityWrapper
+import com.cloudbees.groovy.cps.NonCPS
 
-/**
- * Aspects for Activities.
- */
-interface CipaAroundActivity {
+class CipaLogFile implements Serializable {
 
-	/**
-	 * Any dependency failed.
-	 */
-	void handleFailedDependencies(CipaActivityWrapper wrapper)
+	private final String path
+	private final String title
 
-	/**
-	 * Before startTime is set.
-	 */
-	void beforeActivityStarted(CipaActivityWrapper wrapper)
+	CipaLogFile(String path, String title = null) {
+		this.path = path
+		this.title = title ?: path
+	}
 
-	/**
-	 * Around run of activity.
-	 */
-	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next)
+	@NonCPS
+	String getPath() {
+		return path
+	}
 
-	/**
-	 * After finishedTime was set.
-	 */
-	void afterActivityFinished(CipaActivityWrapper wrapper)
-
-	/**
-	 * @return Value for ordering: Higher means later in chain.
-	 */
-	int getRunAroundActivityOrder()
+	@NonCPS
+	String getTitle() {
+		return title
+	}
 
 }

@@ -18,12 +18,22 @@ package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
+import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CipaActivity
+import de.hasait.cipa.activity.CipaActivityRunContext
 import de.hasait.cipa.activity.CipaAroundActivity
+import de.hasait.cipa.activity.CipaLogFile
+import de.hasait.cipa.activity.CipaTestResult
+import de.hasait.cipa.activity.CipaTestResults
+import hudson.model.Result
+import hudson.model.Run
+import hudson.tasks.junit.CaseResult
+import hudson.tasks.junit.TestResultAction
 
 import java.text.SimpleDateFormat
+import java.util.regex.Pattern
 
-class CipaActivityWrapper implements Serializable {
+class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat('yyyy-MM-dd\' \'HH:mm:ss\' \'Z')
 
@@ -33,6 +43,7 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	private final Cipa cipa
+	private final PScript script
 	final CipaActivity activity
 	private final List<CipaAroundActivity> aroundActivities
 
@@ -42,11 +53,16 @@ class CipaActivityWrapper implements Serializable {
 	private Throwable prepareThrowable
 	private Date startedDate
 	private Date finishedDate
-	private Throwable failedThrowable
-	private boolean dependencyFailure
+	private Throwable runThrowable
+	private List<CipaActivityWrapper> failedDependencies
 
-	CipaActivityWrapper(Cipa cipa, CipaActivity activity, List<CipaAroundActivity> aroundActivities) {
+	private final List<CipaLogFile> logfiles = new ArrayList<>()
+
+	private final CipaTestResults testResults = new CipaTestResults()
+
+	CipaActivityWrapper(Cipa cipa, PScript script, CipaActivity activity, List<CipaAroundActivity> aroundActivities) {
 		this.cipa = cipa
+		this.script = script
 		this.activity = activity
 		this.aroundActivities = aroundActivities
 
@@ -60,7 +76,7 @@ class CipaActivityWrapper implements Serializable {
 
 	@NonCPS
 	Set<Map.Entry<CipaActivityWrapper, Boolean>> getDependencies() {
-		return dependsOn.entrySet()
+		return Collections.unmodifiableSet(dependsOn.entrySet())
 	}
 
 	@NonCPS
@@ -82,6 +98,11 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	@NonCPS
+	List<CipaActivityWrapper> getFailedDependencies() {
+		return failedDependencies ? Collections.unmodifiableList(failedDependencies) : null
+	}
+
+	@NonCPS
 	Date getStartedDate() {
 		return startedDate
 	}
@@ -92,31 +113,118 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	@NonCPS
-	Throwable getFailedThrowable() {
-		return failedThrowable
+	Throwable getRunThrowable() {
+		return runThrowable
 	}
 
 	@NonCPS
-	boolean isDependencyFailure() {
-		return dependencyFailure
+	boolean isFailed() {
+		return prepareThrowable || failedDependencies || runThrowable
+	}
+
+	@NonCPS
+	boolean isDone() {
+		return failed || finishedDate
+	}
+
+	@NonCPS
+	boolean isRunning() {
+		return startedDate && !done
+	}
+
+	@NonCPS
+	CipaTestResults getTestResults() {
+		return testResults
+	}
+
+	@NonCPS
+	String buildFailedMessage() {
+		if (!failed) {
+			return null
+		}
+
+		if (prepareThrowable) {
+			return prepareThrowable.message
+		}
+		if (failedDependencies) {
+			return buildFailedWrappersMessage('Dependencies', failedDependencies)
+		}
+		if (runThrowable) {
+			return runThrowable.message
+		}
+
+		return 'Unknown (BUG?!)'
+	}
+
+
+	@Override
+	@NonCPS
+	void addPassedTest(String description) {
+		testResults.add(new CipaTestResult(description))
+	}
+
+	@Override
+	@NonCPS
+	void addFailedTest(String description, int failingAge) {
+		testResults.add(new CipaTestResult(description, failingAge))
+	}
+
+	@Override
+	@NonCPS
+	void addJunitTestResults(String includeRegex, String excludeRegex) {
+		Pattern includePattern = includeRegex && includeRegex.trim().length() > 0 ? Pattern.compile(includeRegex) : null
+		Pattern excludePattern = excludeRegex && excludeRegex.trim().length() > 0 ? Pattern.compile(excludeRegex) : null
+
+		Closure patternFilter = { CaseResult caseResult ->
+			if (includePattern && !includePattern.matcher(caseResult.className).matches()) {
+				return false
+			}
+			if (excludePattern && excludePattern.matcher(caseResult.className).matches()) {
+				return false
+			}
+			return true
+		}
+
+		Run<?, ?> build = script.currentRawBuild
+		synchronized (build) {
+			TestResultAction testResultAction = build.getAction(TestResultAction.class)
+			if (testResultAction) {
+				if (testResultAction.passedTests) {
+					testResultAction.passedTests.findAll(patternFilter).each { addPassedTest(it.description) }
+				}
+				if (testResultAction.failedTests) {
+					testResultAction.failedTests.findAll(patternFilter).each { addFailedTest(it.description, it.failedSince) }
+				}
+			}
+		}
+	}
+
+	@Override
+	void archiveLogFile(String path, String title) {
+		script.archiveArtifacts(path)
+		logfiles.add(new CipaLogFile(path, title))
+	}
+
+	@NonCPS
+	List<CipaLogFile> getLogfiles() {
+		return Collections.unmodifiableList(logfiles)
 	}
 
 	@NonCPS
 	String buildStateHistoryString() {
 		StringBuilder sb = new StringBuilder()
-		sb.append('Created: ')
-		sb.append(format(creationDate))
+		sb << "Created: ${format(creationDate)}"
+		if (failed) {
+			sb << " | Failed: ${buildFailedMessage()}"
+		}
 		if (startedDate) {
-			sb.append(' | Started: ')
-			sb.append(format(startedDate))
-			if (finishedDate) {
-				sb.append(' | Finished: ')
-				sb.append(format(finishedDate))
-				if (failedThrowable) {
-					sb.append(' - Failed: ')
-					sb.append(failedThrowable.message)
-				}
-			}
+			sb << " | Started: ${format(startedDate)}"
+		}
+		if (finishedDate) {
+			sb << " | Finished: ${format(finishedDate)}"
+		}
+		if (!testResults.empty) {
+			sb << " | TestResults: ${testResults.countPassed}/${testResults.countTotal} (${testResults.countFailed} failed)"
 		}
 		return sb.toString()
 	}
@@ -126,55 +234,63 @@ class CipaActivityWrapper implements Serializable {
 			activity.prepareNode()
 		} catch (Throwable throwable) {
 			prepareThrowable = throwable
+			script.echoStacktrace('prepareNode', throwable)
 		}
 	}
 
 	void runActivity() {
-		String notFinishedDependency = readyToRunActivity()
-		if (notFinishedDependency) {
-			throw new IllegalStateException("!readyToRunActivity: ${notFinishedDependency}")
+		String notDoneDependencyName = readyToRunActivity()
+		if (notDoneDependencyName) {
+			throw new IllegalStateException("At least one not done dependency exists: ${notDoneDependencyName}")
 		}
-		if (prepareThrowable) {
-			throw new IllegalStateException('prepareThrowable')
+
+		if (done) {
+			throw new IllegalStateException('Already done')
+		}
+
+		failedDependencies = findFailedDependencyWrappers()
+		if (failedDependencies) {
+			for (CipaAroundActivity aroundActivity in aroundActivities) {
+				try {
+					aroundActivity.handleFailedDependencies(this)
+				} catch (Throwable throwable) {
+					script.echoStacktrace('handleFailedDependencies', throwable)
+					throw throwable
+				}
+			}
+			return
 		}
 
 		for (CipaAroundActivity aroundActivity in aroundActivities) {
-			aroundActivity.beforeActivityStarted(this)
+			try {
+				aroundActivity.beforeActivityStarted(this)
+			} catch (Throwable throwable) {
+				script.echoStacktrace('beforeActivityStarted', throwable)
+				throw throwable
+			}
 		}
 
 		try {
 			startedDate = new Date()
-
-			List<CipaActivityWrapper> failedDependencies = collectFailedActivitiesMap(dependsOn)
-			if (!failedDependencies.empty) {
-				try {
-					handleDependencyFailures(0, failedDependencies)
-				} catch (Throwable dependencyThrowable) {
-					dependencyFailure = true
-					throw dependencyThrowable
-				}
-			}
-
 			runAroundActivity(0)
-
-			finishedDate = new Date()
 		} catch (Throwable throwable) {
-			failedThrowable = throwable
+			runThrowable = throwable
+			script.echoStacktrace('runActivity', throwable)
+		} finally {
 			finishedDate = new Date()
 		}
 
 		for (CipaAroundActivity aroundActivity in aroundActivities) {
-			aroundActivity.afterActivityFinished(this)
+			try {
+				aroundActivity.afterActivityFinished(this)
+			} catch (Throwable throwable) {
+				script.echoStacktrace('afterActivityFinished', throwable)
+				throw throwable
+			}
 		}
-	}
 
-	private void handleDependencyFailures(int i, List<CipaActivityWrapper> failedDependencies) {
-		if (i < aroundActivities.size()) {
-			aroundActivities.get(i).handleDependencyFailures(this, failedDependencies, {
-				handleDependencyFailures(i + 1, failedDependencies)
-			})
-		} else {
-			throwOnAnyActivityFailure('Dependencies', failedDependencies)
+		if (!testResults.stable) {
+			script.currentRawBuild.result = Result.UNSTABLE
 		}
 	}
 
@@ -184,18 +300,18 @@ class CipaActivityWrapper implements Serializable {
 				runAroundActivity(i + 1)
 			})
 		} else {
-			activity.runActivity()
+			activity.runActivity(this)
 		}
 	}
 
 	/**
-	 * @return null if ready; otherwise the name of an non-finished dependency.
+	 * @return null if ready; otherwise the name of an not yet done dependency.
 	 */
 	@NonCPS
 	String readyToRunActivity() {
-		for (dependency in dependsOn.keySet()) {
-			if (!dependency.finishedDate && !dependency.prepareThrowable) {
-				return dependency.activity.name
+		for (dependencyWrapper in dependsOn.keySet()) {
+			if (!dependencyWrapper.done) {
+				return dependencyWrapper.activity.name
 			}
 		}
 
@@ -203,50 +319,45 @@ class CipaActivityWrapper implements Serializable {
 	}
 
 	@NonCPS
-	static List<CipaActivityWrapper> collectFailedActivitiesMap(Map<CipaActivityWrapper, Boolean> wrappers) {
-		Set<CipaActivityWrapper> inheritFailures = new LinkedHashSet<>()
-		for (wrapper in wrappers) {
-			if (wrapper.value.booleanValue()) {
-				inheritFailures.add(wrapper.key)
+	private List<CipaActivityWrapper> findFailedDependencyWrappers() {
+		Set<CipaActivityWrapper> wrappersToInheritFailuresFrom = new LinkedHashSet<>()
+		for (wrapperWithInherit in dependsOn) {
+			if (wrapperWithInherit.value.booleanValue()) {
+				wrappersToInheritFailuresFrom.add(wrapperWithInherit.key)
 			}
 		}
-		return collectFailedActivities(inheritFailures)
+		return findFailedWrappers(wrappersToInheritFailuresFrom)
 	}
 
 	@NonCPS
-	static List<CipaActivityWrapper> collectFailedActivities(Collection<CipaActivityWrapper> wrappers) {
-		List<CipaActivityWrapper> failed = new ArrayList<>()
+	private static List<CipaActivityWrapper> findFailedWrappers(Collection<CipaActivityWrapper> wrappers) {
+		List<CipaActivityWrapper> failedWrappers = new ArrayList<>()
 		for (wrapper in wrappers) {
-			if (wrapper.failedThrowable || wrapper.prepareThrowable) {
-				failed.add(wrapper)
+			if (wrapper.failed) {
+				failedWrappers.add(wrapper)
 			}
 		}
-		return failed
-	}
-
-	@NonCPS
-	static String buildExceptionMessage(String msgPrefix, Collection<CipaActivityWrapper> failed) {
-		if (!failed || failed.empty) {
-			return null
-		}
-
-		StringBuilder sb = new StringBuilder(msgPrefix + ' failed: [')
-		sb.append(
-				failed.collect {
-					return "${it.activity.name} = ${it.prepareThrowable ? it.prepareThrowable.message : it.failedThrowable.message}"
-				}.join('; ')
-		)
-		sb.append(']')
-		return sb.toString()
+		return failedWrappers.empty ? null : failedWrappers
 	}
 
 	@NonCPS
 	static void throwOnAnyActivityFailure(String msgPrefix, Collection<CipaActivityWrapper> wrappers) {
-		List<CipaActivityWrapper> failed = collectFailedActivities(wrappers)
-		String msg = buildExceptionMessage(msgPrefix, failed)
+		List<CipaActivityWrapper> failedWrappers = findFailedWrappers(wrappers)
+		String msg = buildFailedWrappersMessage(msgPrefix, failedWrappers)
 		if (msg) {
 			throw new RuntimeException(msg)
 		}
+	}
+
+	@NonCPS
+	private static String buildFailedWrappersMessage(String msgPrefix, Collection<CipaActivityWrapper> failedWrappers) {
+		if (!failedWrappers || failedWrappers.empty) {
+			return null
+		}
+
+		StringBuilder sb = new StringBuilder(msgPrefix + ' failed: ')
+		sb.append(failedWrappers.collect { "${it.activity.name} = ${it.buildFailedMessage()}" }.toString())
+		return sb.toString()
 	}
 
 }

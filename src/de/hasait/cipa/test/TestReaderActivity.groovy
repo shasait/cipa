@@ -22,6 +22,7 @@ import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CipaActivity
+import de.hasait.cipa.activity.CipaActivityRunContext
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
@@ -89,13 +90,13 @@ class TestReaderActivity implements CipaInit, CipaActivity, Serializable {
 	}
 
 	@Override
-	void runActivity() {
+	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("Test ${filesIn} and ${filesOut}")
-		script.sleep(10)
+		script.sleep(5)
 		if (Math.random() < 0.2) {
 			throw new RuntimeException("Random failure")
 		}
-		script.sleep(10)
+		script.sleep(5)
 	}
 
 	@Override

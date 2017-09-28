@@ -130,7 +130,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 	}
 
 	@Override
-	void runActivity() {
+	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("Stashing ${files}...")
 
 		script.dir(relDir(files, subDir)) {

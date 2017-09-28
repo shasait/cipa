@@ -47,17 +47,17 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 	}
 
 	@Override
+	void handleFailedDependencies(CipaActivityWrapper wrapper) {
+		// nop
+	}
+
+	@Override
 	void beforeActivityStarted(CipaActivityWrapper wrapper) {
 		if (!svnContentHolder.get()) {
 			if (initCalled.compareAndSet(false, true)) {
 				init()
 			}
 		}
-	}
-
-	@Override
-	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
-		next.call()
 	}
 
 	@Override
@@ -108,10 +108,12 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 			for (wrapperWithNodeName in cipa.runContext.dotNodeNameByWrappers) {
 				CipaActivityWrapper wrapper = wrapperWithNodeName.key
 				String nodeName = wrapperWithNodeName.value
-				boolean running = wrapper.startedDate && !wrapper.finishedDate
-				boolean failed = wrapper.failedThrowable || wrapper.prepareThrowable
-				boolean finished = wrapper.startedDate && wrapper.finishedDate
-				String fill = failed ? "red" : (finished ? "green" : "none")
+				boolean running = wrapper.running
+				boolean failed = wrapper.failed
+				boolean depsFailed = wrapper.failedDependencies
+				boolean done = wrapper.done
+				boolean stable = wrapper.testResults.stable
+				String fill = depsFailed ? "gray" : (failed ? "red" : (done ? (stable ? "green" : "yellow") : "none"))
 				String stroke = running ? "blue" : "black"
 				svgContent = Pattern.compile("(<title>${nodeName}</title>\\s+<ellipse fill=\")[^\"]+(\" stroke=\")[^\"]+(\")").matcher(svgContent).replaceFirst("\$1${fill}\$2${stroke}\$3")
 			}

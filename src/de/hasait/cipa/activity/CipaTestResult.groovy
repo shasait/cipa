@@ -16,36 +16,27 @@
 
 package de.hasait.cipa.activity
 
-import de.hasait.cipa.internal.CipaActivityWrapper
+import com.cloudbees.groovy.cps.NonCPS
 
-/**
- * Aspects for Activities.
- */
-interface CipaAroundActivity {
+class CipaTestResult implements Serializable {
 
-	/**
-	 * Any dependency failed.
-	 */
-	void handleFailedDependencies(CipaActivityWrapper wrapper)
+	private final String description
 
-	/**
-	 * Before startTime is set.
-	 */
-	void beforeActivityStarted(CipaActivityWrapper wrapper)
+	private final Integer failingAge
 
-	/**
-	 * Around run of activity.
-	 */
-	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next)
+	CipaTestResult(String description, Integer failingAge = null) {
+		this.description = description
+		this.failingAge = failingAge
+	}
 
-	/**
-	 * After finishedTime was set.
-	 */
-	void afterActivityFinished(CipaActivityWrapper wrapper)
+	@NonCPS
+	String getDescription() {
+		return description
+	}
 
-	/**
-	 * @return Value for ordering: Higher means later in chain.
-	 */
-	int getRunAroundActivityOrder()
+	@NonCPS
+	Integer getFailingAge() {
+		return failingAge
+	}
 
 }

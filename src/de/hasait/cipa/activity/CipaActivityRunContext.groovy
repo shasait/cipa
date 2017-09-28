@@ -16,36 +16,14 @@
 
 package de.hasait.cipa.activity
 
-import de.hasait.cipa.internal.CipaActivityWrapper
+interface CipaActivityRunContext {
 
-/**
- * Aspects for Activities.
- */
-interface CipaAroundActivity {
+	void archiveLogFile(String path, String title)
 
-	/**
-	 * Any dependency failed.
-	 */
-	void handleFailedDependencies(CipaActivityWrapper wrapper)
+	void addPassedTest(String description)
 
-	/**
-	 * Before startTime is set.
-	 */
-	void beforeActivityStarted(CipaActivityWrapper wrapper)
+	void addFailedTest(String description, int failingAge)
 
-	/**
-	 * Around run of activity.
-	 */
-	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next)
-
-	/**
-	 * After finishedTime was set.
-	 */
-	void afterActivityFinished(CipaActivityWrapper wrapper)
-
-	/**
-	 * @return Value for ordering: Higher means later in chain.
-	 */
-	int getRunAroundActivityOrder()
+	void addJunitTestResults(String includeRegex, String excludeRegex)
 
 }

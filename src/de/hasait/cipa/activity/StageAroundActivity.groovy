@@ -47,13 +47,13 @@ class StageAroundActivity implements CipaInit, CipaAroundActivity, Serializable 
 	}
 
 	@Override
-	void beforeActivityStarted(CipaActivityWrapper wrapper) {
+	void handleFailedDependencies(CipaActivityWrapper wrapper) {
 		// nop
 	}
 
 	@Override
-	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
-		next.call()
+	void beforeActivityStarted(CipaActivityWrapper wrapper) {
+		// nop
 	}
 
 	@Override

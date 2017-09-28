@@ -38,6 +38,7 @@ class CipaRunContext implements Serializable {
 	@NonCPS
 	private void init(Cipa cipa) {
 		nodes.addAll(cipa.findBeans(CipaNode.class))
+		PScript script = cipa.findBean(PScript.class)
 		Set<CipaResourceWithState<?>> resources = cipa.findBeans(CipaResourceWithState.class)
 		Set<CipaActivity> activities = cipa.findBeans(CipaActivity.class)
 		List<CipaAroundActivity> aroundActivities = cipa.findBeansAsList(CipaAroundActivity.class)
@@ -54,7 +55,7 @@ class CipaRunContext implements Serializable {
 			if (!wrappersByNode.containsKey(node)) {
 				throw new IllegalStateException("${node} unknown - either create with cipa.newNode or register with addBean!")
 			}
-			CipaActivityWrapper wrapper = new CipaActivityWrapper(cipa, activity, aroundActivities)
+			CipaActivityWrapper wrapper = new CipaActivityWrapper(cipa, script, activity, aroundActivities)
 			wrappers.add(wrapper)
 			wrappersByNode.get(node).add(wrapper)
 			for (requires in activity.runRequiresRead) {
@@ -127,6 +128,7 @@ class CipaRunContext implements Serializable {
 		StringBuilder dotContent = new StringBuilder()
 		dotContent << '\n'
 		dotContent << 'digraph pipeline {\n'
+		dotContent << 'graph [rankdir = "LR"];\n'
 		int activityI = 0
 		for (wrapper in wrappers) {
 			dotNodeNameByWrappers.put(wrapper, "a${activityI++}")

@@ -22,6 +22,7 @@ import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CipaActivity
+import de.hasait.cipa.activity.CipaActivityRunContext
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
@@ -89,8 +90,16 @@ class TestWriterActivity implements CipaInit, CipaActivity, Serializable {
 	}
 
 	@Override
-	void runActivity() {
+	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("Test ${filesIn} and ${filesOut}")
+
+		if (Math.random() < 0.2) {
+			runContext.addFailedTest('Evil Test', 3)
+		}
+		if (Math.random() < 0.2) {
+			runContext.addPassedTest('Good one')
+		}
+
 	}
 
 	@Override

@@ -94,7 +94,7 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithSt
 
 	@Override
 	void prepareNode() {
-		script.echo('Deleting ${files}...')
+		script.echo("Deleting ${files}...")
 
 		script.dir(files.resource.path) {
 			script.deleteDir()
@@ -102,7 +102,7 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithSt
 	}
 
 	@Override
-	void runActivity() {
+	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("Unstashing ${stash} into ${files.resource}...")
 
 		script.dir(files.resource.path) {

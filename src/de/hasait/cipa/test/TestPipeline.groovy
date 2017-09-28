@@ -55,12 +55,13 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').providedCheckedOutFiles
 		CipaResourceWithState<CipaStashResource> mainStash = new StashFilesActivity(cipa, 'StashMain', mainCheckedOutFiles).providedStash
 		CipaResourceWithState<CipaFileResource> files = new UnstashFilesActivity(cipa, "UnstashMain", mainStash, node2).providedFiles
-		new TestReaderActivity(cipa, "TestR1", files, "StateR1")
-		new TestReaderActivity(cipa, "TestR2", files, "StateR2")
-		new TestReaderActivity(cipa, "TestR3", files, "StateR3")
-		new TestWriterActivity(cipa, "TestW1", files, "StateW1")
-		new TestWriterActivity(cipa, "TestW2", files, "StateW2")
-		new TestWriterActivity(cipa, "TestW3", files, "StateW3")
+		new TestReaderActivity(cipa, "TestRa1", files, "StateRa1")
+		TestReaderActivity ra2 = new TestReaderActivity(cipa, "TestRa2", files, "StateRa2")
+		new TestReaderActivity(cipa, "TestRa3", files, "StateRa3")
+		new TestWriterActivity(cipa, "TestWa1", files, "StateW1")
+		new TestWriterActivity(cipa, "TestWa2", files, "StateW2")
+		new TestWriterActivity(cipa, "TestWa3", files, "StateW3")
+		new TestReaderActivity(cipa, "TestRb1", ra2.providedFilesOut, "StateRb1")
 	}
 
 	@Override
@@ -78,34 +79,29 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	}
 
 	@Override
-	void beforeActivityStarted(CipaActivityWrapper wrapper) {
+	void handleFailedDependencies(CipaActivityWrapper wrapper) {
+		rawScript.setCustomBuildProperty(key: "${wrapper.activity.name}-DepsFailed", value: wrapper.failedDependencies.size())
 	}
 
 	@Override
-	void handleDependencyFailures(CipaActivityWrapper wrapper, List<CipaActivityWrapper> failedDependencyWrappers, Closure<?> next) {
-		rawScript.setCustomBuildProperty(key: "${wrapper.activity.name}-DepsFailed", value: failedDependencyWrappers.size())
-		next.call()
+	void beforeActivityStarted(CipaActivityWrapper wrapper) {
 	}
 
 	@Override
 	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
 		String name = wrapper.activity.name
-		rawScript.setCustomBuildProperty(key: "${name}-StartTime", value: new Date())
-		try {
-			script.echo("runAroundActivity ${name}...")
-			next.call()
-		} catch (err) {
-			script.echo("runAroundActivity caught: ${err}")
-			script.echo("runAroundActivity caught: ${err?.class}")
-			rawScript.setCustomBuildProperty(key: "${name}-Failed", value: err.toString())
-			throw err
-		} finally {
-			rawScript.setCustomBuildProperty(key: "${name}-EndTime", value: new Date())
-		}
+		rawScript.setCustomBuildProperty(key: "${name}-BeginTime", value: wrapper.startedDate)
+		script.echo("runAroundActivity ${name}...")
+		next.call()
 	}
 
 	@Override
 	void afterActivityFinished(CipaActivityWrapper wrapper) {
+		String name = wrapper.activity.name
+		if (wrapper.failed) {
+			rawScript.setCustomBuildProperty(key: "${name}-Failed", value: wrapper.buildFailedMessage())
+		}
+		rawScript.setCustomBuildProperty(key: "${name}-EndTime", value: wrapper.finishedDate)
 	}
 
 	@Override

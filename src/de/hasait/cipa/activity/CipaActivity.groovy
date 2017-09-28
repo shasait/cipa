@@ -54,6 +54,6 @@ interface CipaActivity {
 	/**
 	 * Perform the logic of the activity.
 	 */
-	void runActivity()
+	void runActivity(CipaActivityRunContext runContext)
 
 }

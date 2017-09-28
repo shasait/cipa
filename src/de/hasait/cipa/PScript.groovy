@@ -70,6 +70,19 @@ class PScript implements Serializable {
 		rawScript.echo '[Script] ' + message
 	}
 
+	void echoStacktrace(String message, Throwable throwable) {
+		echo(message + ': ' + extractStacktrace(throwable))
+	}
+
+	@NonCPS
+	private String extractStacktrace(Throwable throwable) {
+		StringWriter sw = new StringWriter()
+		PrintWriter pw = new PrintWriter(sw)
+		throwable.printStackTrace(pw)
+		pw.flush()
+		return sw.toString()
+	}
+
 	void dir(String dirname, Closure<?> body) {
 		rawScript.dir(dirname, body)
 	}

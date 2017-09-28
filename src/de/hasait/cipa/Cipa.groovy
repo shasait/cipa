@@ -313,21 +313,14 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			// TODO replace with sth silent
 			rawScript.waitUntil() {
 				countWait++
-				String notFinishedDependency = wrapper.readyToRunActivity()
-				if (countWait > 10 && notFinishedDependency) {
-					rawScript.echo("Activity [${wrapper.activity.name}] still waits for dependency [${notFinishedDependency}] (and may be more)")
+				String notDoneDependency = wrapper.readyToRunActivity()
+				if (countWait > 10 && notDoneDependency) {
+					rawScript.echo("Activity [${wrapper.activity.name}] still waits for dependency [${notDoneDependency}] (and may be more)")
 					countWait = 0
 				}
-				return notFinishedDependency == null
+				return notDoneDependency == null
 			}
 			wrapper.runActivity()
-			if (wrapper.failedThrowable) {
-				StringWriter sw = new StringWriter()
-				PrintWriter pw = new PrintWriter(sw)
-				wrapper.failedThrowable.printStackTrace(pw)
-				pw.flush()
-				rawScript.echo(sw.toString())
-			}
 		}
 	}
 
