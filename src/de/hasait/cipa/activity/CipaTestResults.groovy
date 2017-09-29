@@ -27,6 +27,7 @@ class CipaTestResults implements Serializable {
 	private int countPassed = 0
 	private int countFailed = 0
 
+	@NonCPS
 	void add(CipaTestResult result) {
 		if (!result) {
 			throw new IllegalArgumentException('!result')
