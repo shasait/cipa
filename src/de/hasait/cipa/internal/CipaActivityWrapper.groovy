@@ -195,10 +195,10 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 			TestResultAction testResultAction = build.getAction(TestResultAction.class)
 			if (testResultAction) {
 				if (testResultAction.passedTests) {
-					testResultAction.passedTests.findAll(patternFilter).each { addPassedTest(it.description) }
+					testResultAction.passedTests.findAll(patternFilter).each { addPassedTest(it.name) }
 				}
 				if (testResultAction.failedTests) {
-					testResultAction.failedTests.findAll(patternFilter).each { addFailedTest(it.description, it.age) }
+					testResultAction.failedTests.findAll(patternFilter).each { addFailedTest(it.name, it.age) }
 				}
 			}
 		}
