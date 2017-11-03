@@ -113,7 +113,7 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 				boolean depsFailed = wrapper.failedDependencies
 				boolean done = wrapper.done
 				boolean stable = wrapper.testResults.stable
-				String fill = depsFailed ? "gray" : (failed ? "red" : (done ? (stable ? "green" : "yellow") : "none"))
+				String fill = depsFailed ? "gray" : (failed ? "red" : (done ? (stable ? "lightgreen" : "yellow") : "none"))
 				String stroke = running ? "blue" : "black"
 				svgContent = Pattern.compile("(<title>${nodeName}</title>\\s+<ellipse fill=\")[^\"]+(\" stroke=\")[^\"]+(\")").matcher(svgContent).replaceFirst("\$1${fill}\$2${stroke}\$3")
 			}
