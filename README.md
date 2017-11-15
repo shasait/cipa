@@ -23,4 +23,4 @@ This way a big pipeline can be easily split into various classes making the code
 Please have a look into the test package.
 
 ## License
-Genesis is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+Cipa is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
