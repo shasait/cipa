@@ -16,36 +16,10 @@
 
 package de.hasait.cipa
 
-import com.cloudbees.groovy.cps.NonCPS
+interface JobParameterValues {
 
-/**
- *
- */
-class CipaNode implements Serializable {
+	Object retrieveOptionalValue(String name, Object defaultValue)
 
-	private final String label
-
-	/**
-	 * Hostname - only available while executing of activities.
-	 */
-	String runtimeHostname
-
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
-		}
-		this.label = label
-	}
-
-	@NonCPS
-	String getLabel() {
-		return label
-	}
-
-	@Override
-	@NonCPS
-	String toString() {
-		return "Node[${label}]"
-	}
+	Object retrieveRequiredValue(String name)
 
 }

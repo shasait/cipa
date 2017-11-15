@@ -16,36 +16,13 @@
 
 package de.hasait.cipa
 
-import com.cloudbees.groovy.cps.NonCPS
-
 /**
- *
+ * Activities can implement this interface in order to add and read job parameters.
  */
-class CipaNode implements Serializable {
+interface JobParameterContribution extends Serializable {
 
-	private final String label
+	void contributeParameters(JobParameterContainer container)
 
-	/**
-	 * Hostname - only available while executing of activities.
-	 */
-	String runtimeHostname
-
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
-		}
-		this.label = label
-	}
-
-	@NonCPS
-	String getLabel() {
-		return label
-	}
-
-	@Override
-	@NonCPS
-	String toString() {
-		return "Node[${label}]"
-	}
+	void processParameters(JobParameterValues values)
 
 }

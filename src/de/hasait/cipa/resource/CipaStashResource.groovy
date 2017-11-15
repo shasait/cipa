@@ -14,38 +14,47 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.resource
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.CipaNode
 
 /**
  *
  */
-class CipaNode implements Serializable {
+class CipaStashResource implements CipaResource, Serializable {
 
-	private final String label
+	private final String id
+	private final String srcRelDir
 
-	/**
-	 * Hostname - only available while executing of activities.
-	 */
-	String runtimeHostname
-
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
+	CipaStashResource(String id, String srcRelDir) {
+		if (!id || id.length() == 0) {
+			throw new IllegalArgumentException('id is null or empty')
 		}
-		this.label = label
+		this.id = id
+		this.srcRelDir = srcRelDir
+	}
+
+	@Override
+	@NonCPS
+	CipaNode getNode() {
+		return null
 	}
 
 	@NonCPS
-	String getLabel() {
-		return label
+	String getId() {
+		return id
+	}
+
+	@NonCPS
+	String getSrcRelDir() {
+		return srcRelDir
 	}
 
 	@Override
 	@NonCPS
 	String toString() {
-		return "Node[${label}]"
+		return "Stash[${id}]"
 	}
 
 }

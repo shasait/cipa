@@ -16,36 +16,19 @@
 
 package de.hasait.cipa
 
-import com.cloudbees.groovy.cps.NonCPS
-
 /**
  *
  */
-class CipaNode implements Serializable {
+interface CipaBeanContainer {
 
-	private final String label
+	public <T> T addBean(T bean)
 
-	/**
-	 * Hostname - only available while executing of activities.
-	 */
-	String runtimeHostname
+	public <T> Set<T> findBeans(Class<T> type)
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
-		}
-		this.label = label
-	}
+	public <T> List<T> findBeansAsList(Class<T> type)
 
-	@NonCPS
-	String getLabel() {
-		return label
-	}
+	public <T> T findBean(Class<T> type, boolean optional)
 
-	@Override
-	@NonCPS
-	String toString() {
-		return "Node[${label}]"
-	}
+	public <T> T findBean(Class<T> type)
 
 }

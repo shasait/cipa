@@ -14,38 +14,46 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.resource
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.CipaNode
 
 /**
  *
  */
-class CipaNode implements Serializable {
+class CipaFileResource implements CipaResource, Serializable {
 
-	private final String label
+	private final CipaNode node
+	private final String path
 
-	/**
-	 * Hostname - only available while executing of activities.
-	 */
-	String runtimeHostname
-
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
+	CipaFileResource(CipaNode node, String path) {
+		if (!node) {
+			throw new IllegalArgumentException('node is null')
 		}
-		this.label = label
+		if (!path || path.length() == 0) {
+			throw new IllegalArgumentException('relDir is null or empty')
+		}
+
+		this.node = node
+		this.path = path
+	}
+
+	@Override
+	@NonCPS
+	CipaNode getNode() {
+		return node
 	}
 
 	@NonCPS
-	String getLabel() {
-		return label
+	String getPath() {
+		return path
 	}
 
 	@Override
 	@NonCPS
 	String toString() {
-		return "Node[${label}]"
+		return "Files[${path}] on ${node}"
 	}
 
 }

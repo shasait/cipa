@@ -16,36 +16,13 @@
 
 package de.hasait.cipa
 
-import com.cloudbees.groovy.cps.NonCPS
-
 /**
- *
+ * Between CipaInit and CipaActivity.
  */
-class CipaNode implements Serializable {
+interface CipaPrepare {
 
-	private final String label
+	int getPrepareCipaOrder()
 
-	/**
-	 * Hostname - only available while executing of activities.
-	 */
-	String runtimeHostname
-
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
-		}
-		this.label = label
-	}
-
-	@NonCPS
-	String getLabel() {
-		return label
-	}
-
-	@Override
-	@NonCPS
-	String toString() {
-		return "Node[${label}]"
-	}
+	void prepareCipa(Cipa cipa)
 
 }

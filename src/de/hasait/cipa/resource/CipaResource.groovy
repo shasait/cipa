@@ -14,38 +14,18 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.resource
 
-import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.CipaNode
 
 /**
  *
  */
-class CipaNode implements Serializable {
-
-	private final String label
+interface CipaResource {
 
 	/**
-	 * Hostname - only available while executing of activities.
+	 * @return The node the resource belongs to OR null if global.
 	 */
-	String runtimeHostname
-
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
-		}
-		this.label = label
-	}
-
-	@NonCPS
-	String getLabel() {
-		return label
-	}
-
-	@Override
-	@NonCPS
-	String toString() {
-		return "Node[${label}]"
-	}
+	CipaNode getNode()
 
 }

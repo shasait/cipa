@@ -14,38 +14,29 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
 
-/**
- *
- */
-class CipaNode implements Serializable {
+class CipaTestResult implements Serializable {
 
-	private final String label
+	private final String description
 
-	/**
-	 * Hostname - only available while executing of activities.
-	 */
-	String runtimeHostname
+	private final Integer failingAge
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
-		}
-		this.label = label
+	CipaTestResult(String description, Integer failingAge = null) {
+		this.description = description
+		this.failingAge = failingAge
 	}
 
 	@NonCPS
-	String getLabel() {
-		return label
+	String getDescription() {
+		return description
 	}
 
-	@Override
 	@NonCPS
-	String toString() {
-		return "Node[${label}]"
+	Integer getFailingAge() {
+		return failingAge
 	}
 
 }

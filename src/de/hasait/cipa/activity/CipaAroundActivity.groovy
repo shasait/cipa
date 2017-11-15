@@ -14,38 +14,38 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.activity
 
-import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.internal.CipaActivityWrapper
 
 /**
- *
+ * Aspects for Activities.
  */
-class CipaNode implements Serializable {
-
-	private final String label
+interface CipaAroundActivity {
 
 	/**
-	 * Hostname - only available while executing of activities.
+	 * Any dependency failed.
 	 */
-	String runtimeHostname
+	void handleFailedDependencies(CipaActivityWrapper wrapper)
 
-	CipaNode(String label) {
-		if (!label) {
-			throw new IllegalArgumentException('label is null')
-		}
-		this.label = label
-	}
+	/**
+	 * Before startTime is set.
+	 */
+	void beforeActivityStarted(CipaActivityWrapper wrapper)
 
-	@NonCPS
-	String getLabel() {
-		return label
-	}
+	/**
+	 * Around run of activity.
+	 */
+	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next)
 
-	@Override
-	@NonCPS
-	String toString() {
-		return "Node[${label}]"
-	}
+	/**
+	 * After finishedTime was set.
+	 */
+	void afterActivityFinished(CipaActivityWrapper wrapper)
+
+	/**
+	 * @return Value for ordering: Higher means later in chain.
+	 */
+	int getRunAroundActivityOrder()
 
 }

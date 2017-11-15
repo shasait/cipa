@@ -7,69 +7,20 @@ It is useful for massive parallel pipelines to reduce cyclomatic complexity and 
 Currently it is limited to Java and Maven.
 
 
-## Example Jenkinsfile
+## Concept
+* You define nodes.
+* Then you define resources (e.g. directories, db schemas) in different states (e.g. checked out, compiled for directories).
+* Then you will add activities which require some resources and produce others (the logic)
+
+Cipa uses this information to build a dependencies graph and execute the activities in correct order and parallel if they are independent.
+
+## BeanContainer
+Cipa is also a bean container, where you add your beans which implement interfaces to influence pipeline behaviour (e.g. JobParameterContribution).
+This way a big pipeline can be easily split into various classes making the code more maintainable.
 
 
-    @Library('cipa@master')
-    import de.hasait.cipa.Cipa
-    import groovy.transform.Field
-    
-    @Field
-    def cipa = new Cipa(this)
-    cipa.configureJDK('JDK8')
-    cipa.configureMaven('M3', 'ciserver-settings.xml', 'ciserver-toolchains.xml').setOptions('-Xms1g -Xmx4g')
-    
-    // Declare two nodes by label...
-    def node1a = cipa.newNode('node1')
-    def node2a = cipa.newNode('node2')
-    
-    // Declare some activities and their dependencies
-    
-    def cleanUpActivity = cipa.newActivity(node1a, 'CleanUp') {
-        echo 'Cleaning up...'
-        sleep 10
-    }
-    
-    
-    
-    def checkOutActivity = cipa.newActivity(node1a, 'Check out') {
-        echo 'Checking out...'
-        sleep 10
-    }
-    checkOutActivity.addDependency(cleanUpActivity)
-    
-    
-    
-    def compileActivity = cipa.newActivity(node2a, 'Compile') {
-        echo 'Compiling...'
-        sleep 10
-    }
-    compileActivity.addDependency(checkOutActivity)
-    
-    
-    
-    def createDbSchema1Activity = cipa.newActivity(node2a, 'Create DB schema 1') {
-        echo 'Creating DB schema 1...'
-        sleep 10
-    }
-    createDbSchema1Activity.addDependency(cleanUpActivity)
-    
-    
-    // Execute all activities
-    cipa.runActivities()
-
-This will first execute cleanUpActivity.
-As soon as it is finished checkOutActivity and createDbSchema1Activity can start.
-After checkOutActivity is finished compileActivity can start and is the last activity.
-
-
-## Ideas / Plans
-
-* Make tool preparation on nodes more flexible
-    * Allow global tools and per node tools
-* Implicit dependencies by declaring produced resources and used ones.
-    * E.g. folder and automatic stash/unstash
-
+## Example
+Please have a look into the test package.
 
 ## License
-Genesis is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+Cipa is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
