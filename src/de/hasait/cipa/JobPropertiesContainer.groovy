@@ -16,13 +16,16 @@
 
 package de.hasait.cipa
 
-/**
- * Beans can implement this interface in order to add and read job parameters.
- */
-interface JobParameterContribution extends Serializable {
+interface JobPropertiesContainer {
 
-	void contributeParameters(JobParameterContainer container)
+	void addPipelineTrigger(def trigger)
 
-	void processParameters(JobParameterValues values)
+	void addCustomJobProperty(def customJobProperty)
+
+	void setBuildDiscarder(def buildDiscarder)
+
+	void setRebuildSettingsAutoRebuild(boolean autoRebuild)
+
+	void setRebuildSettingsRebuildDisabled(boolean rebuildDisabled)
 
 }

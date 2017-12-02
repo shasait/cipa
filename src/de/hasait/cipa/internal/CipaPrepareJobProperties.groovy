@@ -23,9 +23,11 @@ import de.hasait.cipa.CipaPrepare
 import de.hasait.cipa.JobParameterContainer
 import de.hasait.cipa.JobParameterContribution
 import de.hasait.cipa.JobParameterValues
+import de.hasait.cipa.JobPropertiesContainer
+import de.hasait.cipa.JobPropertiesContribution
 import de.hasait.cipa.PScript
 
-class CipaPrepareJobParameters implements CipaInit, CipaPrepare, JobParameterContainer, JobParameterValues, Serializable {
+class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterContainer, JobParameterValues, JobPropertiesContainer, Serializable {
 
 	private static final String PARAM_PREFIX = 'P_'
 
@@ -33,6 +35,11 @@ class CipaPrepareJobParameters implements CipaInit, CipaPrepare, JobParameterCon
 	private def rawScript
 
 	private final List parameters = []
+	private final List pipelineTriggers = []
+	private def buildDiscarder
+	private boolean rebuildSettingsAutoRebuild = false
+	private boolean rebuildSettingsRebuildDisabled = false
+	private final List customJobProperties = []
 
 	@Override
 	void initCipa(Cipa cipa) {
@@ -55,6 +62,13 @@ class CipaPrepareJobParameters implements CipaInit, CipaPrepare, JobParameterCon
 			parameterContribution.contributeParameters(this)
 		}
 
+		List<JobPropertiesContribution> propertiesContributions = cipa.findBeansAsList(JobPropertiesContribution.class)
+
+		script.echo("Collecting job properties via ${JobPropertiesContribution.class.simpleName}s...")
+		for (JobPropertiesContribution propertiesContribution in propertiesContributions) {
+			propertiesContribution.contributeJobProperties(this)
+		}
+
 		script.echo('Updating job properties...')
 		updateJobProperties()
 
@@ -74,6 +88,16 @@ class CipaPrepareJobParameters implements CipaInit, CipaPrepare, JobParameterCon
 	final void addBooleanParameter(String name, boolean defaultValue, String description) {
 		def parameter = rawScript.booleanParam(name: PARAM_PREFIX + name, defaultValue: defaultValue, description: description)
 		parameters.add(parameter)
+	}
+
+	@NonCPS
+	final void addPipelineTrigger(def trigger) {
+		pipelineTriggers.add(trigger)
+	}
+
+	@NonCPS
+	final void addCustomJobProperty(def customJobProperty) {
+		customJobProperties.add(customJobProperty)
 	}
 
 	/**
@@ -98,13 +122,49 @@ class CipaPrepareJobParameters implements CipaInit, CipaPrepare, JobParameterCon
 		return retrieveValueFromParamsOrEnv(name)
 	}
 
+	@NonCPS
+	final void setBuildDiscarder(def buildDiscarder) {
+		this.buildDiscarder = buildDiscarder
+	}
+
+	@NonCPS
+	final void setRebuildSettingsAutoRebuild(boolean autoRebuild) {
+		this.rebuildSettingsAutoRebuild = autoRebuild
+	}
+
+	@NonCPS
+	final void setRebuildSettingsRebuildDisabled(boolean rebuildDisabled) {
+		this.rebuildSettingsRebuildDisabled = rebuildDisabled
+	}
+
 	private void updateJobProperties() {
-		rawScript.properties([
-				rawScript.buildDiscarder(rawScript.logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '20')),
-				rawScript.parameters(parameters),
-				[$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false],
-				rawScript.pipelineTriggers([rawScript.pollSCM('H/10 * * * *')])
-		])
+		List jobProperties = []
+
+		jobProperties.add(rawScript.parameters(parameters))
+
+		def buildDiscarderWithDefaulting
+		if (buildDiscarder) {
+			buildDiscarderWithDefaulting = buildDiscarder
+		} else {
+			buildDiscarderWithDefaulting = rawScript.logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '20')
+		}
+		jobProperties.add(rawScript.buildDiscarder(buildDiscarderWithDefaulting))
+
+		List pipelineTriggersWithDefaulting
+		if (pipelineTriggers) {
+			pipelineTriggersWithDefaulting = pipelineTriggers
+		} else {
+			pipelineTriggersWithDefaulting = [rawScript.pollSCM('H/10 * * * *')]
+		}
+		jobProperties.add(rawScript.pipelineTriggers(pipelineTriggersWithDefaulting))
+
+		jobProperties.add([$class: 'RebuildSettings', autoRebuild: rebuildSettingsAutoRebuild, rebuildDisabled: rebuildSettingsRebuildDisabled])
+
+		if (customJobProperties) {
+			jobProperties.addAll(customJobProperties)
+		}
+
+		rawScript.properties(jobProperties)
 	}
 
 }
