@@ -128,7 +128,8 @@ class CipaRunContext implements Serializable {
 		StringBuilder dotContent = new StringBuilder()
 		dotContent << '\n'
 		dotContent << 'digraph pipeline {\n'
-		dotContent << 'graph [rankdir = "LR"];\n'
+		dotContent << 'rankdir="LR";\n'
+		dotContent << 'node[shape=box];\n'
 		int activityI = 0
 		for (wrapper in wrappers) {
 			dotNodeNameByWrappers.put(wrapper, "a${activityI++}")
@@ -137,12 +138,13 @@ class CipaRunContext implements Serializable {
 		for (node in nodes) {
 			dotContent << "subgraph cluster_node${nodeI++} {\n"
 			dotContent << "label=\"${node.label}\";\n"
+			dotContent << 'style=dotted;\n'
 			for (wrapper in wrappersByNode.get(node)) {
 				dotContent << "${dotNodeNameByWrappers.get(wrapper)}[label=\"${wrapper.activity.name}\"];\n"
 			}
 			dotContent << '}\n'
 		}
-		dotContent << 'start;\n'
+		dotContent << 'start[shape=cds];\n'
 		for (wrapper in wrappers) {
 			Set<Map.Entry<CipaActivityWrapper, Boolean>> dependencies = wrapper.dependencies
 			if (dependencies.empty) {
@@ -151,7 +153,7 @@ class CipaRunContext implements Serializable {
 				for (dependency in dependencies) {
 					dotContent << "${dotNodeNameByWrappers.get(dependency.key)} -> ${dotNodeNameByWrappers.get(wrapper)}"
 					if (!dependency.value.booleanValue()) {
-						dotContent << ' [style = dotted]'
+						dotContent << ' [style=dotted]'
 					}
 					dotContent << ';\n'
 				}
