@@ -153,7 +153,7 @@ class CipaRunContext implements Serializable {
 				for (dependency in dependencies) {
 					dotContent << "${dotNodeNameByWrappers.get(dependency.key)} -> ${dotNodeNameByWrappers.get(wrapper)}"
 					if (!dependency.value.booleanValue()) {
-						dotContent << ' [style=dotted]'
+						dotContent << ' [style=dashed]'
 					}
 					dotContent << ';\n'
 				}
