@@ -93,6 +93,10 @@ class PScript implements Serializable {
 		rawScript.deleteDir()
 	}
 
+	String pwd() {
+		return rawScript.pwd()
+	}
+
 	String sh(String script, boolean returnStdout = false) {
 		return rawScript.sh(script: script, returnStdout: returnStdout)
 	}
