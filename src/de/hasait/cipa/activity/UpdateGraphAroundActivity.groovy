@@ -87,7 +87,7 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 
 		script.dir(this.class.simpleName) {
 			String basename = 'activities-graph'
-			String dotFilename = "${basename}.graphviz"
+			String dotFilename = "${basename}.graphviz.txt"
 			String svgFilename = "${basename}.svg"
 			script.writeFile(dotFilename, cipa.runContext.dotContent)
 			script.sh("( test -x /usr/bin/dot && /usr/bin/dot -Tpng ${dotFilename} > ${basename}.png && /usr/bin/dot -Tsvg ${dotFilename} > ${svgFilename} ) || true")
