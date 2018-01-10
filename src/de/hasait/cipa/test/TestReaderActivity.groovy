@@ -92,6 +92,14 @@ class TestReaderActivity implements CipaInit, CipaActivity, Serializable {
 	@Override
 	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("Test ${filesIn} and ${filesOut}")
+
+		script.echo(script.pwd())
+		script.dir("somedir") {
+			script.dir("somemoredir") {
+				script.echo(script.pwd())
+			}
+		}
+
 		script.sleep(5)
 		if (Math.random() < 0.2) {
 			throw new RuntimeException("Random failure")
