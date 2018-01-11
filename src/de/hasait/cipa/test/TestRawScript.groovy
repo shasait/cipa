@@ -234,6 +234,10 @@ class TestRawScript {
 		log('[sleep] ' + seconds)
 		Thread.sleep(TimeUnit.SECONDS.toMillis(seconds))
 	}
+	
+	void step(Map arg) {
+		log('[step] ' + arg)
+	}
 
 	class Env {
 
