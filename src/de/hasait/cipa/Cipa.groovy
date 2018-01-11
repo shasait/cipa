@@ -20,7 +20,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.activity.CipaAfterActivities
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaPrepareEnv
-import de.hasait.cipa.internal.CipaPrepareJobParameters
+import de.hasait.cipa.internal.CipaPrepareJobProperties
 import de.hasait.cipa.internal.CipaPrepareNodeLabelPrefix
 import de.hasait.cipa.resource.CipaCustomResource
 import de.hasait.cipa.resource.CipaFileResource
@@ -62,7 +62,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		this.rawScript = rawScript
 		script = addBean(new PScript(rawScript))
 		addBean(new CipaPrepareEnv())
-		addBean(new CipaPrepareJobParameters())
+		addBean(new CipaPrepareJobProperties())
 		nodeLabelPrefixHolder = addBean(new CipaPrepareNodeLabelPrefix())
 	}
 

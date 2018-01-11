@@ -17,12 +17,10 @@
 package de.hasait.cipa
 
 /**
- * Beans can implement this interface in order to add and read job parameters.
+ * Beans can implement this interface in order to add job properties.
  */
-interface JobParameterContribution extends Serializable {
+interface JobPropertiesContribution extends Serializable {
 
-	void contributeParameters(JobParameterContainer container)
-
-	void processParameters(JobParameterValues values)
+	void contributeJobProperties(JobPropertiesContainer container)
 
 }

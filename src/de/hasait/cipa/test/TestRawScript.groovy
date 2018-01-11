@@ -36,6 +36,9 @@ class TestRawScript {
 
 	Map<String, String> readFileContents = [:]
 	Map<String, String> shResults = [:]
+	List<String> shExecute = []
+
+	ThreadLocal<List<String>> pwdListHolder = new ThreadLocal<>()
 
 	void echo(String message) {
 		log('[echo] ' + message)
@@ -49,6 +52,16 @@ class TestRawScript {
 			for (e in shResults) {
 				if (Pattern.compile(e.key).matcher(script).matches()) {
 					return e.value
+				}
+			}
+			for (e in shExecute) {
+				if (Pattern.compile(e).matcher(script).matches()) {
+					Process process = script.execute()
+					int exitValue = process.exitValue()
+					if (!exitValue) {
+						throw new RuntimeException("${script} failed: ${exitValue}")
+					}
+					return process.text
 				}
 			}
 		}
@@ -100,8 +113,24 @@ class TestRawScript {
 
 	void dir(String dir, Closure<?> body) {
 		log('[dir] >>> ' + dir)
-		body()
+		List<String> pwdList = pwdListHolder.get() ?: []
+		if (!pwdList) {
+			pwdList = []
+			pwdListHolder.set(pwdList)
+		}
+		pwdList.add(dir)
+		try {
+			body()
+		} finally {
+			pwdList.remove(pwdList.size() - 1)
+		}
 		log('[dir] <<< ' + dir)
+	}
+
+	String pwd() {
+		log('[pwd]')
+		List<String> pwdList = pwdListHolder.get() ?: []
+		return pwdList ? pwdList.join('/') : ''
 	}
 
 	void wrap(Map args, Closure<?> body) {
@@ -204,6 +233,10 @@ class TestRawScript {
 	void sleep(int seconds) {
 		log('[sleep] ' + seconds)
 		Thread.sleep(TimeUnit.SECONDS.toMillis(seconds))
+	}
+	
+	void step(Map arg) {
+		log('[step] ' + arg)
 	}
 
 	class Env {

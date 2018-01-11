@@ -29,7 +29,7 @@ import java.util.regex.Pattern
 class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAfterActivities, Serializable {
 
 	private final AtomicBoolean initCalled = new AtomicBoolean()
-	private final AtomicReference<String> svnContentHolder = new AtomicReference<>()
+	private final AtomicReference<String> svgContentHolder = new AtomicReference<>()
 
 	private Cipa cipa
 	private PScript script
@@ -53,7 +53,7 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 
 	@Override
 	void beforeActivityStarted(CipaActivityWrapper wrapper) {
-		if (!svnContentHolder.get()) {
+		if (!svgContentHolder.get()) {
 			if (initCalled.compareAndSet(false, true)) {
 				init()
 			}
@@ -87,12 +87,14 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 
 		script.dir(this.class.simpleName) {
 			String basename = 'activities-graph'
-			script.writeFile("${basename}.dot", cipa.runContext.dotContent)
-			script.sh("( test -x /usr/bin/dot && /usr/bin/dot -Tpng ${basename}.dot > ${basename}.png && /usr/bin/dot -Tsvg ${basename}.dot > ${basename}.svg ) || true")
+			String dotFilename = "${basename}.graphviz.txt"
+			String svgFilename = "${basename}.svg"
+			script.writeFile(dotFilename, cipa.runContext.dotContent)
+			script.sh("( test -x /usr/bin/dot && /usr/bin/dot -Tpng ${dotFilename} > ${basename}.png && /usr/bin/dot -Tsvg ${dotFilename} > ${svgFilename} ) || true")
 			script.archiveArtifacts("${basename}.*")
 			try {
-				String svgContent = script.readFile("${basename}.svg")
-				svnContentHolder.set(svgContent)
+				String svgContent = script.readFile(svgFilename)
+				svgContentHolder.set(svgContent)
 			} catch (err) {
 				// ignore
 			}
@@ -103,7 +105,7 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 
 	@NonCPS
 	private String produceSVG() {
-		String svgContent = svnContentHolder.get()
+		String svgContent = svgContentHolder.get()
 		if (svgContent) {
 			for (wrapperWithNodeName in cipa.runContext.dotNodeNameByWrappers) {
 				CipaActivityWrapper wrapper = wrapperWithNodeName.key
@@ -115,7 +117,8 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 				boolean stable = wrapper.testResults.stable
 				String fill = depsFailed ? "gray" : (failed ? "red" : (done ? (stable ? "lightgreen" : "yellow") : "none"))
 				String stroke = running ? "blue" : "black"
-				svgContent = Pattern.compile("(<title>${nodeName}</title>\\s+<ellipse fill=\")[^\"]+(\" stroke=\")[^\"]+(\")").matcher(svgContent).replaceFirst("\$1${fill}\$2${stroke}\$3")
+				String title = wrapper.activity.name.replace('<', '$lt;').replace('>', '$gt;')
+				svgContent = Pattern.compile("(<title>)${nodeName}(</title>\\s+<[a-z]+ fill=\")[^\"]+(\" stroke=\")[^\"]+(\")").matcher(svgContent).replaceFirst("\$1${title}\$2${fill}\$3${stroke}\$4")
 			}
 		}
 		return svgContent

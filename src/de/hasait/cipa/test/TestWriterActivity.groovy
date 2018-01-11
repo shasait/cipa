@@ -95,6 +95,11 @@ class TestWriterActivity implements CipaInit, CipaActivity, Serializable {
 
 		runContext.addJUnitTestResults(null, '.*STest')
 
+		script.echo(script.pwd())
+		script.dir("somedir") {
+			script.echo(script.pwd())
+		}
+
 		if (Math.random() < 0.2) {
 			runContext.addFailedTest('Evil Test', 3)
 		}
