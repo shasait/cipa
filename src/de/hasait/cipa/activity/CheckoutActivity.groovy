@@ -179,12 +179,12 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 				if (scmBranch == SBT_TRUNK) {
 					branch = 'refs/heads/master'
 				} else if (scmBranch.startsWith(SBT_BRANCH)) {
-					branch += 'refs/heads/' + scmBranch.substring(SBT_BRANCH.length())
+					branch = 'refs/heads/' + scmBranch.substring(SBT_BRANCH.length())
 				} else if (scmBranch.startsWith(SBT_TAG)) {
-					branch += 'refs/tags/' + scmBranch.substring(SBT_TAG.length())
+					branch = 'refs/tags/' + scmBranch.substring(SBT_TAG.length())
 				} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
 					String folderName = script.currentRawBuild.parent.parent.name
-					branch += 'refs/heads/' + folderName
+					branch = 'refs/heads/' + folderName
 				}
 
 				List extensions = []
