@@ -57,6 +57,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private Set<String> scmExcludeUsers = new LinkedHashSet<>()
 
+	private String scmRef
 	private String scmRev
 
 	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node, String subFolder = null, boolean withStage = true) {
@@ -158,6 +159,11 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	@Override
 	void runActivity(CipaActivityRunContext runContext) {
 		checkout()
+
+		List<CheckoutDoneListener> checkoutDoneListeners = cipa.findBeansAsList(CheckoutDoneListener.class)
+		for (CheckoutDoneListener checkoutDoneListener in checkoutDoneListeners) {
+			checkoutDoneListener.checkoutDone(this, runContext)
+		}
 	}
 
 	@Override
@@ -175,16 +181,16 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 		script.dir(checkedOutFiles.resource.path) {
 			if (scmUrl.endsWith('.git')) {
 				// Git
-				String branch = '*/master'
+				scmRef = '*/master'
 				if (scmBranch == SBT_TRUNK) {
-					branch = 'refs/heads/master'
+					scmRef = 'refs/heads/master'
 				} else if (scmBranch.startsWith(SBT_BRANCH)) {
-					branch = 'refs/heads/' + scmBranch.substring(SBT_BRANCH.length())
+					scmRef = 'refs/heads/' + scmBranch.substring(SBT_BRANCH.length())
 				} else if (scmBranch.startsWith(SBT_TAG)) {
-					branch = 'refs/tags/' + scmBranch.substring(SBT_TAG.length())
+					scmRef = 'refs/tags/' + scmBranch.substring(SBT_TAG.length())
 				} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
 					String folderName = script.currentRawBuild.parent.parent.name
-					branch = 'refs/heads/' + folderName
+					scmRef = 'refs/heads/' + folderName
 				}
 
 				List extensions = []
@@ -197,7 +203,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 				}
 				rawScript.checkout([
 						$class                           : 'GitSCM',
-						branches                         : [[name: branch]],
+						branches                         : [[name: scmRef]],
 						doGenerateSubmoduleConfigurations: false,
 						extensions                       : extensions,
 						submoduleCfg                     : [],
@@ -207,19 +213,23 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 				scmRev = script.determineGitRevOfCwd()
 			} else {
 				// Subversion
+				String subPath
 				if (scmBranch == SBT_TRUNK) {
-					scmUrl += '/trunk'
+					subPath = '/trunk'
 				} else if (scmBranch.startsWith(SBT_BRANCH)) {
-					scmUrl += '/branches/' + scmBranch.substring(SBT_BRANCH.length())
+					subPath = '/branches/' + scmBranch.substring(SBT_BRANCH.length())
 				} else if (scmBranch.startsWith(SBT_TAG)) {
-					scmUrl += '/tags/' + scmBranch.substring(SBT_TAG.length())
+					subPath = '/tags/' + scmBranch.substring(SBT_TAG.length())
 				} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
 					String folderName = script.currentRawBuild.parent.parent.name
 					if (folderName == 'trunk') {
-						scmUrl += '/trunk'
+						subPath = '/trunk'
 					} else {
-						scmUrl += '/branches/' + folderName
+						subPath = '/branches/' + folderName
 					}
+				}
+				if (subPath) {
+					scmUrl += subPath
 				}
 				if (subFolder) {
 					scmUrl += '/' + subFolder
@@ -250,13 +260,29 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 			}
 
 			script.echo("${id}-scmUrl = ${scmUrl}")
+			script.echo("${id}-scmRef = ${scmRef}")
 			script.echo("${id}-scmRev = ${scmRev}")
 		}
 	}
 
 	@NonCPS
+	String getCheckOutId() {
+		return id
+	}
+
+	@NonCPS
+	String getCheckOutIdUpperCase() {
+		return idUpperCase
+	}
+
+	@NonCPS
 	String getCheckedOutScmUrl() {
 		return scmUrl
+	}
+
+	@NonCPS
+	String getCheckedOutScmRef() {
+		return scmRef
 	}
 
 	@NonCPS
