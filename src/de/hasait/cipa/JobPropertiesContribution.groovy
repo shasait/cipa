@@ -21,6 +21,9 @@ package de.hasait.cipa
  */
 interface JobPropertiesContribution extends Serializable {
 
+	/**
+	 * E.g. <code>container.addPipelineTrigger(rawScript.pollSCM('H/10 * * * *'))</code>
+	 */
 	void contributeJobProperties(JobPropertiesContainer container)
 
 }
