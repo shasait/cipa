@@ -23,6 +23,6 @@ import de.hasait.cipa.CipaRunContext
  */
 interface CheckoutDoneListener {
 
-	void checkoutDone(CheckoutActivity checkoutActivity, CipaRunContext runContext)
+	void checkoutDone(CheckoutActivity checkoutActivity, CipaActivityRunContext runContext)
 
 }
