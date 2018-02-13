@@ -85,7 +85,7 @@ class PScript implements Serializable {
 		return sw.toString()
 	}
 
-	void dir(String dirname, Closure<?> body) {
+	public <V> V dir(String dirname, Closure<V> body) {
 		rawScript.dir(dirname, body)
 	}
 
@@ -106,11 +106,11 @@ class PScript implements Serializable {
 		return sh('echo "' + escapedScript + '" | ssh -T -o "BatchMode yes" ' + username + '@localhost', returnStdout)
 	}
 
-	void timeout(int timeOutInMinutes, Closure<?> body) {
-		rawScript.timeout(timeOutInMinutes, body)
+	public <V> V timeout(int timeoutInMinutes, Closure<V> body) {
+		rawScript.timeout(timeoutInMinutes, body)
 	}
 
-	void stage(String name, Closure<?> body) {
+	public <V> V stage(String name, Closure<V> body) {
 		rawScript.stage(name, body)
 	}
 
