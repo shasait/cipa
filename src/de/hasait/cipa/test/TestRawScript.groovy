@@ -172,6 +172,16 @@ class TestRawScript {
 		log('[stage] <<< ' + stage)
 	}
 
+	void timeout(int timeoutInMinutes, Closure<?> body) {
+		timeout([timeout: timeoutInMinutes], body)
+	}
+
+	void timeout(Map args, Closure<?> body) {
+		log('[timeout] >>> ' + args)
+		body()
+		log('[timeout] <<< ' + args)
+	}
+
 	void junit(String arg) {
 		log('[junit] ' + arg)
 	}
@@ -234,7 +244,7 @@ class TestRawScript {
 		log('[sleep] ' + seconds)
 		Thread.sleep(TimeUnit.SECONDS.toMillis(seconds))
 	}
-	
+
 	void step(Map arg) {
 		log('[step] ' + arg)
 	}
