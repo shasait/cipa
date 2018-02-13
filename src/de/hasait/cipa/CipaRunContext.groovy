@@ -27,12 +27,9 @@ class CipaRunContext implements Serializable {
 	final List<CipaActivityWrapper> wrappers = new ArrayList<>()
 	final List<CipaNode> nodes = new ArrayList<>()
 	final Map<CipaNode, List<CipaActivityWrapper>> wrappersByNode = new HashMap<>()
-	final Map<CipaActivityWrapper, String> dotNodeNameByWrappers = new HashMap<>()
-	final String dotContent
 
 	CipaRunContext(Cipa cipa) {
 		init(cipa)
-		dotContent = produceDot()
 	}
 
 	@NonCPS
@@ -121,46 +118,6 @@ class CipaRunContext implements Serializable {
 				lastWriter = requiresWrapper
 			}
 		}
-	}
-
-	@NonCPS
-	private String produceDot() {
-		StringBuilder dotContent = new StringBuilder()
-		dotContent << '\n'
-		dotContent << 'digraph pipeline {\n'
-		dotContent << 'rankdir="LR";\n'
-		dotContent << 'node[shape=box];\n'
-		int activityI = 0
-		for (wrapper in wrappers) {
-			dotNodeNameByWrappers.put(wrapper, "a${activityI++}")
-		}
-		int nodeI = 0
-		for (node in nodes) {
-			dotContent << "subgraph cluster_node${nodeI++} {\n"
-			dotContent << "label=\"${node.label}\";\n"
-			dotContent << 'style=dotted;\n'
-			for (wrapper in wrappersByNode.get(node)) {
-				dotContent << "${dotNodeNameByWrappers.get(wrapper)}[label=\"${wrapper.activity.name}\"];\n"
-			}
-			dotContent << '}\n'
-		}
-		dotContent << 'start[shape=cds];\n'
-		for (wrapper in wrappers) {
-			Set<Map.Entry<CipaActivityWrapper, Boolean>> dependencies = wrapper.dependencies
-			if (dependencies.empty) {
-				dotContent << "start -> ${dotNodeNameByWrappers.get(wrapper)};\n"
-			} else {
-				for (dependency in dependencies) {
-					dotContent << "${dotNodeNameByWrappers.get(dependency.key)} -> ${dotNodeNameByWrappers.get(wrapper)}"
-					if (!dependency.value.booleanValue()) {
-						dotContent << ' [style=dashed]'
-					}
-					dotContent << ';\n'
-				}
-			}
-		}
-		dotContent << '}\n'
-		return dotContent.toString()
 	}
 
 	@NonCPS

@@ -36,6 +36,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 
 	private Set<String> fileIncludes = new LinkedHashSet<>()
 	private Set<String> fileExcludes = new LinkedHashSet<>()
+	private boolean useDefaultExcludes = true
 
 	private PScript script
 
@@ -91,6 +92,12 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 	}
 
 	@NonCPS
+	StashFilesActivity disableDefaultExcludes() {
+		useDefaultExcludes = false
+		return this
+	}
+
+	@NonCPS
 	CipaResourceWithState<CipaStashResource> getProvidedStash() {
 		return stash
 	}
@@ -134,7 +141,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 		script.echo("Stashing ${files}...")
 
 		script.dir(relDir(files, subDir)) {
-			script.stash(stash.resource.id, fileIncludes, fileExcludes)
+			script.stash(stash.resource.id, fileIncludes, fileExcludes, useDefaultExcludes)
 		}
 	}
 

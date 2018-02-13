@@ -16,8 +16,6 @@
 
 package de.hasait.cipa.activity
 
-import de.hasait.cipa.CipaRunContext
-
 /**
  *
  */

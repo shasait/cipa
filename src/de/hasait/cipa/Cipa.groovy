@@ -238,11 +238,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		rawScript.echo("[CIPA] Creating RunContext...")
 		runContext = new CipaRunContext(this)
 
-		if (debug) {
-			rawScript.echo("[CIPA-Debug] Printing dependencies in DOT format:")
-			rawScript.echo(runContext.dotContent)
-		}
-
 		rawScript.echo("[CIPA] Executing activities...")
 		def parallelNodeBranches = [:]
 		for (int nodeI = 0; nodeI < runContext.nodes.size(); nodeI++) {
