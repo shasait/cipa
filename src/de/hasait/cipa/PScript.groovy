@@ -173,8 +173,9 @@ class PScript implements Serializable {
 		def optionsString = options.join(' ')
 
 		rawScript.withEnv(["${Cipa.ENV_VAR___MVN_OPTIONS}=${optionsString} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
-			rawScript.sh(script: "printenv | sort | tee ${MVN_LOG}")
-			return rawScript.sh(script: "set -o pipefail ; mvn ${allArgumentsString} | tee -a ${MVN_LOG}", returnStdout: returnStdout)
+			writeFile(MVN_LOG, "Executing: mvn ${allArgumentsString}")
+			sh("printenv | sort | tee -a ${MVN_LOG}")
+			return sh("set -o pipefail ; mvn ${allArgumentsString} | tee -a ${MVN_LOG}", returnStdout)
 		}
 	}
 
