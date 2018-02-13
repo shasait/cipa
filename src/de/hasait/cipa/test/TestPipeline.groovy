@@ -25,6 +25,7 @@ import de.hasait.cipa.activity.CheckoutActivity
 import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.activity.StageAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
+import de.hasait.cipa.activity.TimeoutAroundActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
 import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.internal.CipaActivityWrapper
@@ -50,6 +51,7 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 		CipaNode node2 = cipa.newNode('node2')
 
 		cipa.addBean(new StageAroundActivity())
+		cipa.addBean(new TimeoutAroundActivity(10))
 		cipa.addBean(new UpdateGraphAroundActivity())
 
 		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').providedCheckedOutFiles
