@@ -199,7 +199,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 					extensions.add([$class: 'UserExclusion', excludedUsers: buildExcludeUsersValue()])
 				}
 				if (subFolder) {
-					extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: [[path: subFolder]]])
+					extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: [[path: '/' + subFolder]]])
 				}
 				rawScript.checkout([
 						$class                           : 'GitSCM',
