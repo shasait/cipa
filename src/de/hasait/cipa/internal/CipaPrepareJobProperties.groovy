@@ -150,13 +150,9 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 		}
 		jobProperties.add(rawScript.buildDiscarder(buildDiscarderWithDefaulting))
 
-		List pipelineTriggersWithDefaulting
 		if (pipelineTriggers) {
-			pipelineTriggersWithDefaulting = pipelineTriggers
-		} else {
-			pipelineTriggersWithDefaulting = [rawScript.pollSCM('H/10 * * * *')]
+			jobProperties.add(rawScript.pipelineTriggers(pipelineTriggers))
 		}
-		jobProperties.add(rawScript.pipelineTriggers(pipelineTriggersWithDefaulting))
 
 		jobProperties.add([$class: 'RebuildSettings', autoRebuild: rebuildSettingsAutoRebuild, rebuildDisabled: rebuildSettingsRebuildDisabled])
 

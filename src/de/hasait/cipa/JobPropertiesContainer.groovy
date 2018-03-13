@@ -18,6 +18,9 @@ package de.hasait.cipa
 
 interface JobPropertiesContainer {
 
+	/**
+	 * Add trigger to build, e.g. <code>rawScript.pollSCM('H/10 * * * *')</code>.
+	 */
 	void addPipelineTrigger(def trigger)
 
 	void addCustomJobProperty(def customJobProperty)
