@@ -53,7 +53,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 		this.subDir = subDir
 
 		String relDir = relDir(files, subDir)
-		String stashId = files.resource.node.label + '_' + relDir.replace('/', '_')
+		String stashId = files.resource.node.label + '_' + name + '_' + relDir.replace('/', '_')
 		this.stash = cipa.newStashResourceWithState(stashId, relDir, files.state)
 
 		cipa.addBean(this)
