@@ -194,7 +194,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 				}
 
 				List extensions = []
-				extensions.add([$class: 'CleanBeforeCheckout'])
+				extensions.add([$class: 'CleanCheckout'])
 				if (!scmExcludeUsers.empty) {
 					extensions.add([$class: 'UserExclusion', excludedUsers: buildExcludeUsersValue()])
 				}
