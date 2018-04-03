@@ -53,6 +53,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	private def rawScript
 
 	private boolean dry
+	private boolean params = true
 
 	private String scmUrl
 	private String scmCredentialsId
@@ -101,6 +102,16 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	}
 
 	/**
+	 * Do not contribute params; just read values from environment.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity disableParams() {
+		params = false
+		return this
+	}
+
+	/**
 	 * @param users Users excluded from polling.
 	 * @return this
 	 */
@@ -126,10 +137,12 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	@Override
 	void contributeParameters(JobParameterContainer container) {
-		container.addStringParameter(idUpperCase + PARAM___SCM_URL, '', "${id}-SCM-URL for checkout (Git if ending in .git, otherwise SVN)")
-		container.addStringParameter(idUpperCase + PARAM___SCM_CREDENTIALS_ID, '', "${id}-SCM-Credentials needed for checkout")
-		container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH, '', "${id}-SCM-Branch for checkout (${SBT_TRUNK};${SBT_BRANCH}<i>name</i>;${SBT_TAG}<i>name</i>;${SBT_BRANCH_FROM_FOLDER};${SBT_NONE})")
-		container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '', "${id}-SCM-Branch-Prefix if ${SBT_BRANCH_FROM_FOLDER} is used, otherwise has no effect")
+		if (params) {
+			container.addStringParameter(idUpperCase + PARAM___SCM_URL, '', "${id}-SCM-URL for checkout (Git if ending in .git, otherwise SVN)")
+			container.addStringParameter(idUpperCase + PARAM___SCM_CREDENTIALS_ID, '', "${id}-SCM-Credentials needed for checkout")
+			container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH, '', "${id}-SCM-Branch for checkout (${SBT_TRUNK};${SBT_BRANCH}<i>name</i>;${SBT_TAG}<i>name</i>;${SBT_BRANCH_FROM_FOLDER};${SBT_NONE})")
+			container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '', "${id}-SCM-Branch-Prefix if ${SBT_BRANCH_FROM_FOLDER} is used, otherwise has no effect")
+		}
 	}
 
 	@Override
