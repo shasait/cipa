@@ -16,6 +16,7 @@
 
 package de.hasait.cipa.internal
 
+import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.JobParameterContainer
 import de.hasait.cipa.JobParameterContribution
 import de.hasait.cipa.JobParameterValues
@@ -27,11 +28,25 @@ class CipaPrepareNodeLabelPrefix implements JobParameterContribution, Serializab
 
 	private static final String PARAM___NODE_LABEL_PREFIX = 'NODE_LABEL_PREFIX'
 
+	private boolean params = true
+
 	private String nodeLabelPrefix
+
+	/**
+	 * Do not contribute params; just read values from environment.
+	 * @return this
+	 */
+	@NonCPS
+	CipaPrepareNodeLabelPrefix disableParams() {
+		params = false
+		return this
+	}
 
 	@Override
 	void contributeParameters(JobParameterContainer container) {
-		container.addStringParameter(PARAM___NODE_LABEL_PREFIX, '', 'Prefix for node labels')
+		if (params) {
+			container.addStringParameter(PARAM___NODE_LABEL_PREFIX, '', 'Prefix for node labels')
+		}
 	}
 
 	@Override

@@ -256,6 +256,14 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
 	}
 
+	/**
+	 * Do not contribute param; just read values from environment.
+	 */
+	@NonCPS
+	void disableNodeLabelPrefixParam() {
+		nodeLabelPrefixHolder.disableParams()
+	}
+
 	@NonCPS
 	private String buildRunSummary() {
 		StringBuilder sb = new StringBuilder()
