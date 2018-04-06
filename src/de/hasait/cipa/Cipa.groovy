@@ -329,44 +329,56 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private void nodeWithEnv(CipaNode node, Closure body) {
 		rawScript.node(nodeLabelPrefixHolder.nodeLabelPrefix + node.label) {
-			node.runtimeHostname = script.determineHostname()
-			rawScript.echo('[CIPA] On host: ' + node.runtimeHostname)
-			String workspace = rawScript.env.WORKSPACE
-			rawScript.echo("[CIPA] workspace: ${workspace}")
-
-			def envVars = []
-			def pathEntries = []
-			def configFiles = []
-
-			List<CipaTool> tools = findBeansAsList(CipaTool.class)
-			for (tool in tools) {
-				def toolHome = rawScript.tool(name: tool.name, type: tool.type)
-				rawScript.echo("[CIPA] Tool ${tool.name}: ${toolHome}")
-				if (tool.dedicatedEnvVar) {
-					envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
-				}
-				if (tool.addToPathWithSuffix) {
-					pathEntries.add("${toolHome}${tool.addToPathWithSuffix}")
-				}
-				if (tool.is(toolMvn)) {
-					String mvnRepo = script.determineMvnRepo()
-					rawScript.echo("[CIPA] mvnRepo: ${mvnRepo}")
-					envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
-					envVars.add("${ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[ENV_VAR___MVN_OPTIONS] ?: ''}")
-				}
-
-				List<List<String>> configFileEnvVarsList = tool.buildConfigFileEnvVarsList()
-				for (configFileEnvVar in configFileEnvVarsList) {
-					configFiles.add(rawScript.configFile(fileId: configFileEnvVar[1], variable: configFileEnvVar[0]))
+			CipaWorkspaceProvider workspaceProvider = findBean(CipaWorkspaceProvider.class, true)
+			if (!workspaceProvider) {
+				nodeWithEnvLogic(node, body)
+			} else {
+				String wsPath = workspaceProvider.determineWorkspacePath()
+				rawScript.ws(wsPath) {
+					nodeWithEnvLogic(node, body)
 				}
 			}
+		}
+	}
 
-			envVars.add('PATH+=' + pathEntries.join(':'))
+	private void nodeWithEnvLogic(CipaNode node, Closure body) {
+		node.runtimeHostname = script.determineHostname()
+		rawScript.echo('[CIPA] On host: ' + node.runtimeHostname)
+		String workspace = rawScript.env.WORKSPACE
+		rawScript.echo("[CIPA] workspace: ${workspace}")
 
-			rawScript.withEnv(envVars) {
-				rawScript.configFileProvider(configFiles) {
-					body()
-				}
+		def envVars = []
+		def pathEntries = []
+		def configFiles = []
+
+		List<CipaTool> tools = findBeansAsList(CipaTool.class)
+		for (tool in tools) {
+			def toolHome = rawScript.tool(name: tool.name, type: tool.type)
+			rawScript.echo("[CIPA] Tool ${tool.name}: ${toolHome}")
+			if (tool.dedicatedEnvVar) {
+				envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
+			}
+			if (tool.addToPathWithSuffix) {
+				pathEntries.add("${toolHome}${tool.addToPathWithSuffix}")
+			}
+			if (tool.is(toolMvn)) {
+				String mvnRepo = script.determineMvnRepo()
+				rawScript.echo("[CIPA] mvnRepo: ${mvnRepo}")
+				envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
+				envVars.add("${ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[ENV_VAR___MVN_OPTIONS] ?: ''}")
+			}
+
+			List<List<String>> configFileEnvVarsList = tool.buildConfigFileEnvVarsList()
+			for (configFileEnvVar in configFileEnvVarsList) {
+				configFiles.add(rawScript.configFile(fileId: configFileEnvVar[1], variable: configFileEnvVar[0]))
+			}
+		}
+
+		envVars.add('PATH+=' + pathEntries.join(':'))
+
+		rawScript.withEnv(envVars) {
+			rawScript.configFileProvider(configFiles) {
+				body()
 			}
 		}
 	}
