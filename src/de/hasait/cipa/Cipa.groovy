@@ -110,7 +110,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				}
 			}
 		}
-		if (!result) {
+		if (!result && !optional) {
 			throw new IllegalStateException("No bean found: ${type}")
 		}
 		return result
