@@ -92,7 +92,7 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 
 	@NonCPS
 	final void addChoiceParameter(String name, List<String> choices, String description) {
-		def parameter = rawScript.choice(name: PARAM_PREFIX + name, choices: choices, description: description)
+		def parameter = rawScript.choice(name: PARAM_PREFIX + name, choices: choices.join('\n'), description: description)
 		parameters.add(parameter)
 	}
 
