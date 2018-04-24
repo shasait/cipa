@@ -54,13 +54,16 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	private boolean dry
 	private boolean params = true
+	private boolean includeInPolling = true
+	private boolean includeInChangelog = true
 
 	private String scmUrl
 	private String scmCredentialsId
 	private String scmBranch
 	private String scmBffPrefix
 
-	private Set<String> scmExcludeUsers = new LinkedHashSet<>()
+	private Set<String> pollingExcludedUsers = new LinkedHashSet<>()
+	private String pollingExcludedMessagePattern
 
 	private String scmResolvedBranch
 	private String scmRef
@@ -112,12 +115,42 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 	}
 
 	/**
-	 * @param users Users excluded from polling.
+	 * Do not include in SCM polling.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity excludeFromPolling() {
+		includeInPolling = false
+		return this
+	}
+
+	/**
+	 * Do not include in changelog.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity excludeFromChangelog() {
+		includeInChangelog = false
+		return this
+	}
+
+	/**
+	 * @param users Users excluded from SCM polling.
 	 * @return this
 	 */
 	@NonCPS
 	CheckoutActivity excludeUser(String... users) {
-		scmExcludeUsers.addAll(users)
+		pollingExcludedUsers.addAll(users)
+		return this
+	}
+
+	/**
+	 * @param messagePattern Commits with message matching messagePattern will be ignored for SCM polling.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity excludeMessage(String messagePattern) {
+		pollingExcludedMessagePattern = messagePattern
 		return this
 	}
 
@@ -204,7 +237,7 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 	@NonCPS
 	private String buildExcludeUsersValue() {
-		return scmExcludeUsers.join('\n')
+		return pollingExcludedUsers.join('\n')
 	}
 
 	private void checkout() {
@@ -232,21 +265,27 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 
 				List extensions = []
 				extensions.add([$class: 'CleanCheckout'])
-				if (!scmExcludeUsers.empty) {
+				if (!pollingExcludedUsers.empty) {
 					extensions.add([$class: 'UserExclusion', excludedUsers: buildExcludeUsersValue()])
+				}
+				if (pollingExcludedMessagePattern) {
+					extensions.add([$class: 'MessageExclusion', excludedMessage: pollingExcludedMessagePattern])
 				}
 				if (subFolder) {
 					extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: [[path: '/' + subFolder]]])
 				}
 				if (!dry) {
-					rawScript.checkout([
-							$class                           : 'GitSCM',
-							branches                         : [[name: scmRef]],
-							doGenerateSubmoduleConfigurations: false,
-							extensions                       : extensions,
-							submoduleCfg                     : [],
-							userRemoteConfigs                : [[credentialsId: scmCredentialsId, url: scmUrl]]
-					])
+					rawScript.checkout(
+							changelog: includeInChangelog,
+							poll: includeInPolling,
+							scm: [
+									$class                           : 'GitSCM',
+									branches                         : [[name: scmRef]],
+									doGenerateSubmoduleConfigurations: false,
+									extensions                       : extensions,
+									submoduleCfg                     : [],
+									userRemoteConfigs                : [[credentialsId: scmCredentialsId, url: scmUrl]]
+							])
 
 					scmRev = script.determineGitRevOfCwd()
 				}
@@ -278,25 +317,28 @@ class CheckoutActivity implements CipaInit, JobParameterContribution, CipaActivi
 					scmUrl += '/' + subFolder
 				}
 				if (!dry) {
-					rawScript.checkout([
-							$class                : 'SubversionSCM',
-							additionalCredentials : [],
-							excludedCommitMessages: '',
-							excludedRegions       : '',
-							excludedRevprop       : '',
-							excludedUsers         : buildExcludeUsersValue(),
-							filterChangelog       : false,
-							ignoreDirPropChanges  : false,
-							includedRegions       : '',
-							locations             : [[
-															 credentialsId        : scmCredentialsId,
-															 depthOption          : 'infinity',
-															 ignoreExternalsOption: true,
-															 local                : '.',
-															 remote               : scmUrl
-													 ]],
-							workspaceUpdater      : [$class: 'UpdateWithCleanUpdater']
-					])
+					rawScript.checkout(
+							changelog: includeInChangelog,
+							poll: includeInPolling,
+							scm: [
+									$class                : 'SubversionSCM',
+									additionalCredentials : [],
+									excludedCommitMessages: pollingExcludedMessagePattern ?: '',
+									excludedRegions       : '',
+									excludedRevprop       : '',
+									excludedUsers         : buildExcludeUsersValue(),
+									filterChangelog       : false,
+									ignoreDirPropChanges  : false,
+									includedRegions       : '',
+									locations             : [[
+																	 credentialsId        : scmCredentialsId,
+																	 depthOption          : 'infinity',
+																	 ignoreExternalsOption: true,
+																	 local                : '.',
+																	 remote               : scmUrl
+															 ]],
+									workspaceUpdater      : [$class: 'UpdateWithCleanUpdater']
+							])
 
 					scmUrl = script.determineSvnUrlOfCwd()
 					scmRev = script.determineSvnRevOfCwd()
