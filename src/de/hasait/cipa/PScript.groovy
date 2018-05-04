@@ -195,25 +195,27 @@ class PScript implements Serializable {
 	}
 
 	@NonCPS
-	Map<String, Object> parseJsonBlocks(List<String> descriptions, String blockId) {
-		String blockBeginMarker = "vvv ${blockId}.json vvv"
-		String blockEndMarker = "^^^ ${blockId}.json ^^^"
+	Map<String, Object> parseJsonBlocks(List<String> descriptions, String... blockIds) {
 
 		Map<String, Object> result = new LinkedHashMap<>()
 
 		for (description in descriptions.reverse()) {
-			int ioBeginOfStartKey = description.indexOf(blockBeginMarker)
-			if (ioBeginOfStartKey >= 0) {
-				int ioAfterStartKey = ioBeginOfStartKey + blockBeginMarker.length()
-				int ioAfterEndKey = description.lastIndexOf(blockEndMarker)
-				if (ioAfterStartKey < ioAfterEndKey) {
-					String additionalEnvJSON = description.substring(ioAfterStartKey, ioAfterEndKey)
-					Object parsedObject = new JsonSlurper().parseText(additionalEnvJSON)
-					if (parsedObject instanceof Map) {
-						Map<?, ?> parsedMap = (Map<?, ?>) parsedObject
-						for (parsedMapEntry in parsedMap) {
-							if (parsedMapEntry.key instanceof String) {
-								result.put((String) parsedMapEntry.key, parsedMapEntry.value)
+			for (String blockId in blockIds) {
+				String blockBeginMarker = "vvv ${blockId}.json vvv"
+				String blockEndMarker = "^^^ ${blockId}.json ^^^"
+				int ioBeginOfStartKey = description.indexOf(blockBeginMarker)
+				if (ioBeginOfStartKey >= 0) {
+					int ioAfterStartKey = ioBeginOfStartKey + blockBeginMarker.length()
+					int ioAfterEndKey = description.lastIndexOf(blockEndMarker)
+					if (ioAfterStartKey < ioAfterEndKey) {
+						String additionalEnvJSON = description.substring(ioAfterStartKey, ioAfterEndKey)
+						Object parsedObject = new JsonSlurper().parseText(additionalEnvJSON)
+						if (parsedObject instanceof Map) {
+							Map<?, ?> parsedMap = (Map<?, ?>) parsedObject
+							for (parsedMapEntry in parsedMap) {
+								if (parsedMapEntry.key instanceof String) {
+									result.put((String) parsedMapEntry.key, parsedMapEntry.value)
+								}
 							}
 						}
 					}

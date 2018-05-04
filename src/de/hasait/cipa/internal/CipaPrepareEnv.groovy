@@ -59,7 +59,7 @@ class CipaPrepareEnv implements CipaInit, CipaPrepare, Serializable {
 		List<List<Object>> envAssignments = new ArrayList<>()
 
 		List<String> descriptions = script.collectDescriptions()
-		Map<String, Object> additionalEnvMap = script.parseJsonBlocks(descriptions, 'additionalEnv')
+		Map<String, Object> additionalEnvMap = script.parseJsonBlocks(descriptions, 'env')
 
 		for (additionalEnvEntry in additionalEnvMap) {
 			envAssignments.add([additionalEnvEntry.key, additionalEnvEntry.value])

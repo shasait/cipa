@@ -18,8 +18,20 @@ package de.hasait.cipa
 
 interface JobParameterValues {
 
+	@Deprecated
 	Object retrieveOptionalValue(String name, Object defaultValue)
 
+	@Deprecated
 	Object retrieveRequiredValue(String name)
+
+	String retrieveOptionalStringParameterValue(String name, String defaultValue)
+
+	String retrieveRequiredStringParameterValue(String name)
+
+	boolean retrieveOptionalBooleanChoiceParameterValue(String name, boolean defaultValue)
+
+	boolean retrieveRequiredBooleanChoiceParameterValue(String name)
+
+	boolean retrieveBooleanParameterValue(String name)
 
 }

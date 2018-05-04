@@ -25,26 +25,20 @@ import de.hasait.cipa.JobParameterContribution
 import de.hasait.cipa.JobParameterValues
 import de.hasait.cipa.JobPropertiesContainer
 import de.hasait.cipa.JobPropertiesContribution
+import de.hasait.cipa.PJobPropertiesManager
 import de.hasait.cipa.PScript
 
 class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterContainer, JobParameterValues, JobPropertiesContainer, Serializable {
 
-	private static final String PARAM_PREFIX = 'P_'
-
 	private PScript script
 	private def rawScript
-
-	private final List parameters = []
-	private final List pipelineTriggers = []
-	private def buildDiscarder
-	private boolean rebuildSettingsAutoRebuild = false
-	private boolean rebuildSettingsRebuildDisabled = false
-	private final List customJobProperties = []
+	private PJobPropertiesManager manager
 
 	@Override
 	void initCipa(Cipa cipa) {
 		script = cipa.findBean(PScript.class)
 		rawScript = script.rawScript
+		manager = new PJobPropertiesManager(rawScript)
 	}
 
 	@Override
@@ -70,7 +64,7 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 		}
 
 		script.echo('Updating job properties...')
-		updateJobProperties()
+		manager.applyJobProperties()
 
 		script.echo('Processing parameters...')
 		for (JobParameterContribution parameterContribution in parameterContributions) {
@@ -78,95 +72,100 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 		}
 	}
 
+	@Override
 	@NonCPS
 	final void addStringParameter(String name, String defaultValue, String description) {
-		def parameter = rawScript.string(name: PARAM_PREFIX + name, defaultValue: defaultValue, description: description)
-		parameters.add(parameter)
+		manager.addStringParameter(name, defaultValue, description)
 	}
 
+	@Override
 	@NonCPS
 	final void addBooleanParameter(String name, boolean defaultValue, String description) {
-		def parameter = rawScript.booleanParam(name: PARAM_PREFIX + name, defaultValue: defaultValue, description: description)
-		parameters.add(parameter)
+		manager.addBooleanParameter(name, defaultValue, description)
 	}
 
+	@Override
+	@NonCPS
+	final void addBooleanChoiceParameter(String name, Boolean defaultValue, String description) {
+		manager.addBooleanChoiceParameter(name, defaultValue, description)
+	}
+
+	@Override
 	@NonCPS
 	final void addChoiceParameter(String name, List<String> choices, String description) {
-		def parameter = rawScript.choice(name: PARAM_PREFIX + name, choices: choices.join('\n'), description: description)
-		parameters.add(parameter)
+		manager.addChoiceParameter(name, choices, description)
 	}
 
+	@Override
 	@NonCPS
 	final void addPipelineTrigger(def trigger) {
-		pipelineTriggers.add(trigger)
+		manager.addPipelineTrigger(trigger)
 	}
 
+	@Override
 	@NonCPS
 	final void addCustomJobProperty(def customJobProperty) {
-		customJobProperties.add(customJobProperty)
+		manager.addCustomJobProperty(customJobProperty)
 	}
 
-	/**
-	 * Obtain first non-null value from params followed by env (params access will be prefixed with P_).
-	 * If required and both are null throw an exception otherwise return null.
-	 */
-	@NonCPS
-	private Object retrieveValueFromParamsOrEnv(String name, boolean required = true) {
-		// P_ prefix needed otherwise params overwrite env
-		def value = rawScript.params['P_' + name] ?: rawScript.env.getEnvironment()[name] ?: null
-		if (value || !required) {
-			return value
-		}
-		throw new RuntimeException("${name} is neither in env nor in params")
-	}
-
-	final Object retrieveOptionalValue(String name, Object defaultValue) {
-		return retrieveValueFromParamsOrEnv(name, false) ?: defaultValue
-	}
-
-	final Object retrieveRequiredValue(String name) {
-		return retrieveValueFromParamsOrEnv(name)
-	}
-
+	@Override
 	@NonCPS
 	final void setBuildDiscarder(def buildDiscarder) {
-		this.buildDiscarder = buildDiscarder
+		manager.setBuildDiscarder(buildDiscarder)
 	}
 
+	@Override
 	@NonCPS
 	final void setRebuildSettingsAutoRebuild(boolean autoRebuild) {
-		this.rebuildSettingsAutoRebuild = autoRebuild
+		manager.setRebuildSettingsAutoRebuild(autoRebuild)
 	}
 
+	@Override
 	@NonCPS
 	final void setRebuildSettingsRebuildDisabled(boolean rebuildDisabled) {
-		this.rebuildSettingsRebuildDisabled = rebuildDisabled
+		manager.setRebuildSettingsRebuildDisabled(rebuildDisabled)
 	}
 
-	private void updateJobProperties() {
-		List jobProperties = []
+	@Override
+	@NonCPS
+	final Object retrieveOptionalValue(String name, Object defaultValue) {
+		return manager.retrieveValueFromParametersOrEnvironment(name, false) ?: defaultValue
+	}
 
-		jobProperties.add(rawScript.parameters(parameters))
+	@Override
+	@NonCPS
+	final Object retrieveRequiredValue(String name) {
+		return manager.retrieveValueFromParametersOrEnvironment(name)
+	}
 
-		def buildDiscarderWithDefaulting
-		if (buildDiscarder) {
-			buildDiscarderWithDefaulting = buildDiscarder
-		} else {
-			buildDiscarderWithDefaulting = rawScript.logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '20')
-		}
-		jobProperties.add(rawScript.buildDiscarder(buildDiscarderWithDefaulting))
+	@Override
+	@NonCPS
+	final String retrieveOptionalStringParameterValue(String name, String defaultValue) {
+		return manager.retrieveOptionalStringParameterValue(name, defaultValue)
+	}
 
-		if (pipelineTriggers) {
-			jobProperties.add(rawScript.pipelineTriggers(pipelineTriggers))
-		}
+	@Override
+	@NonCPS
+	final String retrieveRequiredStringParameterValue(String name) {
+		return manager.retrieveRequiredStringParameterValue(name)
+	}
 
-		jobProperties.add([$class: 'RebuildSettings', autoRebuild: rebuildSettingsAutoRebuild, rebuildDisabled: rebuildSettingsRebuildDisabled])
+	@Override
+	@NonCPS
+	final boolean retrieveOptionalBooleanChoiceParameterValue(String name, boolean defaultValue) {
+		return manager.retrieveOptionalBooleanChoiceParameterValue(name, defaultValue)
+	}
 
-		if (customJobProperties) {
-			jobProperties.addAll(customJobProperties)
-		}
+	@Override
+	@NonCPS
+	final boolean retrieveRequiredBooleanChoiceParameterValue(String name) {
+		return manager.retrieveRequiredBooleanChoiceParameterValue(name)
+	}
 
-		rawScript.properties(jobProperties)
+	@Override
+	@NonCPS
+	final boolean retrieveBooleanParameterValue(String name) {
+		return manager.retrieveBooleanParameterValue(name)
 	}
 
 }
