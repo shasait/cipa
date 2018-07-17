@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2018 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.jobprops
 
-/**
- * Beans can implement this interface in order to add job properties.
- */
-interface JobPropertiesContribution extends Serializable {
+interface JobPropertiesContainer {
 
 	/**
-	 * E.g. <code>container.addPipelineTrigger(rawScript.pollSCM('H/10 * * * *'))</code>
+	 * Add trigger to build, e.g. <code>rawScript.pollSCM('H/10 * * * *')</code>.
 	 */
-	void contributeJobProperties(JobPropertiesContainer container)
+	void addPipelineTrigger(def trigger)
+
+	void addCustomJobProperty(def customJobProperty)
+
+	void setBuildDiscarder(def buildDiscarder)
+
+	void setRebuildSettingsAutoRebuild(boolean autoRebuild)
+
+	void setRebuildSettingsRebuildDisabled(boolean rebuildDisabled)
 
 }

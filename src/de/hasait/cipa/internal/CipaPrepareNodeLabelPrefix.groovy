@@ -17,9 +17,9 @@
 package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
-import de.hasait.cipa.JobParameterContainer
-import de.hasait.cipa.JobParameterContribution
-import de.hasait.cipa.JobParameterValues
+import de.hasait.cipa.jobprops.JobParameterContainer
+import de.hasait.cipa.jobprops.JobParameterContribution
+import de.hasait.cipa.jobprops.JobParameterValues
 
 /**
  *

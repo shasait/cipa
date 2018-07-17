@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.jobprops
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.PScript
+
+import javax.annotation.Nonnull
 
 /**
  * Pipeline Job Properties Manager.
@@ -35,6 +38,7 @@ class PJobPropertiesManager {
 	private final PScript script
 	private final def rawScript
 
+	private final Map<String, PJobArgument<?>> arguments = [:]
 	private final List parameters = []
 	private final List pipelineTriggers = []
 	private def buildDiscarder
@@ -47,6 +51,111 @@ class PJobPropertiesManager {
 	PJobPropertiesManager(PScript script) {
 		this.script = script
 		this.rawScript = script.rawScript
+	}
+
+	@NonCPS
+	final <T> void addArgument(PJobArgument<T> argument) {
+		Objects.requireNonNull(argument)
+		PJobArgument<?> oldArgument = arguments.put(argument.name, argument)
+		if (oldArgument) {
+			throw new IllegalArgumentException("Name collision for argument: ${argument} vs. ${oldArgument}")
+		}
+
+		if (argument.retrieveFromParam) {
+			boolean optionalParam = !argument.required || argument.retrieveFromDescriptions
+			T paramDefaultValue = argument.retrieveFromDescriptions ? null : argument.defaultValue
+
+			if (argument.password) {
+				if (argument.valueType == String.class) {
+					// password
+					def parameter = rawScript.password(name: argument.name, defaultValue: paramDefaultValue, description: argument.description)
+					parameters.add(parameter)
+				} else {
+					throw new RuntimeException("Unsupported argument: ${argument}")
+				}
+			} else if (argument.choices) {
+				if (argument.valueType == String.class) {
+					// string choice
+					List<String> choices = new ArrayList<>()
+					if (optionalParam) {
+						choices.add('')
+					}
+					choices.addAll(argument.choices)
+					def parameter = rawScript.choice(name: argument.name, choices: choices.join('\n'), description: argument.description)
+					parameters.add(parameter)
+				} else {
+					throw new RuntimeException("Unsupported argument: ${argument}")
+				}
+			} else if (argument.valueType == String.class) {
+				// single string
+				def parameter = rawScript.string(name: argument.name, defaultValue: paramDefaultValue, description: argument.description)
+				parameters.add(parameter)
+			} else if (argument.valueType == Boolean.class) {
+				// single boolean
+				if (optionalParam) {
+					List<String> choices = []
+					if (paramDefaultValue != null) {
+						boolean defaultBoolean = ((Boolean) paramDefaultValue).booleanValue()
+						choices.add(defaultBoolean ? BC_TRUE_VALUE : BC_FALSE_VALUE)
+						choices.add(!defaultBoolean ? BC_TRUE_VALUE : BC_FALSE_VALUE)
+						choices.add('')
+					} else {
+						choices.add('')
+						choices.add(BC_TRUE_VALUE)
+						choices.add(BC_FALSE_VALUE)
+					}
+					def parameter = rawScript.choice(name: argument.name, choices: choices.join('\n'), description: argument.description)
+					parameters.add(parameter)
+				} else {
+					def parameter = rawScript.booleanParam(name: argument.name, defaultValue: paramDefaultValue, description: argument.description)
+					parameters.add(parameter)
+				}
+			} else {
+				throw new RuntimeException("Unsupported argument: ${argument}")
+			}
+		}
+	}
+
+	@NonCPS
+	final <T> T retrieveArgumentValue(PJobArgument<T> argument) {
+		Objects.requireNonNull(argument)
+		String name = argument.name
+		if (!arguments.containsKey(name)) {
+			throw new IllegalStateException("Argument ${name} not declared")
+		}
+
+		T result = null
+
+		if (argument.retrieveFromParam) {
+			boolean optionalParam = !argument.required || argument.retrieveFromDescriptions
+
+			if (argument.valueType == Boolean.class) {
+				if (optionalParam) {
+					String paramValue = readParam(name)
+					if (paramValue) {
+						result = BC_TRUE_VALUE.equals(paramValue)
+					}
+				} else {
+					result = readBooleanParam(name)
+				}
+			} else {
+				result = readParam(name) ?: null
+			}
+		}
+
+		if (result == null && argument.retrieveFromDescriptions) {
+			result = descriptionValues[name] ?: null
+		}
+
+		if (result == null) {
+			result = argument.defaultValue
+		}
+
+		if (result == null && argument.required) {
+			throw new RuntimeException("Argument {name} missing")
+		}
+
+		return result
 	}
 
 	@NonCPS
@@ -101,8 +210,7 @@ class PJobPropertiesManager {
 	 */
 	@NonCPS
 	final Object retrieveValueFromParametersOrEnvironment(String name, boolean required = true) {
-		// TODO remove fallback to P_ after projects migrated
-		def value = rawScript.params[name] ?: rawScript.params['P_' + name] ?: descriptionValues[name] ?: null
+		def value = readParam(name) ?: descriptionValues[name] ?: null
 		if (value || !required) {
 			return value
 		}
@@ -131,13 +239,7 @@ class PJobPropertiesManager {
 
 	@NonCPS
 	final boolean retrieveBooleanParameterValue(String name) {
-		// do not use fallback to descriptionValues as params can never be null
-		// TODO remove fallback to P_ after projects migrated
-		Boolean value = (Boolean) rawScript.params[name] ?: rawScript.params['P_' + name]
-		if (value == null) {
-			throw new RuntimeException("${name} is not a param (yet?)")
-		}
-		return value.booleanValue()
+		return readBooleanParam(name).booleanValue()
 	}
 
 	@NonCPS
@@ -183,6 +285,29 @@ class PJobPropertiesManager {
 		List<String> descriptions = script.collectDescriptions()
 		// TODO move additionalEnv to CipaPrepareEnv after projects migrated
 		descriptionValues = script.parseJsonBlocks(descriptions, 'parameters', 'additionalEnv')
+	}
+
+	@NonCPS
+	private Object readParam(String name) {
+		Objects.requireNonNull(name)
+
+		// TODO remove fallback to P_ after projects migrated
+		return rawScript.params[name] ?: rawScript.params['P_' + name]
+	}
+
+	@NonCPS
+	@Nonnull
+	private Boolean readBooleanParam(String name) {
+		Objects.requireNonNull(name)
+
+		// TODO remove fallback to P_ after projects migrated
+		Boolean value = (Boolean) rawScript.params[name]
+		value = value != null ? value : rawScript.params['P_' + name]
+		if (value == null) {
+			// cannot be null
+			throw new RuntimeException("${name} is not a param (yet?)")
+		}
+		return value
 	}
 
 }

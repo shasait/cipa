@@ -20,9 +20,9 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.JobParameterContainer
-import de.hasait.cipa.JobParameterContribution
-import de.hasait.cipa.JobParameterValues
+import de.hasait.cipa.jobprops.JobParameterContainer
+import de.hasait.cipa.jobprops.JobParameterContribution
+import de.hasait.cipa.jobprops.JobParameterValues
 import de.hasait.cipa.PScript
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState

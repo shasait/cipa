@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2018 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.jobprops
 
-interface JobParameterContainer {
+/**
+ * Beans can implement this interface in order to add job properties.
+ */
+interface JobPropertiesContribution extends Serializable {
 
-	void addStringParameter(String name, String defaultValue, String description)
-
-	void addBooleanParameter(String name, boolean defaultValue, String description)
-
-	void addBooleanChoiceParameter(String name, Boolean defaultValue, String description)
-
-	void addChoiceParameter(String name, List<String> choices, String description)
+	/**
+	 * E.g. <code>container.addPipelineTrigger(rawScript.pollSCM('H/10 * * * *'))</code>
+	 */
+	void contributeJobProperties(JobPropertiesContainer container)
 
 }
