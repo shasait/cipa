@@ -20,13 +20,14 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaPrepare
+import de.hasait.cipa.PScript
 import de.hasait.cipa.jobprops.JobParameterContainer
 import de.hasait.cipa.jobprops.JobParameterContribution
 import de.hasait.cipa.jobprops.JobParameterValues
 import de.hasait.cipa.jobprops.JobPropertiesContainer
 import de.hasait.cipa.jobprops.JobPropertiesContribution
+import de.hasait.cipa.jobprops.PJobArgument
 import de.hasait.cipa.jobprops.PJobPropertiesManager
-import de.hasait.cipa.PScript
 
 class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterContainer, JobParameterValues, JobPropertiesContainer, Serializable {
 
@@ -74,6 +75,12 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 
 	@Override
 	@NonCPS
+	final <T> void addArgument(PJobArgument<T> argument) {
+		manager.addArgument(argument)
+	}
+
+	@Override
+	@NonCPS
 	final void addStringParameter(String name, String defaultValue, String description) {
 		manager.addStringParameter(name, defaultValue, description)
 	}
@@ -88,6 +95,12 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 	@NonCPS
 	final void addBooleanChoiceParameter(String name, Boolean defaultValue, String description) {
 		manager.addBooleanChoiceParameter(name, defaultValue, description)
+	}
+
+	@Override
+	@NonCPS
+	final void addPasswordParameter(String name, String description) {
+		manager.addPasswordParameter(name, description)
 	}
 
 	@Override
@@ -136,6 +149,12 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 	@NonCPS
 	final Object retrieveRequiredValue(String name) {
 		return manager.retrieveValueFromParametersOrEnvironment(name)
+	}
+
+	@Override
+	@NonCPS
+	final <T> T retrieveArgumentValue(PJobArgument<T> argument) {
+		return manager.retrieveArgumentValue(argument)
 	}
 
 	@Override

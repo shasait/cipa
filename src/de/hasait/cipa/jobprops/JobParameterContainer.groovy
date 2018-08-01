@@ -18,11 +18,15 @@ package de.hasait.cipa.jobprops
 
 interface JobParameterContainer {
 
+	public <T> void addArgument(PJobArgument<T> argument)
+
 	void addStringParameter(String name, String defaultValue, String description)
 
 	void addBooleanParameter(String name, boolean defaultValue, String description)
 
 	void addBooleanChoiceParameter(String name, Boolean defaultValue, String description)
+
+	void addPasswordParameter(String name, String description)
 
 	void addChoiceParameter(String name, List<String> choices, String description)
 

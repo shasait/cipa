@@ -24,6 +24,8 @@ interface JobParameterValues {
 	@Deprecated
 	Object retrieveRequiredValue(String name)
 
+	public <T> T retrieveArgumentValue(PJobArgument<T> argument)
+
 	String retrieveOptionalStringParameterValue(String name, String defaultValue)
 
 	String retrieveRequiredStringParameterValue(String name)

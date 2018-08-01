@@ -16,10 +16,10 @@
 
 package de.hasait.cipa.jobprops
 
+import javax.annotation.Nonnull
+
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.PScript
-
-import javax.annotation.Nonnull
 
 /**
  * Pipeline Job Properties Manager.
@@ -186,6 +186,12 @@ class PJobPropertiesManager {
 			choices.add(BC_FALSE_VALUE)
 		}
 		addChoiceParameter(name, choices, description)
+	}
+
+	@NonCPS
+	final void addPasswordParameter(String name, String description) {
+		def parameter = rawScript.password(name: name, defaultValue: '', description: description)
+		parameters.add(parameter)
 	}
 
 	@NonCPS
