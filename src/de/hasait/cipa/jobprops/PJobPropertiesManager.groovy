@@ -30,7 +30,7 @@ import de.hasait.cipa.PScript
  * After {@link #applyJobProperties} has been called they are configured and the values can be retrieved.
  * Parameter values will be obtained not only from the parameters itself but additionally from a json block in the job description and/or parent folder descriptions.
  */
-class PJobPropertiesManager implements JobParameterContainer, JobParameterValues {
+class PJobPropertiesManager implements JobParameterContainer, JobParameterValues, JobPropertiesContainer {
 
 	private static final String BC_TRUE_VALUE = '(X)'
 	private static final String BC_FALSE_VALUE = '( )'
