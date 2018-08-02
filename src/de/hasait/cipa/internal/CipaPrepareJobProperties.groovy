@@ -29,16 +29,14 @@ import de.hasait.cipa.jobprops.JobPropertiesContribution
 import de.hasait.cipa.jobprops.PJobArgument
 import de.hasait.cipa.jobprops.PJobPropertiesManager
 
-class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterContainer, JobParameterValues, JobPropertiesContainer, Serializable {
+class CipaPrepareJobProperties implements CipaInit, CipaPrepare, Serializable {
 
 	private PScript script
-	private def rawScript
 	private PJobPropertiesManager manager
 
 	@Override
 	void initCipa(Cipa cipa) {
 		script = cipa.findBean(PScript.class)
-		rawScript = script.rawScript
 		manager = new PJobPropertiesManager(script)
 	}
 
@@ -54,14 +52,14 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 
 		script.echo("Collecting parameters via ${JobParameterContribution.class.simpleName}s...")
 		for (JobParameterContribution parameterContribution in parameterContributions) {
-			parameterContribution.contributeParameters(this)
+			parameterContribution.contributeParameters(manager)
 		}
 
 		List<JobPropertiesContribution> propertiesContributions = cipa.findBeansAsList(JobPropertiesContribution.class)
 
 		script.echo("Collecting job properties via ${JobPropertiesContribution.class.simpleName}s...")
 		for (JobPropertiesContribution propertiesContribution in propertiesContributions) {
-			propertiesContribution.contributeJobProperties(this)
+			propertiesContribution.contributeJobProperties(manager)
 		}
 
 		script.echo('Updating job properties...')
@@ -69,122 +67,8 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 
 		script.echo('Processing parameters...')
 		for (JobParameterContribution parameterContribution in parameterContributions) {
-			parameterContribution.processParameters(this)
+			parameterContribution.processParameters(manager)
 		}
-	}
-
-	@Override
-	@NonCPS
-	final <T> void addArgument(PJobArgument<T> argument) {
-		manager.addArgument(argument)
-	}
-
-	@Override
-	@NonCPS
-	final void addStringParameter(String name, String defaultValue, String description) {
-		manager.addStringParameter(name, defaultValue, description)
-	}
-
-	@Override
-	@NonCPS
-	final void addBooleanParameter(String name, boolean defaultValue, String description) {
-		manager.addBooleanParameter(name, defaultValue, description)
-	}
-
-	@Override
-	@NonCPS
-	final void addBooleanChoiceParameter(String name, Boolean defaultValue, String description) {
-		manager.addBooleanChoiceParameter(name, defaultValue, description)
-	}
-
-	@Override
-	@NonCPS
-	final void addPasswordParameter(String name, String description) {
-		manager.addPasswordParameter(name, description)
-	}
-
-	@Override
-	@NonCPS
-	final void addChoiceParameter(String name, List<String> choices, String description) {
-		manager.addChoiceParameter(name, choices, description)
-	}
-
-	@Override
-	@NonCPS
-	final void addPipelineTrigger(def trigger) {
-		manager.addPipelineTrigger(trigger)
-	}
-
-	@Override
-	@NonCPS
-	final void addCustomJobProperty(def customJobProperty) {
-		manager.addCustomJobProperty(customJobProperty)
-	}
-
-	@Override
-	@NonCPS
-	final void setBuildDiscarder(def buildDiscarder) {
-		manager.setBuildDiscarder(buildDiscarder)
-	}
-
-	@Override
-	@NonCPS
-	final void setRebuildSettingsAutoRebuild(boolean autoRebuild) {
-		manager.setRebuildSettingsAutoRebuild(autoRebuild)
-	}
-
-	@Override
-	@NonCPS
-	final void setRebuildSettingsRebuildDisabled(boolean rebuildDisabled) {
-		manager.setRebuildSettingsRebuildDisabled(rebuildDisabled)
-	}
-
-	@Override
-	@NonCPS
-	final Object retrieveOptionalValue(String name, Object defaultValue) {
-		return manager.retrieveValueFromParametersOrEnvironment(name, false) ?: defaultValue
-	}
-
-	@Override
-	@NonCPS
-	final Object retrieveRequiredValue(String name) {
-		return manager.retrieveValueFromParametersOrEnvironment(name)
-	}
-
-	@Override
-	@NonCPS
-	final <T> T retrieveArgumentValue(PJobArgument<T> argument) {
-		return manager.retrieveArgumentValue(argument)
-	}
-
-	@Override
-	@NonCPS
-	final String retrieveOptionalStringParameterValue(String name, String defaultValue) {
-		return manager.retrieveOptionalStringParameterValue(name, defaultValue)
-	}
-
-	@Override
-	@NonCPS
-	final String retrieveRequiredStringParameterValue(String name) {
-		return manager.retrieveRequiredStringParameterValue(name)
-	}
-
-	@Override
-	@NonCPS
-	final boolean retrieveOptionalBooleanChoiceParameterValue(String name, boolean defaultValue) {
-		return manager.retrieveOptionalBooleanChoiceParameterValue(name, defaultValue)
-	}
-
-	@Override
-	@NonCPS
-	final boolean retrieveRequiredBooleanChoiceParameterValue(String name) {
-		return manager.retrieveRequiredBooleanChoiceParameterValue(name)
-	}
-
-	@Override
-	@NonCPS
-	final boolean retrieveBooleanParameterValue(String name) {
-		return manager.retrieveBooleanParameterValue(name)
 	}
 
 }
