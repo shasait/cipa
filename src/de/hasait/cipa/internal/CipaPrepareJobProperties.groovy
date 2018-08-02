@@ -39,7 +39,7 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, JobParameterCon
 	void initCipa(Cipa cipa) {
 		script = cipa.findBean(PScript.class)
 		rawScript = script.rawScript
-		manager = new PJobPropertiesManager(rawScript)
+		manager = new PJobPropertiesManager(script)
 	}
 
 	@Override
