@@ -62,13 +62,20 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		}
 
 		if (argument.retrieveFromParam) {
+			String description = argument.description
+
 			boolean optionalParam = !argument.required || argument.retrieveFromDescriptions
+			description += optionalParam ? ' (optional)' : ' (required)'
+
 			T paramDefaultValue = argument.retrieveFromDescriptions ? null : argument.defaultValue
+			if (argument.retrieveFromDescriptions && argument.defaultValue) {
+				description += ' (default: ' + argument.defaultValue + ')'
+			}
 
 			if (argument.password) {
 				if (argument.valueType == String.class) {
 					// password
-					def parameter = rawScript.password(name: argument.name, defaultValue: paramDefaultValue, description: argument.description)
+					def parameter = rawScript.password(name: argument.name, defaultValue: paramDefaultValue, description: description)
 					parameters.add(parameter)
 				} else {
 					throw new RuntimeException("Unsupported argument: ${argument}")
@@ -81,14 +88,14 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 						choices.add('')
 					}
 					choices.addAll(argument.choices)
-					def parameter = rawScript.choice(name: argument.name, choices: choices.join('\n'), description: argument.description)
+					def parameter = rawScript.choice(name: argument.name, choices: choices.join('\n'), description: description)
 					parameters.add(parameter)
 				} else {
 					throw new RuntimeException("Unsupported argument: ${argument}")
 				}
 			} else if (argument.valueType == String.class) {
 				// single string
-				def parameter = rawScript.string(name: argument.name, defaultValue: paramDefaultValue, description: argument.description)
+				def parameter = rawScript.string(name: argument.name, defaultValue: paramDefaultValue, description: description)
 				parameters.add(parameter)
 			} else if (argument.valueType == Boolean.class) {
 				// single boolean
@@ -104,10 +111,10 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 						choices.add(BC_TRUE_VALUE)
 						choices.add(BC_FALSE_VALUE)
 					}
-					def parameter = rawScript.choice(name: argument.name, choices: choices.join('\n'), description: argument.description)
+					def parameter = rawScript.choice(name: argument.name, choices: choices.join('\n'), description: description)
 					parameters.add(parameter)
 				} else {
-					def parameter = rawScript.booleanParam(name: argument.name, defaultValue: paramDefaultValue, description: argument.description)
+					def parameter = rawScript.booleanParam(name: argument.name, defaultValue: paramDefaultValue, description: description)
 					parameters.add(parameter)
 				}
 			} else {
