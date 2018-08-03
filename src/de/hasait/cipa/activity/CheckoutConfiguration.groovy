@@ -23,16 +23,16 @@ import de.hasait.cipa.jobprops.JobParameterValues
 
 class CheckoutConfiguration implements JobParameterContribution, Serializable {
 
+	static final String SBT_TRUNK = 'trunk'
+	static final String SBT_BRANCH = 'branch:'
+	static final String SBT_TAG = 'tag:'
+	static final String SBT_BRANCH_FROM_FOLDER = 'branch-from-folder'
+	static final String SBT_NONE = 'none'
+
 	private static final String PARAM___SCM_URL = '_SCM_URL'
 	private static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
 	private static final String PARAM___SCM_BRANCH = '_SCM_BRANCH'
 	private static final String PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX = '_SCM_BFF_PREFIX'
-
-	private static final String SBT_TRUNK = 'trunk'
-	private static final String SBT_BRANCH = 'branch:'
-	private static final String SBT_TAG = 'tag:'
-	private static final String SBT_BRANCH_FROM_FOLDER = 'branch-from-folder'
-	private static final String SBT_NONE = 'none'
 
 	final String id
 	final String idUpperCase
@@ -50,10 +50,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 
 	Set<String> pollingExcludedUsers = new LinkedHashSet<>()
 	String pollingExcludedMessagePattern
-
-	String scmResolvedBranch
-	String scmRef
-
+	
 	CheckoutConfiguration(String id, String subFolder = null) {
 		this.id = id
 		this.idUpperCase = id.toUpperCase()
@@ -152,59 +149,6 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 
 		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch == SBT_NONE)) {
 			throw new RuntimeException("Parameter ${idUpperCase + PARAM___SCM_BRANCH} invalid: ${scmBranch}")
-		}
-
-		if (scmUrl.endsWith('.git')) {
-			// Git
-			scmRef = '*/master'
-			if (scmBranch == SBT_TRUNK) {
-				scmResolvedBranch = 'master'
-				scmRef = 'refs/heads/master'
-			} else if (scmBranch.startsWith(SBT_BRANCH)) {
-				scmResolvedBranch = scmBranch.substring(SBT_BRANCH.length())
-				scmRef = 'refs/heads/' + scmResolvedBranch
-			} else if (scmBranch.startsWith(SBT_TAG)) {
-				scmRef = 'refs/tags/' + scmBranch.substring(SBT_TAG.length())
-			} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
-				String folderName = script.currentRawBuild.parent.parent.name
-				if (folderName == 'trunk' || folderName == 'master') {
-					scmResolvedBranch = 'master'
-				} else {
-					scmResolvedBranch = scmBffPrefix + folderName
-				}
-				scmRef = 'refs/heads/' + scmResolvedBranch
-			}
-		} else {
-			// Subversion
-			String subPath
-			if (scmBranch == SBT_TRUNK) {
-				scmResolvedBranch = 'trunk'
-				subPath = '/trunk'
-			} else if (scmBranch.startsWith(SBT_BRANCH)) {
-				scmResolvedBranch = scmBranch.substring(SBT_BRANCH.length())
-				subPath = '/branches/' + scmResolvedBranch
-			} else if (scmBranch.startsWith(SBT_TAG)) {
-				subPath = '/tags/' + scmBranch.substring(SBT_TAG.length())
-			} else if (scmBranch == SBT_BRANCH_FROM_FOLDER) {
-				String folderName = script.currentRawBuild.parent.parent.name
-				if (folderName == 'trunk') {
-					scmResolvedBranch = 'trunk'
-					subPath = '/trunk'
-				} else {
-					scmResolvedBranch = scmBffPrefix + folderName
-					subPath = '/branches/' + scmResolvedBranch
-				}
-			}
-			if (subPath) {
-				scmUrl += subPath
-			}
-			int subFoldersSize = subFolders.size()
-			if (subFoldersSize > 1) {
-				throw new RuntimeException("Subverion cannot handly multiple subfolders")
-			}
-			if (subFoldersSize == 1) {
-				scmUrl += '/' + subFolders.get(0)
-			}
 		}
 	}
 

@@ -34,7 +34,11 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 
 	private final CipaResourceWithState<CipaFileResource> checkedOutFiles
 
+	private String scmUrl
+	private String scmRef
+	private String scmResolvedBranch
 	private String scmRev
+	private String forcedScmBranch
 
 	CheckoutActivity(Cipa cipa, String name, CipaNode node, CheckoutConfiguration config, boolean withStage = true) {
 		this.cipa = cipa
@@ -127,6 +131,16 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 		return this
 	}
 
+	/**
+	 * @param forcedScmBranch Use this branch expression and not from config. 
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutActivity withScmBranchExpression(String forcedScmBranch) {
+		this.forcedScmBranch = forcedScmBranch
+		return this
+	}
+
 	@NonCPS
 	CipaResourceWithState<CipaFileResource> getProvidedCheckedOutFiles() {
 		return checkedOutFiles
@@ -179,40 +193,91 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 
 	private void checkout() {
 		script.dir(checkedOutFiles.resource.path) {
-			if (config.scmUrl.endsWith('.git')) {
+			scmUrl = config.scmUrl
+			String scmBranch = forcedScmBranch ?: config.scmBranch
+
+			if (scmUrl.endsWith('.git')) {
 				// Git
-				List extensions = []
-				extensions.add([$class: 'CleanCheckout'])
-				if (!config.pollingExcludedUsers.empty) {
-					extensions.add([$class: 'UserExclusion', excludedUsers: config.buildExcludeUsersValue()])
-				}
-				if (config.pollingExcludedMessagePattern) {
-					extensions.add([$class: 'MessageExclusion', excludedMessage: config.pollingExcludedMessagePattern])
-				}
-				if (config.subFolders) {
-					List pathList = []
-					for (String subFolder in config.subFolders) {
-						pathList.add([path: '/' + subFolder])
+				scmRef = '*/master'
+				if (scmBranch == CheckoutConfiguration.SBT_TRUNK) {
+					scmResolvedBranch = 'master'
+					scmRef = 'refs/heads/master'
+				} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_BRANCH)) {
+					scmResolvedBranch = scmBranch.substring(CheckoutConfiguration.SBT_BRANCH.length())
+					scmRef = 'refs/heads/' + scmResolvedBranch
+				} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_TAG)) {
+					scmRef = 'refs/tags/' + scmBranch.substring(CheckoutConfiguration.SBT_TAG.length())
+				} else if (scmBranch == CheckoutConfiguration.SBT_BRANCH_FROM_FOLDER) {
+					String folderName = script.currentRawBuild.parent.parent.name
+					if (folderName == 'trunk' || folderName == 'master') {
+						scmResolvedBranch = 'master'
+					} else {
+						scmResolvedBranch = config.scmBffPrefix + folderName
 					}
-					extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: pathList])
+					scmRef = 'refs/heads/' + scmResolvedBranch
 				}
 				if (!config.dry) {
+					List extensions = []
+					extensions.add([$class: 'CleanCheckout'])
+					if (!config.pollingExcludedUsers.empty) {
+						extensions.add([$class: 'UserExclusion', excludedUsers: config.buildExcludeUsersValue()])
+					}
+					if (config.pollingExcludedMessagePattern) {
+						extensions.add([$class: 'MessageExclusion', excludedMessage: config.pollingExcludedMessagePattern])
+					}
+					if (config.subFolders) {
+						List pathList = []
+						for (String subFolder in config.subFolders) {
+							pathList.add([path: '/' + subFolder])
+						}
+						extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: pathList])
+					}
 					rawScript.checkout(
 							changelog: config.includeInChangelog,
 							poll: config.includeInPolling,
 							scm: [
 									$class                           : 'GitSCM',
-									branches                         : [[name: config.scmRef]],
+									branches                         : [[name: scmRef]],
 									doGenerateSubmoduleConfigurations: false,
 									extensions                       : extensions,
 									submoduleCfg                     : [],
-									userRemoteConfigs                : [[credentialsId: config.scmCredentialsId, url: config.scmUrl]]
+									userRemoteConfigs                : [[credentialsId: config.scmCredentialsId, url: scmUrl]]
 							])
 
 					scmRev = script.determineGitRevOfCwd()
 				}
 			} else {
 				// Subversion
+				String subPath
+				if (scmBranch == CheckoutConfiguration.SBT_TRUNK) {
+					scmResolvedBranch = 'trunk'
+					subPath = '/trunk'
+				} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_BRANCH)) {
+					scmResolvedBranch = scmBranch.substring(CheckoutConfiguration.SBT_BRANCH.length())
+					subPath = '/branches/' + scmResolvedBranch
+				} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_TAG)) {
+					subPath = '/tags/' + scmBranch.substring(CheckoutConfiguration.SBT_TAG.length())
+				} else if (scmBranch == CheckoutConfiguration.SBT_BRANCH_FROM_FOLDER) {
+					String folderName = script.currentRawBuild.parent.parent.name
+					if (folderName == 'trunk') {
+						scmResolvedBranch = 'trunk'
+						subPath = '/trunk'
+					} else {
+						scmResolvedBranch = config.scmBffPrefix + folderName
+						subPath = '/branches/' + scmResolvedBranch
+					}
+				}
+				if (subPath) {
+					scmUrl += subPath
+				}
+				int subFoldersSize = config.subFolders.size()
+				if (subFoldersSize > 1) {
+					throw new RuntimeException("Subversion cannot handle multiple subfolders")
+				}
+				if (subFoldersSize == 1) {
+					scmUrl += '/' + config.subFolders.get(0)
+				}
+
 				if (!config.dry) {
 					rawScript.checkout(
 							changelog: config.includeInChangelog,
@@ -232,18 +297,18 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 																	 depthOption          : 'infinity',
 																	 ignoreExternalsOption: true,
 																	 local                : '.',
-																	 remote               : config.scmUrl
+																	 remote               : scmUrl
 															 ]],
 									workspaceUpdater      : [$class: 'UpdateWithCleanUpdater']
 							])
 
-					config.scmUrl = script.determineSvnUrlOfCwd()
+					scmUrl = script.determineSvnUrlOfCwd()
 					scmRev = script.determineSvnRevOfCwd()
 				}
 			}
 
-			script.echo("${config.id}-scmUrl = ${config.scmUrl}")
-			script.echo("${config.id}-scmRef = ${config.scmRef}")
+			script.echo("${config.id}-scmUrl = ${scmUrl}")
+			script.echo("${config.id}-scmRef = ${scmRef}")
 			script.echo("${config.id}-scmRev = ${scmRev}")
 		}
 	}
@@ -260,12 +325,12 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 
 	@NonCPS
 	String getCheckedOutScmUrl() {
-		return config.scmUrl
+		return scmUrl
 	}
 
 	@NonCPS
 	String getCheckedOutScmRef() {
-		return config.scmRef
+		return scmRef
 	}
 
 	@NonCPS
@@ -275,7 +340,7 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 
 	@NonCPS
 	String getResolvedBranch() {
-		return config.scmResolvedBranch
+		return scmResolvedBranch
 	}
 
 }
