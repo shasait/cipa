@@ -40,14 +40,14 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 	private String scmRev
 	private String forcedScmBranch
 
-	CheckoutActivity(Cipa cipa, String name, CipaNode node, CheckoutConfiguration config, boolean withStage = true) {
+	CheckoutActivity(Cipa cipa, String name, CipaNode node, CheckoutConfiguration config, boolean withStage = true, String relDir = null) {
 		this.cipa = cipa
 		this.script = cipa.findBean(PScript.class)
 		this.rawScript = script.rawScript
 		this.name = name
 		this.withStage = withStage
 		this.config = config
-		this.checkedOutFiles = cipa.newFileResourceWithState(node, "${config.id}Files", 'CheckedOut')
+		this.checkedOutFiles = cipa.newFileResourceWithState(node, relDir ?: config.id + 'Files', 'CheckedOut')
 
 		cipa.addBean(this)
 		cipa.addBean(config)
@@ -55,8 +55,8 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 		cipa.addBean(checkedOutFiles)
 	}
 
-	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node, String subFolder = null, boolean withStage = true) {
-		this(cipa, name, node, new CheckoutConfiguration(id, subFolder), withStage)
+	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node, String subFolder = null, boolean withStage = true, String relDir = null) {
+		this(cipa, name, node, new CheckoutConfiguration(id, subFolder), withStage, relDir)
 	}
 
 	@Override
