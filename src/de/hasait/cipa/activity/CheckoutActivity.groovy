@@ -207,6 +207,8 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 					scmRef = 'refs/heads/' + scmResolvedBranch
 				} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_TAG)) {
 					scmRef = 'refs/tags/' + scmBranch.substring(CheckoutConfiguration.SBT_TAG.length())
+				} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_REV)) {
+					scmRef = scmBranch.substring(CheckoutConfiguration.SBT_REV.length())
 				} else if (scmBranch == CheckoutConfiguration.SBT_BRANCH_FROM_FOLDER) {
 					String folderName = script.currentRawBuild.parent.parent.name
 					if (folderName == 'trunk' || folderName == 'master') {
@@ -257,6 +259,8 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 					subPath = '/branches/' + scmResolvedBranch
 				} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_TAG)) {
 					subPath = '/tags/' + scmBranch.substring(CheckoutConfiguration.SBT_TAG.length())
+				} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_REV)) {
+					throw new RuntimeException("Not implemented yet")
 				} else if (scmBranch == CheckoutConfiguration.SBT_BRANCH_FROM_FOLDER) {
 					String folderName = script.currentRawBuild.parent.parent.name
 					if (folderName == 'trunk') {

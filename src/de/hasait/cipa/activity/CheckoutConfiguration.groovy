@@ -26,6 +26,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	static final String SBT_TRUNK = 'trunk'
 	static final String SBT_BRANCH = 'branch:'
 	static final String SBT_TAG = 'tag:'
+	static final String SBT_REV = 'rev:'
 	static final String SBT_BRANCH_FROM_FOLDER = 'branch-from-folder'
 	static final String SBT_NONE = 'none'
 
@@ -50,7 +51,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 
 	Set<String> pollingExcludedUsers = new LinkedHashSet<>()
 	String pollingExcludedMessagePattern
-	
+
 	CheckoutConfiguration(String id, String subFolder = null) {
 		this.id = id
 		this.idUpperCase = id.toUpperCase()
@@ -135,7 +136,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 		if (params) {
 			container.addStringParameter(idUpperCase + PARAM___SCM_URL, '', "${id}-SCM-URL for checkout (Git if ending in .git, otherwise SVN)")
 			container.addStringParameter(idUpperCase + PARAM___SCM_CREDENTIALS_ID, '', "${id}-SCM-Credentials needed for checkout")
-			container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH, '', "${id}-SCM-Branch for checkout (${SBT_TRUNK};${SBT_BRANCH}<i>name</i>;${SBT_TAG}<i>name</i>;${SBT_BRANCH_FROM_FOLDER};${SBT_NONE})")
+			container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH, '', "${id}-SCM-Branch for checkout (${SBT_TRUNK};${SBT_BRANCH}<i>name</i>;${SBT_TAG}<i>name</i>;${SBT_BRANCH_FROM_FOLDER};${SBT_REV}<i>revision</i>;${SBT_NONE})")
 			container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '', "${id}-SCM-Branch-Prefix if ${SBT_BRANCH_FROM_FOLDER} is used, otherwise has no effect")
 		}
 	}
@@ -147,7 +148,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 		scmBranch = values.retrieveOptionalValue(idUpperCase + PARAM___SCM_BRANCH, SBT_NONE)
 		scmBffPrefix = values.retrieveOptionalValue(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '')
 
-		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch == SBT_NONE)) {
+		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch.startsWith(SBT_REV) || scmBranch == SBT_NONE)) {
 			throw new RuntimeException("Parameter ${idUpperCase + PARAM___SCM_BRANCH} invalid: ${scmBranch}")
 		}
 	}
