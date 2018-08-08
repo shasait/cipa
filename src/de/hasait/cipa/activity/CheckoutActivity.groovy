@@ -230,7 +230,7 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 					if (config.subFolders != null && !config.subFolders.empty) {
 						List pathList = []
 						for (String subFolder in config.subFolders) {
-							pathList.add([path: '/' + subFolder])
+							pathList.add([path: subFolder])
 						}
 						extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: pathList])
 					}
