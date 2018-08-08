@@ -227,7 +227,7 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 					if (config.pollingExcludedMessagePattern) {
 						extensions.add([$class: 'MessageExclusion', excludedMessage: config.pollingExcludedMessagePattern])
 					}
-					if (config.subFolders != null && !config.subFolders.empty) {
+					if (config.subFolders) {
 						List pathList = []
 						for (String subFolder in config.subFolders) {
 							pathList.add([path: subFolder])
