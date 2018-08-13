@@ -19,7 +19,9 @@ package de.hasait.cipa
 import com.cloudbees.groovy.cps.NonCPS
 import groovy.json.JsonSlurper
 import hudson.model.Job
+import hudson.model.Result
 import hudson.model.Run
+import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
 /**
  * Wrapper for pipeline script allowing access to well known steps.
@@ -32,6 +34,17 @@ class PScript implements Serializable {
 
 	PScript(rawScript) {
 		this.rawScript = rawScript
+	}
+
+	RunWrapper build(String job, List parameters = [], int embedLogMaxLines = 100) {
+		RunWrapper runWrapper = rawScript.build(job: job, parameters: parameters, propagate: false)
+		Run<?, ?> rawBuild = runWrapper.rawBuild
+		List<String> lines = rawBuild.getLog(embedLogMaxLines)
+		echo("Build ${rawBuild.url}\nLast lines:\n${lines.join('\n')}")
+		if (rawBuild.result == Result.FAILURE) {
+			throw new RuntimeException("Build ${rawBuild.url} failed!")
+		}
+		return RunWrapper
 	}
 
 	String determineHostname() {
