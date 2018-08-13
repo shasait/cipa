@@ -291,6 +291,12 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 			finishedDate = new Date()
 		}
 
+		if (runThrowable) {
+			script.currentRawBuild.result = Result.FAILURE
+		} else if (!testResults.stable) {
+			script.currentRawBuild.result = Result.UNSTABLE
+		}
+
 		for (CipaAroundActivity aroundActivity in aroundActivities) {
 			try {
 				aroundActivity.afterActivityFinished(this)
@@ -298,10 +304,6 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 				script.echoStacktrace('afterActivityFinished', throwable)
 				throw throwable
 			}
-		}
-
-		if (!testResults.stable) {
-			script.currentRawBuild.result = Result.UNSTABLE
 		}
 	}
 
