@@ -184,7 +184,7 @@ class PScript implements Serializable {
 	@NonCPS
 	private String buildGrep(List<String> filters) {
 		if (filters) {
-			return '| grep -E "' + filters.each {it.replace('[', '\\[').replace(']', '\\]').replace('"', '\\"')}.join('|') + '"'
+			return '| grep -E "' + filters.each {it.replace('[', '\\\\[').replace(']', '\\\\]').replace('"', '\\\\"')}.join('|') + '"'
 		}
 		return ''
 	}
