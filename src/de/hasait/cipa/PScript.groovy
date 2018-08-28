@@ -153,7 +153,9 @@ class PScript implements Serializable {
 			List<String> profiles = [],
 			List<String> arguments = [],
 			List<String> options = [],
-			boolean returnStdout = false) {
+			boolean returnStdout = false,
+			List<String> mvnStdoutFilters = ['[INFO] Building', '[INFO] BUILD ', '[INFO] Finished at']
+	) {
 		def allArguments = ['-B', '-V', '-e']
 		if (rawScript.env[Cipa.ENV_VAR___MVN_SETTINGS]) {
 			allArguments.add('-s "${' + Cipa.ENV_VAR___MVN_SETTINGS + '}"')
@@ -175,8 +177,16 @@ class PScript implements Serializable {
 		rawScript.withEnv(["${Cipa.ENV_VAR___MVN_OPTIONS}=${optionsString} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
 			writeFile(MVN_LOG, "Executing: mvn ${allArgumentsString}\nEnvironment:\n")
 			sh("printenv | sort | tee -a ${MVN_LOG}")
-			return sh("set -o pipefail ; mvn ${allArgumentsString} | tee -a ${MVN_LOG}", returnStdout)
+			return sh("set -o pipefail ; mvn ${allArgumentsString} | tee -a ${MVN_LOG}" + buildGrep(mvnStdoutFilters), returnStdout)
 		}
+	}
+	
+	@NonCPS
+	private String buildGrep(List<String> filters) {
+		if (filters) {
+			return '| grep -E "' + filters.each {it.replace('[', '\\[').replace(']', '\\]').replace('"', '\\"')}.join('|') + '"'
+		}
+		return ''
 	}
 
 	@NonCPS
