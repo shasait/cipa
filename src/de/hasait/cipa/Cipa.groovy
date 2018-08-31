@@ -299,6 +299,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					parallelActivitiesBranches.failFast = true
 					rawScript.parallel(parallelActivitiesBranches)
 
+					for (wrapper in nodeWrappers) {
+						wrapper.cleanupNode()
+					}
+
 					if (runContext.allFinished) {
 						List<CipaAfterActivities> afters = findBeansAsList(CipaAfterActivities.class)
 						for (CipaAfterActivities after in afters) {

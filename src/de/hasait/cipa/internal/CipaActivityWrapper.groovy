@@ -21,6 +21,7 @@ import de.hasait.cipa.Cipa
 import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaActivityRunContext
+import de.hasait.cipa.activity.CipaActivityWithCleanup
 import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.activity.CipaLogFile
 import de.hasait.cipa.activity.CipaTestResult
@@ -55,6 +56,7 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	private Date finishedDate
 	private Throwable runThrowable
 	private List<CipaActivityWrapper> failedDependencies
+	private Throwable cleanupThrowable
 
 	private final List<CipaLogFile> logfiles = new ArrayList<>()
 
@@ -82,6 +84,11 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	@NonCPS
 	Date getCreationDate() {
 		return creationDate
+	}
+
+	@NonCPS
+	Throwable getCleanupThrowable() {
+		return cleanupThrowable
 	}
 
 	@NonCPS
@@ -238,6 +245,17 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 			sb << " | TestResults: ${testResults.countPassed}/${testResults.countTotal} (${testResults.countFailed} failed)"
 		}
 		return sb.toString()
+	}
+
+	void cleanupNode() {
+		try {
+			if (activity instanceof CipaActivityWithCleanup) {
+				((CipaActivityWithCleanup) activity).cleanupNode()
+			}
+		} catch (Throwable throwable) {
+			cleanupThrowable = throwable
+			script.echoStacktrace('cleanupNode', throwable)
+		}
 	}
 
 	void prepareNode() {
