@@ -17,6 +17,7 @@
 package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.Cipa
 import de.hasait.cipa.internal.CipaActivityWrapper
 
 /**
@@ -29,7 +30,9 @@ class TimeoutAroundActivity extends AbstractCipaAroundActivity {
 
 	private final Integer defaultTimeoutInMinutes
 
-	TimeoutAroundActivity(Integer defaultTimeoutInMinutes = null) {
+	TimeoutAroundActivity(Cipa cipa, Integer defaultTimeoutInMinutes = null) {
+		super(cipa)
+
 		this.defaultTimeoutInMinutes = defaultTimeoutInMinutes
 	}
 

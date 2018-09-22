@@ -37,13 +37,16 @@ class TestPipelineTest {
 		Mockito.when(testResultAction.getPassedTests()).thenReturn([caseResult1])
 		Mockito.when(run.getAction(TestResultAction.class)).thenReturn(testResultAction)
 		Job job = Mockito.mock(Job)
+		Mockito.when(run.getParent()).thenReturn(job)
+		Mockito.when(job.getDescription()).thenReturn('''
+vvv parameters.json vvv {
+  "MAIN_SCM_URL": "scm://somewhere.git"
+, "MAIN_SCM_CREDENTIALS_ID": "somecreds"
+} ^^^ parameters.json ^^^
+''')
 
 		TestRawScript rawScript = new TestRawScript()
 		rawScript.currentBuild.rawBuild = run
-
-		rawScript.env.MAIN_SCM_URL = 'scm://somewhere.git'
-		rawScript.env.MAIN_SCM_CREDENTIALS_ID = 'somecreds'
-		rawScript.env.NODE_LABEL_PREFIX = 'nlprefix-'
 
 		rawScript.readFileContents.put('activities-graph\\.svg', '''
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>

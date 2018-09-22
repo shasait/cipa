@@ -19,15 +19,11 @@ package de.hasait.cipa.activity
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.PScript
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
-class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializable {
+class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithStage, Serializable {
 
-	private final Cipa cipa
-	private final PScript script
-	private final def rawScript
 	private final String name
 	private final boolean withStage
 	private final CheckoutConfiguration config
@@ -41,18 +37,15 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 	private String forcedScmBranch
 
 	CheckoutActivity(Cipa cipa, String name, CipaNode node, CheckoutConfiguration config, boolean withStage = true, String relDir = null) {
-		this.cipa = cipa
-		this.script = cipa.findBean(PScript.class)
-		this.rawScript = script.rawScript
+		super(cipa)
+
 		this.name = name
 		this.withStage = withStage
 		this.config = config
 		this.checkedOutFiles = cipa.newFileResourceWithState(node, relDir ?: config.id + 'Files', 'CheckedOut')
+		addRunProvides(checkedOutFiles)
 
-		cipa.addBean(this)
 		cipa.addBean(config)
-		cipa.addBean(checkedOutFiles.resource)
-		cipa.addBean(checkedOutFiles)
 	}
 
 	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node, String subFolder = null, boolean withStage = true, String relDir = null) {
@@ -148,31 +141,8 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 
 	@Override
 	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresRead() {
-		return []
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresWrite() {
-		return []
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunProvides() {
-		return [checkedOutFiles]
-	}
-
-	@Override
-	@NonCPS
 	CipaNode getNode() {
 		return checkedOutFiles.resource.node
-	}
-
-	@Override
-	void prepareNode() {
-		// nop
 	}
 
 	@Override
@@ -196,7 +166,28 @@ class CheckoutActivity implements CipaActivity, CipaActivityWithStage, Serializa
 			scmUrl = config.scmUrl
 			String scmBranch = forcedScmBranch ?: config.scmBranch
 
-			if (scmUrl.endsWith('.git')) {
+			if (!scmUrl) {
+				if (!config.dry) {
+					rawScript.checkout rawScript.scm
+					if (script.fileExists('.git')) {
+						// Git
+						scmResolvedBranch = script.determineGitBranchOfCwd()
+						scmRev = script.determineGitRevOfCwd()
+					} else {
+						// Subversion
+						scmUrl = script.determineSvnUrlOfCwd()
+						scmRev = script.determineSvnRevOfCwd()
+						if (scmUrl.endsWith('/trunk')) {
+							scmResolvedBranch = 'trunk'
+						} else {
+							int ioBranches = scmUrl.lastIndexOf('/branches/')
+							if (ioBranches > 0) {
+								scmResolvedBranch = scmUrl.substring(ioBranches + '/branches/'.length())
+							}
+						}
+					}
+				}
+			} else if (scmUrl.endsWith('.git')) {
 				// Git
 				scmRef = '*/master'
 				if (scmBranch == CheckoutConfiguration.SBT_TRUNK) {

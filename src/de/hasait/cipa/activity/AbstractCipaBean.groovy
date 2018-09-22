@@ -17,21 +17,23 @@
 package de.hasait.cipa.activity
 
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaInit
 import de.hasait.cipa.PScript
 
 /**
  *
  */
-abstract class AbstractCipaBean implements CipaInit, Serializable {
+abstract class AbstractCipaBean implements Serializable {
 
-	protected PScript script
-	protected rawScript
+	protected final Cipa cipa
+	protected final PScript script
+	protected final rawScript
 
-	@Override
-	void initCipa(Cipa cipa) {
-		script = cipa.findBean(PScript.class)
-		rawScript = script.rawScript
+	AbstractCipaBean(Cipa cipa) {
+		this.cipa = cipa
+		this.script = cipa.findBean(PScript.class)
+		this.rawScript = script.rawScript
+
+		cipa.addBean(this)
 	}
 
 }

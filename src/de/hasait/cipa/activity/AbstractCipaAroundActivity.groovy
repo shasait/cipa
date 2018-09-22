@@ -16,13 +16,17 @@
 
 package de.hasait.cipa.activity
 
-
+import de.hasait.cipa.Cipa
 import de.hasait.cipa.internal.CipaActivityWrapper
 
 /**
  *
  */
 abstract class AbstractCipaAroundActivity extends AbstractCipaBean implements CipaAroundActivity, Serializable {
+
+	AbstractCipaAroundActivity(Cipa cipa) {
+		super(cipa)
+	}
 
 	@Override
 	void handleFailedDependencies(CipaActivityWrapper wrapper) {

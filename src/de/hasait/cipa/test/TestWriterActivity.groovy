@@ -18,41 +18,33 @@ package de.hasait.cipa.test
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.PScript
-import de.hasait.cipa.activity.CipaActivity
+import de.hasait.cipa.activity.AbstractCipaActivity
 import de.hasait.cipa.activity.CipaActivityRunContext
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
-class TestWriterActivity implements CipaInit, CipaActivity, Serializable {
+class TestWriterActivity extends AbstractCipaActivity {
 
-	private final Cipa cipa
 	private final String name
 	private final CipaResourceWithState<CipaFileResource> filesIn
 	private final CipaResourceWithState<CipaFileResource> filesOut
 
-	private PScript script
-
 	TestWriterActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState) {
-		this.cipa = cipa
+		super(cipa)
+
 		this.name = name
+
 		this.filesIn = filesIn
+		addRunRequiresWrite(filesIn)
 
 		this.filesOut = cipa.newResourceState(filesIn, newState)
-
-		cipa.addBean(this)
+		addRunProvides(filesOut)
 	}
 
 	@NonCPS
 	CipaResourceWithState<CipaFileResource> getProvidedFilesOut() {
 		return filesOut
-	}
-
-	@Override
-	void initCipa(Cipa cipa) {
-		script = cipa.findBean(PScript.class)
 	}
 
 	@Override
@@ -63,30 +55,8 @@ class TestWriterActivity implements CipaInit, CipaActivity, Serializable {
 
 	@Override
 	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresRead() {
-		return []
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresWrite() {
-		return [filesIn]
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunProvides() {
-		return [filesOut]
-	}
-
-	@Override
-	@NonCPS
 	CipaNode getNode() {
 		return filesIn.resource.node
-	}
-
-	@Override
-	void prepareNode() {
 	}
 
 	@Override

@@ -143,10 +143,10 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 
 	@Override
 	void processParameters(JobParameterValues values) {
-		scmUrl = values.retrieveRequiredValue(idUpperCase + PARAM___SCM_URL)
-		scmCredentialsId = values.retrieveOptionalValue(idUpperCase + PARAM___SCM_CREDENTIALS_ID, '')
-		scmBranch = values.retrieveOptionalValue(idUpperCase + PARAM___SCM_BRANCH, SBT_NONE)
-		scmBffPrefix = values.retrieveOptionalValue(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '')
+		scmUrl = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___SCM_URL, null)
+		scmCredentialsId = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___SCM_CREDENTIALS_ID, null)
+		scmBranch = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___SCM_BRANCH, SBT_NONE)
+		scmBffPrefix = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '')
 
 		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch.startsWith(SBT_REV) || scmBranch == SBT_NONE)) {
 			throw new RuntimeException("Parameter ${idUpperCase + PARAM___SCM_BRANCH} invalid: ${scmBranch}")
