@@ -29,6 +29,8 @@ import java.util.regex.Pattern
 
 class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAfterActivities, Serializable {
 
+	public static final int AROUND_ACTIVITY_ORDER = 1000
+
 	private final Map<CipaActivityWrapper, String> dotNodeNameByWrappers = new HashMap<>()
 
 	private final AtomicBoolean produceSVGCalled = new AtomicBoolean()
@@ -74,7 +76,7 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 	@Override
 	@NonCPS
 	int getRunAroundActivityOrder() {
-		return 1000
+		return AROUND_ACTIVITY_ORDER
 	}
 
 	@Override

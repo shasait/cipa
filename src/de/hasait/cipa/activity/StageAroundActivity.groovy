@@ -27,6 +27,8 @@ import de.hasait.cipa.internal.CipaActivityWrapper
  */
 class StageAroundActivity implements CipaInit, CipaAroundActivity, Serializable {
 
+	public static final int AROUND_ACTIVITY_ORDER = 100
+
 	private final boolean withStageDefault
 
 	StageAroundActivity(boolean withStageDefault = true) {
@@ -43,7 +45,7 @@ class StageAroundActivity implements CipaInit, CipaAroundActivity, Serializable 
 	@Override
 	@NonCPS
 	int getRunAroundActivityOrder() {
-		return 100
+		return AROUND_ACTIVITY_ORDER
 	}
 
 	@Override

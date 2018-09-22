@@ -17,15 +17,15 @@
 package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
-import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaInit
-import de.hasait.cipa.PScript
 import de.hasait.cipa.internal.CipaActivityWrapper
 
 /**
- * Wrap each activity in a timeout if CipaActivityWithTimeout is implemented.
+ * Wrap each activity in a timeout if defaultTimeout is specified.
+ * {@link CipaActivityWithTimeout} can be implemented by an activity to adjust the timeout.
  */
-class TimeoutAroundActivity implements CipaInit, CipaAroundActivity, Serializable {
+class TimeoutAroundActivity extends AbstractCipaAroundActivity {
+
+	public static final int AROUND_ACTIVITY_ORDER = 10000
 
 	private final Integer defaultTimeoutInMinutes
 
@@ -33,27 +33,10 @@ class TimeoutAroundActivity implements CipaInit, CipaAroundActivity, Serializabl
 		this.defaultTimeoutInMinutes = defaultTimeoutInMinutes
 	}
 
-	private PScript script
-
-	@Override
-	void initCipa(Cipa cipa) {
-		script = cipa.findBean(PScript.class)
-	}
-
 	@Override
 	@NonCPS
 	int getRunAroundActivityOrder() {
-		return 10000
-	}
-
-	@Override
-	void handleFailedDependencies(CipaActivityWrapper wrapper) {
-		// nop
-	}
-
-	@Override
-	void beforeActivityStarted(CipaActivityWrapper wrapper) {
-		// nop
+		return AROUND_ACTIVITY_ORDER
 	}
 
 	@Override
@@ -71,11 +54,6 @@ class TimeoutAroundActivity implements CipaInit, CipaAroundActivity, Serializabl
 		} else {
 			next.call()
 		}
-	}
-
-	@Override
-	void afterActivityFinished(CipaActivityWrapper wrapper) {
-		// nop
 	}
 
 }
