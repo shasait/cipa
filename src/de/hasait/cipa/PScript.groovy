@@ -119,6 +119,10 @@ class PScript implements Serializable {
 		return sh('echo "' + escapedScript + '" | ssh -T -o "BatchMode yes" ' + username + '@localhost', returnStdout)
 	}
 
+	boolean fileExists(final String relativePath) {
+		return rawScript.fileExists(relativePath)
+	}
+
 	public <V> V timeout(int timeoutInMinutes, Closure<V> body) {
 		rawScript.timeout(timeoutInMinutes, body)
 	}
@@ -193,11 +197,11 @@ class PScript implements Serializable {
 			return sh("set -o pipefail ; mvn ${allArgumentsString} | tee -a ${MVN_LOG}" + buildGrep(mvnStdoutFilters), returnStdout)
 		}
 	}
-	
+
 	@NonCPS
 	private String buildGrep(List<String> filters) {
 		if (filters) {
-			return '| grep -E "' + filters.collect {it.replace('[', '\\[').replace(']', '\\]').replace('"', '\\"')}.join('|') + '"'
+			return '| grep -E "' + filters.collect { it.replace('[', '\\[').replace(']', '\\]').replace('"', '\\"') }.join('|') + '"'
 		}
 		return ''
 	}
