@@ -18,6 +18,7 @@ package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
+import de.hasait.cipa.resource.CipaResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
 /**
@@ -40,21 +41,21 @@ abstract class AbstractCipaActivity extends AbstractCipaBean implements CipaActi
 	}
 
 	@NonCPS
-	protected final void addRunRequiresRead(CipaResourceWithState<?> resourceWithState) {
+	protected final <R extends CipaResource> void addRunRequiresRead(CipaResourceWithState<R> resourceWithState) {
 		requiresRead.add(resourceWithState)
 		cipa.addBean(resourceWithState.resource)
 		cipa.addBean(resourceWithState)
 	}
 
 	@NonCPS
-	protected final void addRunRequiresWrite(CipaResourceWithState<?> resourceWithState) {
+	protected final <R extends CipaResource> void addRunRequiresWrite(CipaResourceWithState<R> resourceWithState) {
 		requiresWrite.add(resourceWithState)
 		cipa.addBean(resourceWithState.resource)
 		cipa.addBean(resourceWithState)
 	}
 
 	@NonCPS
-	protected final void addRunProvides(CipaResourceWithState<?> resourceWithState) {
+	protected final <R extends CipaResource> void addRunProvides(CipaResourceWithState<R> resourceWithState) {
 		provides.add(resourceWithState)
 		cipa.addBean(resourceWithState.resource)
 		cipa.addBean(resourceWithState)
