@@ -358,6 +358,7 @@ class PScript implements Serializable {
 
 		echo("${config.id}-scmUrl = ${scmUrl}")
 		echo("${config.id}-scmRef = ${scmRef}")
+		echo("${config.id}-scmResolvedBranch = ${scmResolvedBranch}")
 		echo("${config.id}-scmRev = ${scmRev}")
 
 		return new CheckoutResult(scmUrl: scmUrl, scmRef: scmRef, scmResolvedBranch: scmResolvedBranch, scmRev: scmRev)
