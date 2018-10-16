@@ -17,6 +17,7 @@
 package de.hasait.cipa
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.activity.CheckoutConfiguration
 import groovy.json.JsonSlurper
 import hudson.model.Job
 import hudson.model.Result
@@ -61,7 +62,7 @@ class PScript implements Serializable {
 	 * Determine SVN URL of current working directory.
 	 */
 	String determineSvnUrlOfCwd() {
-		String svnUrl = rawScript.sh(returnStdout: true, script: 'svn info | awk \'/^URL/{print $2}\'')
+		String svnUrl = sh('svn info | awk \'/^URL/{print $2}\'', true)
 		return svnUrl.trim()
 	}
 
@@ -69,15 +70,27 @@ class PScript implements Serializable {
 	 * Determine SVN Revision of current working directory.
 	 */
 	String determineSvnRevOfCwd() {
-		String svnRev = rawScript.sh(returnStdout: true, script: 'svn info | awk \'/^Revision/{print $2}\'')
+		String svnRev = sh('svn info | awk \'/^Revision/{print $2}\'', true)
 		return svnRev.trim()
+	}
+
+	/**
+	 * Determine Git Branch of current working directory.
+	 */
+	String determineGitBranchOfCwd() {
+		String gitRef = sh('git symbolic-ref HEAD', true).trim()
+		String prefix = 'refs/heads/'
+		if (gitRef.startsWith(prefix)) {
+			return gitRef.substring(prefix.length())
+		}
+		return gitRef
 	}
 
 	/**
 	 * Determine Git Revision of current working directory.
 	 */
 	String determineGitRevOfCwd() {
-		String gitRev = rawScript.sh(returnStdout: true, script: 'git rev-parse HEAD')
+		String gitRev = sh('git rev-parse HEAD', true)
 		return gitRev.trim()
 	}
 
@@ -196,6 +209,165 @@ class PScript implements Serializable {
 			sh("printenv | sort | tee -a ${MVN_LOG}")
 			return sh("set -o pipefail ; mvn ${allArgumentsString} | tee -a ${MVN_LOG}" + buildGrep(mvnStdoutFilters), returnStdout)
 		}
+	}
+
+	CheckoutResult checkout(CheckoutConfiguration config, String forcedScmBranch = null) {
+		String scmUrl
+		String scmRef
+		String scmResolvedBranch
+		String scmRev
+
+		scmUrl = config.scmUrl
+		String scmBranch = forcedScmBranch ?: config.scmBranch
+
+		if (!scmUrl) {
+			if (!config.dry) {
+				rawScript.checkout rawScript.scm
+				if (fileExists('.git')) {
+					// Git
+					scmResolvedBranch = determineGitBranchOfCwd()
+					scmRev = determineGitRevOfCwd()
+				} else {
+					// Subversion
+					scmUrl = determineSvnUrlOfCwd()
+					scmRev = determineSvnRevOfCwd()
+					if (scmUrl.endsWith('/trunk')) {
+						scmResolvedBranch = 'trunk'
+					} else {
+						int ioBranches = scmUrl.lastIndexOf('/branches/')
+						if (ioBranches > 0) {
+							scmResolvedBranch = scmUrl.substring(ioBranches + '/branches/'.length())
+						}
+					}
+				}
+			}
+		} else if (scmUrl.endsWith('.git')) {
+			// Git
+			scmRef = '*/master'
+			if (scmBranch == CheckoutConfiguration.SBT_TRUNK) {
+				scmResolvedBranch = 'master'
+				scmRef = 'refs/heads/master'
+			} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_BRANCH)) {
+				scmResolvedBranch = scmBranch.substring(CheckoutConfiguration.SBT_BRANCH.length())
+				scmRef = 'refs/heads/' + scmResolvedBranch
+			} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_TAG)) {
+				scmRef = 'refs/tags/' + scmBranch.substring(CheckoutConfiguration.SBT_TAG.length())
+			} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_REV)) {
+				scmRef = scmBranch.substring(CheckoutConfiguration.SBT_REV.length())
+			} else if (scmBranch == CheckoutConfiguration.SBT_BRANCH_FROM_FOLDER) {
+				String folderName = currentRawBuild.parent.parent.name
+				if (folderName == 'trunk' || folderName == 'master') {
+					scmResolvedBranch = 'master'
+				} else {
+					scmResolvedBranch = config.scmBffPrefix + folderName
+				}
+				scmRef = 'refs/heads/' + scmResolvedBranch
+			}
+			if (!config.dry) {
+				List extensions = []
+				extensions.add([$class: 'CleanCheckout'])
+				if (!config.pollingExcludedUsers.empty) {
+					extensions.add([$class: 'UserExclusion', excludedUsers: config.buildExcludeUsersValue()])
+				}
+				if (config.pollingExcludedMessagePattern) {
+					extensions.add([$class: 'MessageExclusion', excludedMessage: config.pollingExcludedMessagePattern])
+				}
+				if (config.subFolders) {
+					List pathList = []
+					for (String subFolder in config.subFolders) {
+						pathList.add([path: subFolder])
+					}
+					extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: pathList])
+				}
+				rawScript.checkout(
+						changelog: config.includeInChangelog,
+						poll: config.includeInPolling,
+						scm: [
+								$class                           : 'GitSCM',
+								branches                         : [[name: scmRef]],
+								doGenerateSubmoduleConfigurations: false,
+								extensions                       : extensions,
+								submoduleCfg                     : [],
+								userRemoteConfigs                : [[credentialsId: config.scmCredentialsId, url: scmUrl]]
+						])
+
+				scmRev = determineGitRevOfCwd()
+			}
+		} else {
+			// Subversion
+			String subPath
+			if (scmBranch == CheckoutConfiguration.SBT_TRUNK) {
+				scmResolvedBranch = 'trunk'
+				subPath = '/trunk'
+			} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_BRANCH)) {
+				scmResolvedBranch = scmBranch.substring(CheckoutConfiguration.SBT_BRANCH.length())
+				subPath = '/branches/' + scmResolvedBranch
+			} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_TAG)) {
+				subPath = '/tags/' + scmBranch.substring(CheckoutConfiguration.SBT_TAG.length())
+			} else if (scmBranch.startsWith(CheckoutConfiguration.SBT_REV)) {
+				throw new RuntimeException("Not implemented yet")
+			} else if (scmBranch == CheckoutConfiguration.SBT_BRANCH_FROM_FOLDER) {
+				String folderName = currentRawBuild.parent.parent.name
+				if (folderName == 'trunk') {
+					scmResolvedBranch = 'trunk'
+					subPath = '/trunk'
+				} else {
+					scmResolvedBranch = config.scmBffPrefix + folderName
+					subPath = '/branches/' + scmResolvedBranch
+				}
+			}
+			if (subPath) {
+				scmUrl += subPath
+			}
+			int subFoldersSize = config.subFolders.size()
+			if (subFoldersSize > 1) {
+				throw new RuntimeException("Subversion cannot handle multiple subfolders")
+			}
+			if (subFoldersSize == 1) {
+				scmUrl += '/' + config.subFolders.get(0)
+			}
+
+			if (!config.dry) {
+				rawScript.checkout(
+						changelog: config.includeInChangelog,
+						poll: config.includeInPolling,
+						scm: [
+								$class                : 'SubversionSCM',
+								additionalCredentials : [],
+								excludedCommitMessages: config.pollingExcludedMessagePattern ?: '',
+								excludedRegions       : '',
+								excludedRevprop       : '',
+								excludedUsers         : config.buildExcludeUsersValue(),
+								filterChangelog       : false,
+								ignoreDirPropChanges  : false,
+								includedRegions       : '',
+								locations             : [[
+																 credentialsId        : config.scmCredentialsId,
+																 depthOption          : 'infinity',
+																 ignoreExternalsOption: true,
+																 local                : '.',
+																 remote               : scmUrl
+														 ]],
+								workspaceUpdater      : [$class: 'UpdateWithCleanUpdater']
+						])
+
+				scmUrl = determineSvnUrlOfCwd()
+				scmRev = determineSvnRevOfCwd()
+			}
+		}
+
+		echo("${config.id}-scmUrl = ${scmUrl}")
+		echo("${config.id}-scmRef = ${scmRef}")
+		echo("${config.id}-scmRev = ${scmRev}")
+
+		return new CheckoutResult(scmUrl: scmUrl, scmRef: scmRef, scmResolvedBranch: scmResolvedBranch, scmRev: scmRev)
+	}
+
+	static class CheckoutResult {
+		String scmUrl
+		String scmRef
+		String scmResolvedBranch
+		String scmRev
 	}
 
 	@NonCPS
