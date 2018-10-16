@@ -27,6 +27,8 @@ class CipaFileResource implements CipaResource, Serializable {
 	private final CipaNode node
 	private final String path
 
+	def runtime = [:]
+
 	CipaFileResource(CipaNode node, String path) {
 		if (!node) {
 			throw new IllegalArgumentException('node is null')

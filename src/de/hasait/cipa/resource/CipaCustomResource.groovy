@@ -28,6 +28,8 @@ class CipaCustomResource implements CipaResource, Serializable {
 	private final String type
 	private final String id
 
+	def runtime = [:]
+
 	CipaCustomResource(CipaNode node, String type, String id) {
 		this.node = node
 		if (!type || type.length() == 0) {
