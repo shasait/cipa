@@ -331,17 +331,23 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 	}
 
-	private void nodeWithEnv(CipaNode node, Closure body) {
-		rawScript.node(nodeLabelPrefixHolder.nodeLabelPrefix + node.label) {
+	void node(CipaNode cipaNode, Closure body) {
+		rawScript.node(nodeLabelPrefixHolder.nodeLabelPrefix + cipaNode.label) {
 			CipaWorkspaceProvider workspaceProvider = findBean(CipaWorkspaceProvider.class, true)
 			if (!workspaceProvider) {
-				nodeWithEnvLogic(node, body)
+				body()
 			} else {
 				String wsPath = workspaceProvider.determineWorkspacePath()
 				rawScript.ws(wsPath) {
-					nodeWithEnvLogic(node, body)
+					body()
 				}
 			}
+		}
+	}
+
+	private void nodeWithEnv(CipaNode cipaNode, Closure body) {
+		node(cipaNode) {
+			nodeWithEnvLogic(cipaNode, body)
 		}
 	}
 
