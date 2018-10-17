@@ -16,6 +16,8 @@
 
 package de.hasait.cipa.test
 
+import groovy.json.JsonSlurper
+
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
@@ -37,11 +39,77 @@ class TestRawScript {
 	Map<String, String> readFileContents = [:]
 	Map<String, String> shResults = [:]
 	List<String> shExecute = []
+	Map<String, Object> httpRequestResults = [:]
 
 	ThreadLocal<List<String>> pwdListHolder = new ThreadLocal<>()
 
-	void echo(String message) {
-		log('[echo] ' + message)
+	void dir(String dir, Closure<?> body) {
+		log('[dir] >>> ' + dir)
+		List<String> pwdList = pwdListHolder.get() ?: []
+		if (!pwdList) {
+			pwdList = []
+			pwdListHolder.set(pwdList)
+		}
+		pwdList.add(dir)
+		try {
+			body()
+		} finally {
+			pwdList.remove(pwdList.size() - 1)
+		}
+		log('[dir] <<< ' + dir)
+	}
+
+	boolean fileExists(String file) {
+		return readFileContents.containsKey(file)
+	}
+
+	Object httpRequest(Map args) {
+		log('[httpRequest] ' + args)
+		return httpRequestResults.get(args.url)
+	}
+
+	void node(String label = '<none>', Closure<?> body) {
+		log('[node] >>> ' + label)
+		body()
+		log('[node] <<< ' + label)
+	}
+
+	void parallel(Map branches) {
+		log('[parallel] >>>')
+		List<Thread> threadGroup = new ArrayList<>()
+		for (branch in branches) {
+			if (Runnable.class.isInstance(branch.value)) {
+				threadGroup.add(new Thread((Runnable) branch.value, (String) branch.key))
+			}
+		}
+		threadGroup.each { it.start() }
+		threadGroup.each { it.join() }
+		log('[parallel] <<<')
+	}
+
+	String pwd() {
+		log('[pwd]')
+		List<String> pwdList = pwdListHolder.get() ?: []
+		return pwdList ? pwdList.join('/') : ''
+	}
+
+	String readFile(Map args) {
+		log('[readFile] ' + args)
+		String file = args.file
+		if (file) {
+			for (e in readFileContents) {
+				if (Pattern.compile(e.key).matcher(file).matches()) {
+					return e.value
+				}
+			}
+		}
+		return null
+	}
+
+	Object readJSON(Map args) {
+		log('[readJSON] ' + args)
+		String file = args.file
+		return new JsonSlurper().parseText(readFileContents.get(file))
 	}
 
 	String sh(Map args) {
@@ -69,78 +137,9 @@ class TestRawScript {
 		return ''
 	}
 
-	void parallel(Map branches) {
-		log('[parallel] >>>')
-		List<Thread> threadGroup = new ArrayList<>()
-		for (branch in branches) {
-			if (Runnable.class.isInstance(branch.value)) {
-				threadGroup.add(new Thread((Runnable) branch.value, (String) branch.key))
-			}
-		}
-		threadGroup.each { it.start() }
-		threadGroup.each { it.join() }
-		log('[parallel] <<<')
-	}
-
-	void node(String label = '<none>', Closure<?> body) {
-		log('[node] >>> ' + label)
-		body()
-		log('[node] <<< ' + label)
-	}
-
-	String readFile(Map args) {
-		log('[readFile] ' + args)
-		String file = args['file']
-		if (file) {
-			for (e in readFileContents) {
-				if (Pattern.compile(e.key).matcher(file).matches()) {
-					return e.value
-				}
-			}
-		}
-		return null
-	}
-
-	void writeFile(Map args) {
-		log('[writeFile] ' + args)
-	}
-
-	void withEnv(List assignments, Closure<?> body) {
-		log('[withEnv] >>> ' + assignments)
-		body()
-		log('[withEnv] <<< ' + assignments)
-	}
-
-	void dir(String dir, Closure<?> body) {
-		log('[dir] >>> ' + dir)
-		List<String> pwdList = pwdListHolder.get() ?: []
-		if (!pwdList) {
-			pwdList = []
-			pwdListHolder.set(pwdList)
-		}
-		pwdList.add(dir)
-		try {
-			body()
-		} finally {
-			pwdList.remove(pwdList.size() - 1)
-		}
-		log('[dir] <<< ' + dir)
-	}
-
-	String pwd() {
-		log('[pwd]')
-		List<String> pwdList = pwdListHolder.get() ?: []
-		return pwdList ? pwdList.join('/') : ''
-	}
-
-	void wrap(Map args, Closure<?> body) {
-		log('[wrap] >>> ' + args)
-		body()
-		log('[wrap] <<< ' + args)
-	}
-
-	void deleteDir() {
-		log('[deleteDir]')
+	void sleep(int seconds) {
+		log('[sleep] ' + seconds)
+		Thread.sleep(TimeUnit.SECONDS.toMillis(seconds))
 	}
 
 	void waitUntil(Closure<Boolean> test) {
@@ -150,103 +149,25 @@ class TestRawScript {
 		}
 	}
 
-	void checkout(Map args) {
-		log('[checkout] ' + args)
-	}
+	//-----------------------------------------------
 
-	void stash(Map args) {
-		log('[stash] ' + args)
-	}
+	def methodMissing(String name, args) {
+		Closure body
+		if (args && args.length > 0 && args[-1] instanceof Closure) {
+			body = args[-1]
+			args = args[0..-2]
+		} else {
+			body = null
+		}
+		log('[' + name + ']' + (body ? ' >>>' : '') + (args ? ' ' + args : ''))
+		if (body) {
+			body.call()
+			log('[' + name + ']' + (body ? ' <<<' : '') + (args ? ' ' + args : ''))
+		}
 
-	void unstash(Map args) {
-		log('[unstash] ' + args)
-	}
-
-	void unstash(String arg) {
-		log('[unstash] ' + arg)
-	}
-
-	void stage(String stage, Closure<?> body) {
-		log('[stage] >>> ' + stage)
-		body()
-		log('[stage] <<< ' + stage)
-	}
-
-	void timeout(int timeoutInMinutes, Closure<?> body) {
-		timeout([timeout: timeoutInMinutes], body)
-	}
-
-	void timeout(Map args, Closure<?> body) {
-		log('[timeout] >>> ' + args)
-		body()
-		log('[timeout] <<< ' + args)
-	}
-
-	void junit(String arg) {
-		log('[junit] ' + arg)
-	}
-
-	void archiveArtifacts(Map args) {
-		log('[archiveArtifacts] ' + args)
-	}
-
-	Object tool(Map args) {
-		return ['tool': args]
-	}
-
-	Object string(Map args) {
-		return ['string': args]
-	}
-
-	Object logRotator(Map args) {
-		return ['logRotator': args]
-	}
-
-	Object buildDiscarder(Object logRotator) {
-		return ['buildDiscarder': logRotator]
-	}
-
-	Object parameters(List parameters) {
-		return ['parameters': parameters]
-	}
-
-	Object pipelineTriggers(Object arg0) {
-		return ['pipelineTriggers': arg0]
-	}
-
-	Object pollSCM(String cron) {
-		return ['pollSCM': cron]
-	}
-
-	void properties(List properties) {
-		log('[properties] ' + properties)
-	}
-
-	Object configFile(Map args) {
-		return ['configFile': args]
-	}
-
-	void configFileProvider(List configFiles, Closure<?> body) {
-		log('[configFileProvider] >>> ' + configFiles)
-		body()
-		log('[configFileProvider] <<< ' + configFiles)
-	}
-
-	void setCustomBuildProperty(Map args) {
-		log('[setCustomBuildProperty] ' + args)
-	}
-
-	void setJUnitCounts(Map args) {
-		log('[setJUnitCounts] ' + args)
-	}
-
-	void sleep(int seconds) {
-		log('[sleep] ' + seconds)
-		Thread.sleep(TimeUnit.SECONDS.toMillis(seconds))
-	}
-
-	void step(Map arg) {
-		log('[step] ' + arg)
+		def result = [:]
+		result.put(name, args)
+		return result
 	}
 
 	class Env {
