@@ -283,7 +283,9 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 	final void applyJobProperties() {
 		List jobProperties = []
 
-		jobProperties.add(rawScript.parameters(parameters))
+		if (parameters) {
+			jobProperties.add(rawScript.parameters(parameters))
+		}
 
 		def buildDiscarderWithDefaulting
 		if (buildDiscarder) {
