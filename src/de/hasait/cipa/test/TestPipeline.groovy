@@ -47,12 +47,10 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 		cipa.debug = true
 		cipa.addBean(this)
 
+		cipa.addStandardBeans(10)
+
 		CipaNode node1 = cipa.newNode('node1')
 		CipaNode node2 = cipa.newNode('node2')
-
-		cipa.addBean(new StageAroundActivity())
-		new TimeoutAroundActivity(cipa, 10)
-		cipa.addBean(new UpdateGraphAroundActivity())
 
 		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').providedCheckedOutFiles
 		CipaResourceWithState<CipaStashResource> mainStash = new StashFilesActivity(cipa, 'StashMain', mainCheckedOutFiles).providedStash

@@ -18,8 +18,11 @@ package de.hasait.cipa
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.activity.CipaAfterActivities
+import de.hasait.cipa.activity.StageAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
+import de.hasait.cipa.activity.TimeoutAroundActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
+import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.internal.CipaActivityBuilder
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaPrepareEnv
@@ -74,6 +77,13 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	public <T> T addBean(T bean) {
 		beans.add(bean)
 		return bean
+	}
+
+	@NonCPS
+	void addStandardBeans(Integer defaultTimeoutInMinutes = null) {
+		addBean(new StageAroundActivity())
+		new TimeoutAroundActivity(this, defaultTimeoutInMinutes)
+		addBean(new UpdateGraphAroundActivity())
 	}
 
 	@Override
