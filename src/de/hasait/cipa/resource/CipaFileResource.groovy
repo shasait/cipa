@@ -30,9 +30,6 @@ class CipaFileResource implements CipaResource, Serializable {
 	def runtime = [:]
 
 	CipaFileResource(CipaNode node, String path) {
-		if (!node) {
-			throw new IllegalArgumentException('node is null')
-		}
 		if (!path || path.length() == 0) {
 			throw new IllegalArgumentException('relDir is null or empty')
 		}
@@ -55,7 +52,7 @@ class CipaFileResource implements CipaResource, Serializable {
 	@Override
 	@NonCPS
 	String toString() {
-		return "Files[${path}] on ${node}"
+		return (node ? '' : 'Global') + "Files[${path}]" + (node ? " on ${node}" : '')
 	}
 
 }

@@ -30,7 +30,9 @@ class TestReaderActivity extends AbstractCipaActivity {
 	private final CipaResourceWithState<CipaFileResource> filesIn
 	private final CipaResourceWithState<CipaFileResource> filesOut
 
-	TestReaderActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState) {
+	private final Boolean failing
+
+	TestReaderActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState, Boolean failing = null) {
 		super(cipa)
 
 		this.name = name
@@ -40,6 +42,8 @@ class TestReaderActivity extends AbstractCipaActivity {
 
 		this.filesOut = cipa.newResourceState(filesIn, newState)
 		addRunProvides(filesOut)
+
+		this.failing = failing
 	}
 
 	@NonCPS
@@ -70,11 +74,11 @@ class TestReaderActivity extends AbstractCipaActivity {
 			}
 		}
 
-		script.sleep(5)
-		if (Math.random() < 0.2) {
-			throw new RuntimeException("Random failure")
+		script.sleep(1)
+		if (failing != null ? failing : Math.random() < 0.2) {
+			throw new RuntimeException("Failure")
 		}
-		script.sleep(5)
+		script.sleep(1)
 	}
 
 	@Override

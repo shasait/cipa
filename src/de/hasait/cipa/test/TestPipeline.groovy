@@ -21,7 +21,13 @@ import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.PScript
-import de.hasait.cipa.activity.*
+import de.hasait.cipa.activity.CheckoutActivity
+import de.hasait.cipa.activity.CipaAroundActivity
+import de.hasait.cipa.activity.StageAroundActivity
+import de.hasait.cipa.activity.StashFilesActivity
+import de.hasait.cipa.activity.TimeoutAroundActivity
+import de.hasait.cipa.activity.UnstashFilesActivity
+import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
@@ -36,7 +42,7 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	private PScript script
 	private def rawScript
 
-	TestPipeline(rawScript) {
+	TestPipeline(rawScript, Boolean ra1f = null, Boolean ra2f = null, Boolean ra3f = null, Boolean wa1f = null, Boolean wa2f = null, Boolean wa3f = null, Boolean rb1f = null) {
 		cipa = new Cipa(rawScript)
 		cipa.debug = true
 		cipa.addBean(this)
@@ -51,13 +57,13 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').providedCheckedOutFiles
 		CipaResourceWithState<CipaStashResource> mainStash = new StashFilesActivity(cipa, 'StashMain', mainCheckedOutFiles).providedStash
 		CipaResourceWithState<CipaFileResource> files = new UnstashFilesActivity(cipa, "UnstashMain", mainStash, node2).providedFiles
-		new TestReaderActivity(cipa, "TestRa1", files, "StateRa1")
-		TestReaderActivity ra2 = new TestReaderActivity(cipa, "TestRa2", files, "StateRa2")
-		new TestReaderActivity(cipa, "TestRa3", files, "StateRa3")
-		new TestWriterActivity(cipa, "TestWa1", files, "StateW1")
-		new TestWriterActivity(cipa, "TestWa2", files, "StateW2")
-		new TestWriterActivity(cipa, "TestWa3", files, "StateW3")
-		new TestReaderActivity(cipa, "TestRb1", ra2.providedFilesOut, "StateRb1")
+		new TestReaderActivity(cipa, "TestRa1", files, "StateRa1", ra1f)
+		TestReaderActivity ra2 = new TestReaderActivity(cipa, "TestRa2", files, "StateRa2", ra2f)
+		new TestReaderActivity(cipa, "TestRa3", files, "StateRa3", ra3f)
+		new TestWriterActivity(cipa, "TestWa1", files, "StateW1", wa1f)
+		new TestWriterActivity(cipa, "TestWa2", files, "StateW2", wa2f)
+		new TestWriterActivity(cipa, "TestWa3", files, "StateW3", wa3f)
+		new TestReaderActivity(cipa, "TestRb1", ra2.providedFilesOut, "StateRb1", rb1f)
 	}
 
 	@Override

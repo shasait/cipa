@@ -31,7 +31,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 	private final String name
 	private final boolean withStage
 	private final CipaResourceWithState<CipaFileResource> files
-	private final String subDir
+	private final String relDir
 	private final CipaResourceWithState<CipaStashResource> stash
 
 	private Set<String> fileIncludes = new LinkedHashSet<>()
@@ -40,19 +40,13 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 
 	private PScript script
 
-	@NonCPS
-	private static String relDir(CipaResourceWithState<CipaFileResource> files, String subDir) {
-		return files.resource.path + (subDir ? '/' + subDir : '')
-	}
-
-	StashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> files, String subDir = '', boolean withStage = false) {
+	StashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> files, String subDir = null, boolean withStage = false) {
 		this.cipa = cipa
 		this.name = name
 		this.withStage = withStage
 		this.files = files
-		this.subDir = subDir
+		this.relDir = files.resource.path + (subDir ? '/' + subDir : '')
 
-		String relDir = relDir(files, subDir)
 		String stashId = files.resource.node.label + '_' + name + '_' + relDir.replace('/', '_')
 		this.stash = cipa.newStashResourceWithState(stashId, relDir, files.state)
 
@@ -140,7 +134,7 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("Stashing ${files}...")
 
-		script.dir(relDir(files, subDir)) {
+		script.dir(relDir) {
 			script.stash(stash.resource.id, fileIncludes, fileExcludes, useDefaultExcludes)
 		}
 	}

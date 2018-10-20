@@ -18,6 +18,9 @@ package de.hasait.cipa
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.activity.CipaAfterActivities
+import de.hasait.cipa.activity.StashFilesActivity
+import de.hasait.cipa.activity.UnstashFilesActivity
+import de.hasait.cipa.internal.CipaActivityBuilder
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaPrepareEnv
 import de.hasait.cipa.internal.CipaPrepareJobProperties
@@ -122,6 +125,21 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	@NonCPS
+	CipaActivityBuilder newActivityBuilder(CipaNode node) {
+		return new CipaActivityBuilder(this, node)
+	}
+
+	@NonCPS
+	CipaResourceWithState<CipaStashResource> newStashActivity(String name, CipaResourceWithState<CipaFileResource> files, String subDir = '', boolean withStage = false) {
+		return new StashFilesActivity(this, name, files, subDir, withStage).providedStash
+	}
+
+	@NonCPS
+	CipaResourceWithState<CipaFileResource> newUnstashActivity(String name, CipaResourceWithState<CipaStashResource> stash, CipaNode node, String relDir = null, boolean withStage = false) {
+		return new UnstashFilesActivity(this, name, stash, node, relDir, withStage).providedFiles
+	}
+
+	@NonCPS
 	CipaResourceWithState<CipaFileResource> newFileResourceWithState(CipaNode node, String relDir, String state) {
 		CipaFileResource resource = addBean(new CipaFileResource(node, relDir))
 		return addBean(new CipaResourceWithState<CipaFileResource>(resource, state))
@@ -137,6 +155,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	CipaResourceWithState<CipaCustomResource> newCustomResourceWithState(CipaNode node = null, String type, String id, String state) {
 		CipaCustomResource resource = addBean(new CipaCustomResource(node, type, id))
 		return addBean(new CipaResourceWithState<CipaCustomResource>(resource, state))
+	}
+
+	@NonCPS
+	public <R extends CipaResource> CipaResourceWithState<R> newResourceWithState(R resource, String state) {
+		return addBean(new CipaResourceWithState<CipaCustomResource>(addBean(resource), state))
 	}
 
 	@NonCPS

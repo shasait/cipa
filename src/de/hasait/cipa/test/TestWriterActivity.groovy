@@ -30,7 +30,9 @@ class TestWriterActivity extends AbstractCipaActivity {
 	private final CipaResourceWithState<CipaFileResource> filesIn
 	private final CipaResourceWithState<CipaFileResource> filesOut
 
-	TestWriterActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState) {
+	private final Boolean failingTest
+
+	TestWriterActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState, Boolean failingTest = null) {
 		super(cipa)
 
 		this.name = name
@@ -40,6 +42,8 @@ class TestWriterActivity extends AbstractCipaActivity {
 
 		this.filesOut = cipa.newResourceState(filesIn, newState)
 		addRunProvides(filesOut)
+
+		this.failingTest = failingTest
 	}
 
 	@NonCPS
@@ -70,13 +74,11 @@ class TestWriterActivity extends AbstractCipaActivity {
 			script.echo(script.pwd())
 		}
 
-		if (Math.random() < 0.2) {
+		if (failingTest != null ? failingTest : Math.random() < 0.2) {
 			runContext.addFailedTest('Evil Test', 3)
-		}
-		if (Math.random() < 0.2) {
+		} else {
 			runContext.addPassedTest('Good one')
 		}
-
 	}
 
 	@Override
