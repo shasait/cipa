@@ -31,17 +31,17 @@ class BuilderBasedTest extends CipaTestBase {
 
 		def node = cipa.newNode('label')
 
-		def a1 = cipa.newActivityBuilder(node)
+		def a1 = cipa.newActivity(node)
 		def a1out = a1.providesDir('mydir')
-		a1.build('A1') {
+		a1.create('A1') {
 			script.dir(a1out.resource.path) {
 				script.sh 'touch a'
 			}
 		}
 
-		def a2 = cipa.newActivityBuilder(node)
+		def a2 = cipa.newActivity(node)
 		def a2out = a2.modifies(a1out)
-		a2.build('A2') {
+		a2.create('A2') {
 			script.dir(a2out.resource.path) {
 				script.sh 'echo "Hallo" > a'
 			}

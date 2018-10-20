@@ -125,7 +125,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	@NonCPS
-	CipaActivityBuilder newActivityBuilder(CipaNode node) {
+	CipaActivityBuilder newActivity(CipaNode node) {
 		return new CipaActivityBuilder(this, node)
 	}
 

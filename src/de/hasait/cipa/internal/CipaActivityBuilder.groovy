@@ -77,13 +77,14 @@ class CipaActivityBuilder implements Serializable {
 	}
 
 	@NonCPS
-	CipaActivity build(String name, Closure<?> logic) {
+	CipaActivity create(String name, Closure<?> logic) {
 		if (activityProvides && used) {
 			throw new IllegalStateException("A builder having provided resources can be only used once: ${name}")
 		}
 
 		String activityName = name
 		CipaNode activityNode = node
+		Closure<?> activityLogic = logic
 
 		CipaActivity activity = new CipaActivity() {
 
@@ -117,7 +118,7 @@ class CipaActivityBuilder implements Serializable {
 			}
 
 			void runActivity(CipaActivityRunContext runContext) {
-				logic.call(runContext)
+				activityLogic.call(runContext)
 			}
 
 		}
