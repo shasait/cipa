@@ -72,7 +72,7 @@ class CipaActivityBuilder implements Serializable {
 	}
 
 	@NonCPS
-	void reads(CipaResourceWithState<?> read) {
+	public <R extends CipaResource> void reads(CipaResourceWithState<R> read) {
 		activityRequiresRead.add(read)
 	}
 
