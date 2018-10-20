@@ -86,22 +86,28 @@ class CipaActivityBuilder implements Serializable {
 		CipaNode activityNode = node
 
 		CipaActivity activity = new CipaActivity() {
+
+			@NonCPS
 			String getName() {
 				return activityName
 			}
 
+			@NonCPS
 			Set<CipaResourceWithState<?>> getRunRequiresRead() {
 				return activityRequiresRead
 			}
 
+			@NonCPS
 			Set<CipaResourceWithState<?>> getRunRequiresWrite() {
 				return activityRequiresWrite
 			}
 
+			@NonCPS
 			Set<CipaResourceWithState<?>> getRunProvides() {
 				return activityProvides
 			}
 
+			@NonCPS
 			CipaNode getNode() {
 				return activityNode
 			}
@@ -113,6 +119,7 @@ class CipaActivityBuilder implements Serializable {
 			void runActivity(CipaActivityRunContext runContext) {
 				logic.call(runContext)
 			}
+
 		}
 
 		used = true
