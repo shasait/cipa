@@ -107,10 +107,12 @@ class CipaActivityBuilder implements Serializable {
 			cipa.addBean(this)
 		}
 
+		@NonCPS
 		String getName() {
 			return name
 		}
 
+		@NonCPS
 		CipaNode getNode() {
 			return node
 		}
