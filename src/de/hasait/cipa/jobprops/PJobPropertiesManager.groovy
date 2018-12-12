@@ -307,9 +307,7 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 
 		rawScript.properties(jobProperties)
 
-		List<String> descriptions = script.collectDescriptions()
-		// TODO move additionalEnv to CipaPrepareEnv after projects migrated
-		descriptionValues = script.parseJsonBlocks(descriptions, 'parameters', 'additionalEnv')
+		descriptionValues = script.determineParametersFromDescriptionValues()
 	}
 
 	@NonCPS
