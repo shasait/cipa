@@ -231,6 +231,13 @@ class PScript implements Serializable {
 		return workspace + '/.repo'
 	}
 
+	@NonCPS
+	Map<String, Object> determineParametersFromDescriptionValues(Job<?, ?> job = currentRawBuild.parent) {
+		List<String> descriptions = collectDescriptions(job)
+		// TODO move additionalEnv to CipaPrepareEnv after projects migrated
+		return parseJsonBlocks(descriptions, 'parameters', 'additionalEnv')
+	}
+
 	/**
 	 * Determine SVN URL of current working directory.
 	 */
