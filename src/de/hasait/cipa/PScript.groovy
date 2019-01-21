@@ -30,6 +30,7 @@ import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 class PScript implements Serializable {
 
 	static final String MVN_LOG = 'mvn.log'
+	static final String MVN_REPO_RELDIR = '.repo'
 
 	def rawScript
 
@@ -228,7 +229,7 @@ class PScript implements Serializable {
 
 	String determineMvnRepo() {
 		String workspace = rawScript.env.WORKSPACE
-		return workspace + '/.repo'
+		return workspace + '/' + MVN_REPO_RELDIR
 	}
 
 	@NonCPS
@@ -404,6 +405,18 @@ class PScript implements Serializable {
 
 	void unstash(String id) {
 		rawScript.unstash(id)
+	}
+
+	/**
+	 * Use folder {@link PScript#MVN_REPO_RELDIR} in current working directory as mvn repo (will be created automatically).
+	 */
+	public <V> V withPrivateMvnRepo(Closure<V> body) {
+		def envVars = []
+		String mvnRepo = pwd() + '/' + MVN_REPO_RELDIR
+		envVars.add("${Cipa.ENV_VAR___MVN_REPO}=${mvnRepo}")
+		rawScript.withEnv(envVars) {
+			body()
+		}
 	}
 
 	static class CheckoutResult {
