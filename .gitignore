@@ -1,4 +1,17 @@
+# Build
+/**/target
+
 # IntelliJ
-.idea
 *.iml
-out
+*.ipr
+*.iws
+.idea
+
+# Eclipse
+.metadata
+.classpath
+.project
+.settings
+.factorypath
+.checkstyle
+.externalToolBuilders
