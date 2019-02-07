@@ -315,7 +315,7 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		Objects.requireNonNull(name)
 
 		// TODO remove fallback to P_ after projects migrated
-		return rawScript.params[name] ?: rawScript.params['P_' + name]
+		return rawScript.params['P_' + name] ?: rawScript.params[name]
 	}
 
 	@NonCPS
@@ -324,8 +324,8 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		Objects.requireNonNull(name)
 
 		// TODO remove fallback to P_ after projects migrated
-		Boolean value = (Boolean) rawScript.params[name]
-		value = value != null ? value : rawScript.params['P_' + name]
+		Boolean value = (Boolean) rawScript.params['P_' + name]
+		value = value != null ? value : rawScript.params[name]
 		if (value == null) {
 			// cannot be null
 			throw new RuntimeException("${name} is not a param (yet?)")
