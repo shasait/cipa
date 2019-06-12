@@ -16,6 +16,8 @@
 
 package de.hasait.cipa
 
+import java.util.function.Supplier
+
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.activity.CipaAfterActivities
 import de.hasait.cipa.activity.StageAroundActivity
@@ -128,7 +130,24 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 		return result
 	}
-
+	
+	/**
+	 * Either return already existing bean or create a new one.
+	 * @param type The type of the bean, never null.
+	 * @param constructor If null the no-arg-constructor is used, otherwise this supplier.
+	 * @return The bean, never null.
+	 */
+	@Override
+	@NonCPS
+	public <T> T findOrAddBean(Class<T> type, Supplier<T> constructor = null) {
+		T bean = findBean(type, true)
+		if (bean != null) {
+			return bean
+		}
+		T newBean = constructor != null ? constructor.get() : type.newInstance()
+		return addBean(newBean)
+	}
+	
 	@NonCPS
 	CipaNode newNode(String nodeLabel) {
 		return addBean(new CipaNode(nodeLabel))
