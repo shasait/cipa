@@ -16,6 +16,8 @@
 
 package de.hasait.cipa
 
+import java.util.function.Supplier
+
 /**
  *
  */
