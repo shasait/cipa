@@ -23,11 +23,8 @@ import de.hasait.cipa.CipaNode
 import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CheckoutActivity
 import de.hasait.cipa.activity.CipaAroundActivity
-import de.hasait.cipa.activity.StageAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
-import de.hasait.cipa.activity.TimeoutAroundActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
-import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState

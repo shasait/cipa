@@ -2,7 +2,7 @@
 
 ## What is cipa?
 Cipa is a shared library for Jenkins Pipelines.
-It is useful for massive parallel pipelines to reduce cyclomatic complexity and remove boilerplate code.
+It is useful for massive parallel pipelines to reduce cyclomatic complexity and boilerplate code.
 
 Currently it is focused to Java and Maven projects, but can be easily extended.
 

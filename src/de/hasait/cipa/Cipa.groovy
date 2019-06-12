@@ -83,9 +83,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	void addStandardBeans(Integer defaultTimeoutInMinutes = null) {
-		addBean(new StageAroundActivity())
-		new TimeoutAroundActivity(this, defaultTimeoutInMinutes)
-		addBean(new UpdateGraphAroundActivity())
+		findOrAddBean(StageAroundActivity.class)
+		findOrAddBean(TimeoutAroundActivity.class).withDefaultTimeoutInMinutes(defaultTimeoutInMinutes)
+		findOrAddBean(UpdateGraphAroundActivity.class)
 	}
 
 	@Override
@@ -134,7 +134,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	/**
 	 * Either return already existing bean or create a new one.
 	 * @param type The type of the bean, never null.
-	 * @param constructor If null the no-arg-constructor is used, otherwise this supplier.
+	 * @param constructor If specified use if no bean exists; if null, first try cipa-arg-constructor, then no-arg-constructor.
 	 * @return The bean, never null.
 	 */
 	@Override
@@ -144,8 +144,17 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		if (bean != null) {
 			return bean
 		}
-		T newBean = constructor != null ? constructor.get() : type.newInstance()
-		return addBean(newBean)
+		T newBean
+		if (constructor != null) {
+			newBean = constructor.get()
+		} else {
+			try {
+				newBean = type.getConstructor(Cipa.class).newInstance(this)
+			} catch (NoSuchMethodException e) {
+				newBean = type.newInstance()
+			}
+		}
+		return beans.contains(newBean) ? newBean : addBean(newBean)
 	}
 	
 	@NonCPS

@@ -28,12 +28,18 @@ class TimeoutAroundActivity extends AbstractCipaAroundActivity {
 
 	public static final int AROUND_ACTIVITY_ORDER = 10000
 
-	private final Integer defaultTimeoutInMinutes
+	private Integer defaultTimeoutInMinutes
 
 	TimeoutAroundActivity(Cipa cipa, Integer defaultTimeoutInMinutes = null) {
 		super(cipa)
 
 		this.defaultTimeoutInMinutes = defaultTimeoutInMinutes
+	}
+
+	@NonCPS
+	TimeoutAroundActivity withDefaultTimeoutInMinutes(Integer defaultTimeoutInMinutes) {
+		this.defaultTimeoutInMinutes = defaultTimeoutInMinutes
+		return this
 	}
 
 	@Override
