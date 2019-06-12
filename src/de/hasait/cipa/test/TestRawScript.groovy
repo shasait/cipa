@@ -34,8 +34,6 @@ class TestRawScript {
 
 	def params = [:]
 
-	Env env = new Env()
-
 	Map<String, String> readFileContents = [:]
 	Map<String, String> shResults = [:]
 	List<String> shExecute = []
@@ -149,6 +147,46 @@ class TestRawScript {
 		}
 	}
 
+	def env = new TestEnv()
+
+	class TestEnv {
+
+		def environment = [:]
+
+		def getProperty(String name) {
+			return environment[name]
+		}
+
+		void setProperty(String name, Object value) {
+			environment[name] = value
+		}
+
+	}
+
+	def manager = new TestManager()
+
+	class TestManager {
+
+		def methodMissing(String name, args) {
+			Closure body
+			if (args && args.length > 0 && args[-1] instanceof Closure) {
+				body = args[-1]
+				args = args[0..-2]
+			} else {
+				body = null
+			}
+			log('[' + name + ']' + (body ? ' >>>' : '') + (args ? ' ' + args : ''))
+			if (body) {
+				body.call()
+				log('[' + name + ']' + (body ? ' <<<' : '') + (args ? ' ' + args : ''))
+			}
+			def result = [:]
+			result.put(name, args)
+			return result
+		}
+
+	}
+
 	//-----------------------------------------------
 
 	def methodMissing(String name, args) {
@@ -168,20 +206,6 @@ class TestRawScript {
 		def result = [:]
 		result.put(name, args)
 		return result
-	}
-
-	class Env {
-
-		def environment = [:]
-
-		def getProperty(String name) {
-			return environment[name]
-		}
-
-		void setProperty(String name, Object value) {
-			environment[name] = value
-		}
-
 	}
 
 }
