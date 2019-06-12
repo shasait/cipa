@@ -31,4 +31,8 @@ interface CipaBeanContainer {
 
 	public <T> T findBean(Class<T> type)
 
+	public <T> T findOrAddBean(Class<T> type, Supplier<T> constructor)
+
+	public <T> T findOrAddBean(Class<T> type)
+
 }
