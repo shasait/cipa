@@ -20,7 +20,6 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.activity.CheckoutConfiguration
 import groovy.json.JsonSlurper
 import hudson.model.Job
-import hudson.model.Result
 import hudson.model.Run
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
@@ -38,19 +37,25 @@ class PScript implements Serializable {
 		this.rawScript = rawScript
 	}
 
+	@NonCPS
+	static List<String> getLog(RunWrapper runWrapper, int maxLines) {
+		Run rawBuild = runWrapper.rawBuild
+		List<String> lines = rawBuild.getLog(maxLines)
+		return lines
+	}
+
 	void archiveArtifacts(String artifacts, String excludes = null, boolean allowEmptyArchive = false, boolean fingerprint = false, boolean onlyIfSuccessful = false, boolean defaultExcludes = true, boolean caseSensitive = true) {
 		rawScript.archiveArtifacts(allowEmptyArchive: allowEmptyArchive, artifacts: artifacts, caseSensitive: caseSensitive, defaultExcludes: defaultExcludes, excludes: excludes, fingerprint: fingerprint, onlyIfSuccessful: onlyIfSuccessful)
 	}
 
 	RunWrapper build(String job, List parameters = [], int embedLogMaxLines = 100) {
 		RunWrapper runWrapper = rawScript.build(job: job, parameters: parameters, propagate: false)
-		Run<?, ?> rawBuild = runWrapper.rawBuild
-		List<String> lines = rawBuild.getLog(embedLogMaxLines)
-		echo("Build ${rawBuild.url}\nLast lines:\n${lines.join('\n')}")
-		if (rawBuild.result == Result.FAILURE) {
-			throw new RuntimeException("Build ${rawBuild.url} failed!")
+		List<String> lines = getLog(runWrapper, embedLogMaxLines)
+		echo("Build ${runWrapper.absoluteUrl}\nLast lines:\n${lines.join('\n')}")
+		if (runWrapper.result == 'FAILURE') {
+			throw new RuntimeException("Build ${runWrapper.absoluteUrl} failed!")
 		}
-		return RunWrapper
+		return runWrapper
 	}
 
 	CheckoutResult checkout(CheckoutConfiguration config, String forcedScmBranch = null) {
@@ -419,13 +424,6 @@ class PScript implements Serializable {
 		}
 	}
 
-	static class CheckoutResult {
-		String scmUrl
-		String scmRef
-		String scmResolvedBranch
-		String scmRev
-	}
-
 	@NonCPS
 	private String buildGrep(List<String> filters) {
 		if (filters) {
@@ -464,6 +462,13 @@ class PScript implements Serializable {
 		}
 
 		return result
+	}
+
+	static class CheckoutResult implements Serializable {
+		String scmUrl
+		String scmRef
+		String scmResolvedBranch
+		String scmRev
 	}
 
 }
