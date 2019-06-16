@@ -359,7 +359,7 @@ class PScript implements Serializable {
 		rawScript.withEnv(["${Cipa.ENV_VAR___MVN_OPTIONS}=${optionsString} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
 			writeFile(MVN_LOG, "Executing: mvn ${allArgumentsString}\nEnvironment:\n")
 			sh("printenv | sort | tee -a ${MVN_LOG}")
-			return sh("set -o pipefail ; mvn ${allArgumentsString} | tee -a ${MVN_LOG}" + buildGrep(mvnStdoutFilters), returnStdout)
+			return sh("#!/bin/bash\nset -o pipefail\nmvn ${allArgumentsString} | tee -a ${MVN_LOG} ${buildGrep(mvnStdoutFilters)}", returnStdout)
 		}
 	}
 

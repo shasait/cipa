@@ -67,7 +67,11 @@ class TestWriterActivity extends AbstractCipaActivity {
 	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("Test ${filesIn} and ${filesOut}")
 
-		runContext.addJUnitTestResults(null, '.*STest')
+		script.dir(filesIn.resource.path) {
+			script.mvn(['clean', 'package'], [], [], [], true)
+			runContext.archiveMvnLogFile(getName() + '.log')
+			runContext.addJUnitTestResults(null, '.*STest')
+		}
 
 		script.echo(script.pwd())
 		script.dir("somedir") {
