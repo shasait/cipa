@@ -40,7 +40,7 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	private def rawScript
 
 	TestPipeline(rawScript, Boolean ra1f = null, Boolean ra2f = null, Boolean ra3f = null, Boolean wa1f = null, Boolean wa2f = null, Boolean wa3f = null, Boolean rb1f = null) {
-		cipa = new Cipa(rawScript)
+		cipa = Cipa.getOrCreate(rawScript)
 		cipa.debug = true
 		cipa.addBean(this)
 

@@ -16,6 +16,7 @@
 
 package de.hasait.cipa
 
+import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Supplier
 
 import com.cloudbees.groovy.cps.NonCPS
@@ -48,6 +49,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	static final String ENV_VAR___MVN_TOOLCHAINS = 'MVN_TOOLCHAINS'
 	static final String ENV_VAR___MVN_OPTIONS = 'MAVEN_OPTS'
 
+	private static final ConcurrentHashMap<Object, Cipa> instances = new ConcurrentHashMap<>()
+
 	private final def rawScript
 	private final PScript script
 	private final CipaPrepareNodeLabelPrefix nodeLabelPrefixHolder
@@ -67,11 +70,27 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		if (!rawScript) {
 			throw new IllegalArgumentException('rawScript is null')
 		}
+		Cipa existingCipa = instances.putIfAbsent(rawScript, this)
+		if (existingCipa != null) {
+			throw new IllegalArgumentException('Duplicate construction - use getOrCreate')
+		}
 		this.rawScript = rawScript
 		script = addBean(new PScript(rawScript))
 		addBean(new CipaPrepareEnv())
 		addBean(new CipaPrepareJobProperties())
 		nodeLabelPrefixHolder = addBean(new CipaPrepareNodeLabelPrefix())
+	}
+
+	@NonCPS
+	static Cipa getOrCreate(rawScript) {
+		if (!rawScript) {
+			throw new IllegalArgumentException('rawScript is null')
+		}
+		Cipa existingCipa = instances.get(rawScript)
+		if (existingCipa != null) {
+			return existingCipa
+		}
+		return new Cipa(rawScript)
 	}
 
 	@Override
@@ -150,8 +169,12 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		} else {
 			try {
 				newBean = type.getConstructor(Cipa.class).newInstance(this)
-			} catch (NoSuchMethodException e) {
-				newBean = type.newInstance()
+			} catch (NoSuchMethodException e1) {
+				try {
+					newBean = type.getConstructor(Object.class).newInstance(rawScript)
+				} catch (NoSuchMethodException e2) {
+					newBean = type.newInstance()
+				}
 			}
 		}
 		return beans.contains(newBean) ? newBean : addBean(newBean)
