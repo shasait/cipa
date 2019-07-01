@@ -54,6 +54,7 @@ class CipaPrepareNodeLabelPrefix implements JobParameterContribution, Serializab
 		nodeLabelPrefix = values.retrieveOptionalValue(PARAM___NODE_LABEL_PREFIX, '')
 	}
 
+	@NonCPS
 	String getNodeLabelPrefix() {
 		return nodeLabelPrefix
 	}

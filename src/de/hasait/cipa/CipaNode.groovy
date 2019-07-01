@@ -24,22 +24,29 @@ import com.cloudbees.groovy.cps.NonCPS
 class CipaNode implements Serializable {
 
 	private final String label
+	private final boolean applyPrefix
 
 	/**
 	 * Hostname - only available while executing of activities.
 	 */
 	String runtimeHostname
 
-	CipaNode(String label) {
+	CipaNode(String label, boolean applyPrefix = true) {
 		if (!label) {
 			throw new IllegalArgumentException('label is null')
 		}
 		this.label = label
+		this.applyPrefix = applyPrefix
 	}
 
 	@NonCPS
 	String getLabel() {
 		return label
+	}
+
+	@NonCPS
+	boolean isApplyPrefix() {
+		return applyPrefix
 	}
 
 	@Override

@@ -130,7 +130,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 		return result
 	}
-	
+
 	/**
 	 * Either return already existing bean or create a new one.
 	 * @param type The type of the bean, never null.
@@ -156,10 +156,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 		return beans.contains(newBean) ? newBean : addBean(newBean)
 	}
-	
+
 	@NonCPS
-	CipaNode newNode(String nodeLabel) {
-		return addBean(new CipaNode(nodeLabel))
+	CipaNode newNode(String nodeLabel, boolean applyPrefix = true) {
+		return addBean(new CipaNode(nodeLabel, applyPrefix))
 	}
 
 	@NonCPS
@@ -392,8 +392,13 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 	}
 
+	@NonCPS
+	String nodeLabel(CipaNode cipaNode) {
+		return (cipaNode.applyPrefix ? nodeLabelPrefixHolder.nodeLabelPrefix : '') + cipaNode.label
+	}
+
 	void node(CipaNode cipaNode, Closure body) {
-		rawScript.node(nodeLabelPrefixHolder.nodeLabelPrefix + cipaNode.label) {
+		rawScript.node(nodeLabel(cipaNode)) {
 			CipaWorkspaceProvider workspaceProvider = findBean(CipaWorkspaceProvider.class, true)
 			if (!workspaceProvider) {
 				body()
