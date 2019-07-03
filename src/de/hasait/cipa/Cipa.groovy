@@ -61,6 +61,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private CipaTool toolMvn
 
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
+	private final Set<CipaInit> alreadyPrepared = new HashSet<>()
 
 	CipaRunContext runContext
 
@@ -270,53 +271,64 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	private List<CipaInit> findBeansToInitialize() {
-		List<CipaInit> inits = findBeansAsList(CipaInit.class)
-		inits.removeAll(alreadyInitialized)
-		return inits
+		List<CipaInit> result = findBeansAsList(CipaInit.class)
+		result.removeAll(alreadyInitialized)
+		return result
 	}
 
 	private void initBeans() {
-		rawScript.echo("[CIPA] Initializing...")
-		int initRound = 0
+		int round = 0
 		while (true) {
-			List<CipaInit> inits = findBeansToInitialize()
-			if (inits.empty) {
+			List<CipaInit> beans = findBeansToInitialize()
+			if (beans.empty) {
 				break
 			}
-			initRound++
-			if (initRound > 100) {
-				throw new IllegalStateException("Init loop? ${inits}")
+			round++
+			if (round > 100) {
+				throw new IllegalStateException("Init loop? ${beans}")
 			}
-			for (init in inits) {
-				rawScript.echo("[CIPA] Initializing: ${init}")
-				init.initCipa(this)
-				alreadyInitialized.add(init)
+			for (bean in beans) {
+				rawScript.echo("[CIPA] Initializing: ${bean}")
+				bean.initCipa(this)
+				alreadyInitialized.add(bean)
 			}
 		}
 	}
 
 	@NonCPS
 	private List<CipaPrepare> findBeansToPrepare() {
-		List<CipaPrepare> prepares = findBeansAsList(CipaPrepare.class)
-		prepares.sort { it.prepareCipaOrder }
-		return prepares
+		List<CipaPrepare> result = findBeansAsList(CipaPrepare.class)
+		result.removeAll(alreadyPrepared)
+		result.sort { it.prepareCipaOrder }
+		return result
 	}
 
 	private void prepareBeans() {
-		rawScript.echo("[CIPA] Preparing...")
-		List<CipaPrepare> prepares = findBeansToPrepare()
+		int round = 0
+		while (true) {
+			initBeans()
 
-		for (prepare in prepares) {
-			rawScript.echo("[CIPA] Preparing: ${prepare}")
-			prepare.prepareCipa(this)
+			List<CipaPrepare> beans = findBeansToPrepare()
+			if (beans.empty) {
+				break
+			}
+			if (round > 0) {
+				rawScript.echo("[CIPA] Warning - Preparing late beans - prepare order might be incorrect!")
+			}
+			round++
+			if (round > 100) {
+				throw new IllegalStateException("Prepare loop? ${beans}")
+			}
+			for (bean in beans) {
+				rawScript.echo("[CIPA] Preparing: ${bean}")
+				bean.prepareCipa(this)
+				alreadyPrepared.add(bean)
+			}
 		}
-
-		initBeans()
 	}
 
 	@Override
 	void run() {
-		initBeans()
 		prepareBeans()
 
 		rawScript.echo("[CIPA] Creating RunContext...")
