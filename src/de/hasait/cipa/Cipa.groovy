@@ -153,27 +153,29 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	/**
 	 * Either return already existing bean or create a new one.
+	 * Creation is either done by specified supplier; if not specified then constructor with cipa arg is tried, then rawscript, then no-arg.
+	 *
 	 * @param type The type of the bean, never null.
-	 * @param constructor If specified use if no bean exists; if null, first try cipa-arg-constructor, then no-arg-constructor.
+	 * @param supplier Optional construction strategy.
 	 * @return The bean, never null.
 	 */
 	@Override
 	@NonCPS
-	public <T> T findOrAddBean(Class<T> type, Supplier<T> constructor = null) {
+	public <T> T findOrAddBean(Class<T> type, Supplier<T> supplier = null) {
 		T bean = findBean(type, true)
 		if (bean != null) {
 			return bean
 		}
 		T newBean
-		if (constructor != null) {
-			newBean = constructor.get()
+		if (supplier != null) {
+			newBean = supplier.get()
 		} else {
 			try {
-				newBean = type.getConstructor(Cipa.class).newInstance(this)
-			} catch (NoSuchMethodException e1) {
+				newBean = type.newInstance(this)
+			} catch (GroovyRuntimeException e1) {
 				try {
-					newBean = type.getConstructor(Object.class).newInstance(rawScript)
-				} catch (NoSuchMethodException e2) {
+					newBean = type.newInstance(rawScript)
+				} catch (GroovyRuntimeException e2) {
 					newBean = type.newInstance()
 				}
 			}
