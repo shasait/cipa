@@ -27,7 +27,6 @@ import de.hasait.cipa.resource.CipaResourceWithState
 class TestWriterActivity extends AbstractCipaActivity {
 
 	private final String name
-	private final CipaResourceWithState<CipaFileResource> filesIn
 	private final CipaResourceWithState<CipaFileResource> filesOut
 
 	private final Boolean failingTest
@@ -37,11 +36,7 @@ class TestWriterActivity extends AbstractCipaActivity {
 
 		this.name = name
 
-		this.filesIn = filesIn
-		addRunRequiresWrite(filesIn)
-
-		this.filesOut = cipa.newResourceState(filesIn, newState)
-		addRunProvides(filesOut)
+		this.filesOut = modifiesResource(filesIn, newState)
 
 		this.failingTest = failingTest
 	}
@@ -60,14 +55,14 @@ class TestWriterActivity extends AbstractCipaActivity {
 	@Override
 	@NonCPS
 	CipaNode getNode() {
-		return filesIn.resource.node
+		return filesOut.resource.node
 	}
 
 	@Override
 	void runActivity(CipaActivityRunContext runContext) {
-		script.echo("Test ${filesIn} and ${filesOut}")
+		script.echo("TestWriter ${filesOut}")
 
-		script.dir(filesIn.resource.path) {
+		script.dir(filesOut.resource.path) {
 			script.mvn(['clean', 'package'], [], [], [], true)
 			runContext.archiveMvnLogFile(getName() + '.log')
 			runContext.addJUnitTestResults(null, '.*STest')
@@ -88,7 +83,7 @@ class TestWriterActivity extends AbstractCipaActivity {
 	@Override
 	@NonCPS
 	String toString() {
-		return "Test ${filesIn} and ${filesOut}"
+		return "TestWriter ${filesOut}"
 	}
 
 }

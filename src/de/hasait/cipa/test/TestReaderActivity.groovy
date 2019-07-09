@@ -28,11 +28,10 @@ class TestReaderActivity extends AbstractCipaActivity {
 
 	private final String name
 	private final CipaResourceWithState<CipaFileResource> filesIn
-	private final CipaResourceWithState<CipaFileResource> filesOut
 
 	private final Boolean failing
 
-	TestReaderActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState, Boolean failing = null) {
+	TestReaderActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, Boolean failing = null) {
 		super(cipa)
 
 		this.name = name
@@ -40,15 +39,7 @@ class TestReaderActivity extends AbstractCipaActivity {
 		this.filesIn = filesIn
 		addRunRequiresRead(filesIn)
 
-		this.filesOut = cipa.newResourceState(filesIn, newState)
-		addRunProvides(filesOut)
-
 		this.failing = failing
-	}
-
-	@NonCPS
-	CipaResourceWithState<CipaFileResource> getProvidedFilesOut() {
-		return filesOut
 	}
 
 	@Override
@@ -65,7 +56,7 @@ class TestReaderActivity extends AbstractCipaActivity {
 
 	@Override
 	void runActivity(CipaActivityRunContext runContext) {
-		script.echo("Test ${filesIn} and ${filesOut}")
+		script.echo("TestReader ${filesIn}")
 
 		script.echo(script.pwd())
 		script.dir("somedir") {
@@ -84,7 +75,7 @@ class TestReaderActivity extends AbstractCipaActivity {
 	@Override
 	@NonCPS
 	String toString() {
-		return "Test ${filesIn} and ${filesOut}"
+		return "TestReader ${filesIn}"
 	}
 
 }

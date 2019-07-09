@@ -61,6 +61,14 @@ abstract class AbstractCipaActivity extends AbstractCipaBean implements CipaActi
 		cipa.addBean(resourceWithState)
 	}
 
+	@NonCPS
+	protected final <R extends CipaResource> CipaResourceWithState<R> modifiesResource(CipaResourceWithState<R> inResourceWithState, String newState) {
+		addRunRequiresWrite(inResourceWithState)
+		CipaResourceWithState<R> outResourceWithState = inResourceWithState.newState(newState)
+		addRunProvides(outResourceWithState)
+		return outResourceWithState
+	}
+
 	@Override
 	@NonCPS
 	final Set<CipaResourceWithState<?>> getRunRequiresRead() {

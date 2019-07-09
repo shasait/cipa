@@ -52,13 +52,13 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').providedCheckedOutFiles
 		CipaResourceWithState<CipaStashResource> mainStash = new StashFilesActivity(cipa, 'StashMain', mainCheckedOutFiles).providedStash
 		CipaResourceWithState<CipaFileResource> files = new UnstashFilesActivity(cipa, "UnstashMain", mainStash, node2).providedFiles
-		new TestReaderActivity(cipa, "TestRa1", files, "StateRa1", ra1f)
-		TestReaderActivity ra2 = new TestReaderActivity(cipa, "TestRa2", files, "StateRa2", ra2f)
-		new TestReaderActivity(cipa, "TestRa3", files, "StateRa3", ra3f)
+		new TestReaderActivity(cipa, "TestRa1", files, ra1f)
+		new TestReaderActivity(cipa, "TestRa2", files, ra2f)
+		new TestReaderActivity(cipa, "TestRa3", files, ra3f)
 		new TestWriterActivity(cipa, "TestWa1", files, "StateW1", wa1f)
 		new TestWriterActivity(cipa, "TestWa2", files, "StateW2", wa2f)
-		new TestWriterActivity(cipa, "TestWa3", files, "StateW3", wa3f)
-		new TestReaderActivity(cipa, "TestRb1", ra2.providedFilesOut, "StateRb1", rb1f)
+		CipaResourceWithState<CipaFileResource> filesW3 = new TestWriterActivity(cipa, "TestWa3", files, "StateW3", wa3f).providedFilesOut
+		new TestReaderActivity(cipa, "TestRb1", filesW3, rb1f)
 	}
 
 	@Override
