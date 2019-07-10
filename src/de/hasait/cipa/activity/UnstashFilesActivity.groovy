@@ -25,25 +25,25 @@ import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
 
-class UnstashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStage, Serializable {
+class UnstashFilesActivity extends AbstractCipaActivity implements CipaActivityWithStage {
 
-	private final Cipa cipa
 	private final String name
 	private final boolean withStage
+
 	private final CipaResourceWithState<CipaStashResource> stash
 	private final CipaResourceWithState<CipaFileResource> files
 
-	private PScript script
-
 	UnstashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaStashResource> stash, CipaNode node, String relDir = null, boolean withStage = false) {
-		this.cipa = cipa
+		super(cipa)
+
 		this.name = name
 		this.withStage = withStage
+
 		this.stash = stash
+		addRunRequiresRead(stash)
 
 		this.files = cipa.newFileResourceWithState(node, relDir ?: stash.resource.srcRelDir, stash.state)
-
-		cipa.addBean(this)
+		addRunProvides(files)
 	}
 
 	@Override
@@ -61,35 +61,6 @@ class UnstashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithSt
 	@NonCPS
 	CipaResourceWithState<CipaFileResource> getProvidedFiles() {
 		return files
-	}
-
-	@Override
-	void initCipa(Cipa cipa) {
-		script = cipa.findBean(PScript.class)
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresRead() {
-		return [stash]
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresWrite() {
-		return []
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunProvides() {
-		return [files]
-	}
-
-	@Override
-	@NonCPS
-	CipaNode getNode() {
-		return files.resource.node
 	}
 
 	@Override

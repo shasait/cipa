@@ -53,12 +53,6 @@ class TestWriterActivity extends AbstractCipaActivity {
 	}
 
 	@Override
-	@NonCPS
-	CipaNode getNode() {
-		return filesOut.resource.node
-	}
-
-	@Override
 	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("TestWriter ${filesOut}")
 

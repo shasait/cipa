@@ -61,7 +61,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private CipaTool toolMvn
 
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
-	private final Set<CipaInit> alreadyPrepared = new HashSet<>()
+	private final Set<CipaPrepare> alreadyPrepared = new HashSet<>()
 
 	CipaRunContext runContext
 
@@ -71,11 +71,17 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		if (!rawScript) {
 			throw new IllegalArgumentException('rawScript is null')
 		}
+		try {
+			rawScript.currentBuild
+		} catch (MissingPropertyException e) {
+			throw new IllegalArgumentException('Invalid rawScript', e)
+		}
+		this.rawScript = rawScript
+
 		Cipa existingCipa = instances.putIfAbsent(rawScript, this)
 		if (existingCipa != null) {
 			throw new IllegalArgumentException('Duplicate construction - use getOrCreate')
 		}
-		this.rawScript = rawScript
 		script = addBean(new PScript(rawScript))
 		addBean(new CipaPrepareEnv())
 		addBean(new CipaPrepareJobProperties())
@@ -84,9 +90,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	static Cipa getOrCreate(rawScript) {
-		if (!rawScript) {
-			throw new IllegalArgumentException('rawScript is null')
-		}
 		Cipa existingCipa = instances.get(rawScript)
 		if (existingCipa != null) {
 			return existingCipa
@@ -223,7 +226,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	public <R extends CipaResource> CipaResourceWithState<R> newResourceWithState(R resource, String state) {
-		return addBean(new CipaResourceWithState<CipaCustomResource>(addBean(resource), state))
+		return addBean(new CipaResourceWithState<R>(addBean(resource), state))
 	}
 
 	@NonCPS

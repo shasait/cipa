@@ -77,7 +77,7 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 
 	@Override
 	void handleFailedDependencies(CipaActivityWrapper wrapper) {
-		rawScript.setCustomBuildProperty(key: "${wrapper.activity.name}-DepsFailed", value: wrapper.failedDependencies.size())
+		script.setCustomBuildProperty("${wrapper.activity.name}-DepsFailed", wrapper.failedDependencies.size())
 	}
 
 	@Override
@@ -87,7 +87,7 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	@Override
 	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
 		String name = wrapper.activity.name
-		rawScript.setCustomBuildProperty(key: "${name}-BeginTime", value: wrapper.startedDate)
+		script.setCustomBuildProperty("${name}-BeginTime", wrapper.startedDate)
 		script.echo("runAroundActivity ${name}...")
 		next.call()
 	}
@@ -96,9 +96,9 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	void afterActivityFinished(CipaActivityWrapper wrapper) {
 		String name = wrapper.activity.name
 		if (wrapper.failed) {
-			rawScript.setCustomBuildProperty(key: "${name}-Failed", value: wrapper.buildFailedMessage())
+			script.setCustomBuildProperty("${name}-Failed", wrapper.buildFailedMessage())
 		}
-		rawScript.setCustomBuildProperty(key: "${name}-EndTime", value: wrapper.finishedDate)
+		script.setCustomBuildProperty("${name}-EndTime", wrapper.finishedDate)
 	}
 
 	@Override

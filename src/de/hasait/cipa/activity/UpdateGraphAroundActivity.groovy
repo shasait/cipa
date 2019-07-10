@@ -16,18 +16,16 @@
 
 package de.hasait.cipa.activity
 
-import com.cloudbees.groovy.cps.NonCPS
-import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaInit
-import de.hasait.cipa.CipaRunContext
-import de.hasait.cipa.PScript
-import de.hasait.cipa.internal.CipaActivityWrapper
-
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
 
-class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAfterActivities, Serializable {
+import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.Cipa
+import de.hasait.cipa.CipaRunContext
+import de.hasait.cipa.internal.CipaActivityWrapper
+
+class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements CipaAfterActivities, Serializable {
 
 	public static final int AROUND_ACTIVITY_ORDER = 1000
 
@@ -37,29 +35,14 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 
 	private final AtomicReference<String> svgContentHolder = new AtomicReference<>()
 
-	private Cipa cipa
-	private PScript script
-
-	@Override
-	void initCipa(Cipa cipa) {
-		this.cipa = cipa
-		script = cipa.findBean(PScript.class)
+	UpdateGraphAroundActivity(Cipa cipa) {
+		super(cipa)
 	}
 
 	@Override
 	@NonCPS
 	String toString() {
 		return "Create activity graph"
-	}
-
-	@Override
-	void handleFailedDependencies(CipaActivityWrapper wrapper) {
-		// nop
-	}
-
-	@Override
-	void beforeActivityStarted(CipaActivityWrapper wrapper) {
-		// nop
 	}
 
 	@Override
@@ -182,7 +165,7 @@ class UpdateGraphAroundActivity implements CipaInit, CipaAroundActivity, CipaAft
 		if (svgContent) {
 			svgContent = transformSVG(svgContent)
 			try {
-				script.rawScript.setCustomBuildProperty(key: "Activity-Graph", value: svgContent)
+				script.setCustomBuildProperty('Activity-Graph', svgContent)
 			} catch (err) {
 				script.echo("setCustomBuildProperty failed: ${err}")
 			}

@@ -49,12 +49,6 @@ class TestReaderActivity extends AbstractCipaActivity {
 	}
 
 	@Override
-	@NonCPS
-	CipaNode getNode() {
-		return filesIn.resource.node
-	}
-
-	@Override
 	void runActivity(CipaActivityRunContext runContext) {
 		script.echo("TestReader ${filesIn}")
 

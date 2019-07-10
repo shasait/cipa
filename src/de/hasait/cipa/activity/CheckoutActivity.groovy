@@ -22,7 +22,7 @@ import de.hasait.cipa.CipaNode
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
-class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithStage, Serializable {
+class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithStage {
 
 	private final String name
 	private final boolean withStage
@@ -41,11 +41,12 @@ class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithS
 
 		this.name = name
 		this.withStage = withStage
+
 		this.config = config
+		cipa.addBean(config)
+
 		this.checkedOutFiles = cipa.newFileResourceWithState(node, relDir ?: config.id + 'Files', 'CheckedOut')
 		addRunProvides(checkedOutFiles)
-
-		cipa.addBean(config)
 	}
 
 	CheckoutActivity(Cipa cipa, String name, String id, CipaNode node, String subFolder = null, boolean withStage = true, String relDir = null) {
@@ -137,12 +138,6 @@ class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithS
 	@NonCPS
 	CipaResourceWithState<CipaFileResource> getProvidedCheckedOutFiles() {
 		return checkedOutFiles
-	}
-
-	@Override
-	@NonCPS
-	CipaNode getNode() {
-		return checkedOutFiles.resource.node
 	}
 
 	@Override

@@ -28,8 +28,12 @@ abstract class AbstractCipaBean implements Serializable {
 	protected final PScript script
 	protected final rawScript
 
-	AbstractCipaBean(Cipa cipa) {
-		this.cipa = cipa
+	AbstractCipaBean(rawScriptOrCipa) {
+		if (rawScriptOrCipa instanceof Cipa) {
+			this.cipa = rawScriptOrCipa
+		} else {
+			this.cipa = Cipa.getOrCreate(rawScriptOrCipa)
+		}
 		this.script = cipa.findBean(PScript.class)
 		this.rawScript = script.rawScript
 

@@ -18,16 +18,12 @@ package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaInit
-import de.hasait.cipa.CipaNode
-import de.hasait.cipa.PScript
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
 
-class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStage, Serializable {
+class StashFilesActivity extends AbstractCipaActivity implements CipaActivityWithStage {
 
-	private final Cipa cipa
 	private final String name
 	private final boolean withStage
 	private final CipaResourceWithState<CipaFileResource> files
@@ -38,19 +34,20 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 	private Set<String> fileExcludes = new LinkedHashSet<>()
 	private boolean useDefaultExcludes = true
 
-	private PScript script
-
 	StashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> files, String subDir = null, boolean withStage = false) {
-		this.cipa = cipa
+		super(cipa)
+
 		this.name = name
 		this.withStage = withStage
+
 		this.files = files
+		addRunRequiresRead(files)
+
 		this.relDir = files.resource.path + (subDir ? '/' + subDir : '')
 
 		String stashId = files.resource.node.label + '_' + name + '_' + relDir.replace('/', '_')
 		this.stash = cipa.newStashResourceWithState(stashId, relDir, files.state)
-
-		cipa.addBean(this)
+		addRunProvides(stash)
 	}
 
 	@Override
@@ -94,40 +91,6 @@ class StashFilesActivity implements CipaInit, CipaActivity, CipaActivityWithStag
 	@NonCPS
 	CipaResourceWithState<CipaStashResource> getProvidedStash() {
 		return stash
-	}
-
-	@Override
-	void initCipa(Cipa cipa) {
-		script = cipa.findBean(PScript.class)
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresRead() {
-		return [files]
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunRequiresWrite() {
-		return []
-	}
-
-	@Override
-	@NonCPS
-	Set<CipaResourceWithState<?>> getRunProvides() {
-		return [stash]
-	}
-
-	@Override
-	@NonCPS
-	CipaNode getNode() {
-		return files.resource.node
-	}
-
-	@Override
-	void prepareNode() {
-		// nop
 	}
 
 	@Override

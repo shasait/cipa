@@ -83,7 +83,7 @@ class CipaActivityBuilder implements Serializable {
 		}
 
 		used = true
-		return new BuildActivity(cipa, node, name, logic, requiresRead, requiresWrite, provides);
+		return new BuildActivity(cipa, node, name, logic, requiresRead, requiresWrite, provides)
 	}
 
 	private static class BuildActivity implements CipaActivity, Serializable {

@@ -315,6 +315,10 @@ class PScript implements Serializable {
 		return rawScript.currentBuild.rawBuild
 	}
 
+	Object getCustomBuildProperty(String key) {
+		return rawScript.getCustomBuildProperty(key: key)
+	}
+
 	@NonCPS
 	def getItemByFullName(String fullName) {
 		return jenkins.getItemByFullName(fullName)
@@ -377,6 +381,10 @@ class PScript implements Serializable {
 
 	def readJsonText(String text) {
 		return rawScript.readJSON(text: text)
+	}
+
+	void setCustomBuildProperty(String key, Object value) {
+		rawScript.setCustomBuildProperty(key: key, value: value)
 	}
 
 	String sh(String script, boolean returnStdout = false) {
