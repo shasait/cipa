@@ -174,8 +174,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			newBean = supplier.get()
 		} else {
 			try {
-				newBean = type.newInstance(this)
-			} catch (GroovyRuntimeException e1) {
+				newBean = type.getConstructor(Cipa.class).newInstance(this)
+			} catch (NoSuchMethodException e1) {
 				try {
 					newBean = type.newInstance(rawScript)
 				} catch (GroovyRuntimeException e2) {
