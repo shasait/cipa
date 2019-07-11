@@ -5,7 +5,7 @@
 
     <groupId>de.hasait.cipa</groupId>
     <artifactId>cipa</artifactId>
-    <version>3.7-SNAPSHOT</version>
+    <version>3.7</version>
     <packaging>jar</packaging>
 
     <name>CIPA</name>
