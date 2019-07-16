@@ -15,9 +15,9 @@ Currently it is focused to Java and Maven projects, but can be easily extended.
 Cipa uses this information to build a dependencies graph and execute the activities in correct order and parallel if they are independent.
 
 ## BeanContainer
-Cipa is also a bean container, where you add your beans which implement interfaces to influence pipeline behaviour (e.g. JobParameterContribution).
-This way a big pipeline can be easily split into various classes making the code more maintainable.
-
+Cipa is also a bean container: Beans can be registered and then requested by (super-)type or interface. This allows concepts like **IoC** for pipeline development (see JobParameterContribution).
+CipaAroundActivity adds **AOP**.
+Applying these mature concepts to pipeline development enable you to write more maintainable code by splitting complex logic into smaller classes.
 
 ## Example
 Please have a look into the test package.
