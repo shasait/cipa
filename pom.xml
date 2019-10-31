@@ -223,6 +223,11 @@
 					<artifactId>maven-processor-plugin</artifactId>
 					<version>2.2.4</version>
 				</plugin>
+				<plugin>
+					<groupId>com.bluetrainsoftware.maven</groupId>
+					<artifactId>groovydoc-maven-plugin</artifactId>
+					<version>2.1</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
@@ -272,6 +277,19 @@
 						<phase>verify</phase>
 						<goals>
 							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.bluetrainsoftware.maven</groupId>
+				<artifactId>groovydoc-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-docs</id>
+						<phase>package</phase>
+						<goals>
+							<goal>attach-docs</goal>
 						</goals>
 					</execution>
 				</executions>
