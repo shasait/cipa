@@ -126,6 +126,9 @@ class PScript implements Serializable {
 					}
 					extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: pathList])
 				}
+				if (config.shallowDepth >= 1) {
+					extensions.add([$class: 'CloneOption', shallow: true, depth: config.shallowDepth])
+				}
 				rawScript.checkout(
 						changelog: config.includeInChangelog,
 						poll: config.includeInPolling,

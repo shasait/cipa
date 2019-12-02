@@ -43,6 +43,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	boolean params = true
 	boolean includeInPolling = true
 	boolean includeInChangelog = true
+	int shallowDepth = 0
 
 	String scmUrl
 	String scmCredentialsId
@@ -128,6 +129,16 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	@NonCPS
 	CheckoutConfiguration excludeMessage(String messagePattern) {
 		pollingExcludedMessagePattern = messagePattern
+		return this
+	}
+
+	/**
+	 * @param shallowDepth 0 = complete history (default); 1 = only latest; >1 for limited history
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutConfiguration withShallowDepth(int shallowDepth) {
+		this.shallowDepth = shallowDepth
 		return this
 	}
 
