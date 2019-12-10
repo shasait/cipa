@@ -131,6 +131,7 @@ class CipaRunContext implements Serializable {
 		return true
 	}
 
+	@NonCPS
 	void performCleanup(PScript script){
 		if (allFinished){
 			script.echo("Deleting resource directory ${script.pwd()}...")
