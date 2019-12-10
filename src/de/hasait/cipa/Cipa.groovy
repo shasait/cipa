@@ -412,6 +412,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					}
 				}
 			}
+			rawScript.echo("[SALOGINFRA-] Directory is ${script.rawScript.pwd()}...")
 		}
 	}
 
