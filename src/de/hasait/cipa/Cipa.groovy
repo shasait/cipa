@@ -355,9 +355,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 		rawScript.echo(buildRunSummary())
 		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
-		if (script.pwd()){
-			performCleanup()
-		}
 	}
 
 	/**
@@ -500,13 +497,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				body()
 			}
 		}
-	}
-
-	@NonCPS
-	void performCleanup(){
-		script.echo("[DeleteDir] Deleting ${script.pwd()}...")
-		script.deleteDir()
-		script.echo("Clean up done!")
 	}
 
 }
