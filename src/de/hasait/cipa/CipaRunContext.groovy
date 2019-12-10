@@ -118,6 +118,7 @@ class CipaRunContext implements Serializable {
 				lastWriter = requiresWrapper
 			}
 		}
+		performCleanup(script)
 	}
 
 	@NonCPS
@@ -128,6 +129,14 @@ class CipaRunContext implements Serializable {
 			}
 		}
 		return true
+	}
+
+	void performCleanup(PScript script){
+		if (allFinished){
+			script.echo("Deleting resource directory ${script.pwd()}...")
+			script.deleteDir()
+			script.echo("Clean up done !")
+		}
 	}
 
 }

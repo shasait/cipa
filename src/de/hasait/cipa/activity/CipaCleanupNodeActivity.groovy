@@ -23,7 +23,7 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity {
 
     @Override
     void afterActivityFinished(CipaActivityWrapper wrapper) {
-        script.echo("[SALOGINFRA-7136] Clean up started...")
+        script.echo("[SALOGINFRA-7136] Deleting directory ${script.pwd()}...")
         script.deleteDir()
         script.echo("[SALOGINFRA-7136] Clean up ended...")
     }
