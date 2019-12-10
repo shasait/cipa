@@ -1,5 +1,6 @@
 package de.hasait.cipa.activity
 
+import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.internal.CipaActivityWrapper
 
@@ -14,6 +15,7 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity {
         super(cipa)
     }
 
+    @NonCPS
     @Override
     int getRunAroundActivityOrder() {
         return AROUND_ACTIVITY_ORDER
