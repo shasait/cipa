@@ -17,7 +17,7 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
     @NonCPS
     @Override
     void afterCipaActivities() {
-        script.echo("[SALOGINFRA-7136] working directory is ${script.pwd()}")
+        script.echo("[SALOGINFRA-7136] working directory}")
     }
 
     @NonCPS
