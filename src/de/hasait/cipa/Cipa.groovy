@@ -355,7 +355,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 		rawScript.echo(buildRunSummary())
 		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
-		rawScript.echo(script.pwd())
 	}
 
 	/**
