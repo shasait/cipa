@@ -12,6 +12,7 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
 
     public static final int AROUND_ACTIVITY_ORDER = 10000
     private Set<CipaFileResource> fileResources
+    private String resourcePath
 
 
     CipaCleanupNodeActivity(Cipa cipa) {
@@ -36,9 +37,10 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
     void afterCipaActivities() {
         fileResources.each {
             rawScript.echo("Node: ${it.node}, Path: ${it.path}\n")
+            resourcePath = it.path
         }
-        String cleanupDirectory = rawScript.echo(rawScript.env.WORKSPACE)
-        rawScript.dir(cleanupDirectory){
+        rawScript.echo(rawScript.env.WORKSPACE)
+        rawScript.dir(resourcePath){
             rawScript.echo("In the directory now!!!")
             rawScript.pwd()
         }
