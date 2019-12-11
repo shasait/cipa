@@ -19,6 +19,7 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
         fileResources = new HashSet<>()
     }
 
+    @NonCPS
     @Override
     void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
         wrapper.getActivity().getRunProvides().each {
