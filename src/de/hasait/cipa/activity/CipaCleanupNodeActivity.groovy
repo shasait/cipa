@@ -2,6 +2,8 @@ package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
+import de.hasait.cipa.internal.CipaActivityWrapper
+import de.hasait.cipa.resource.CipaFileResource
 
 /**
  * Activity which cleans up all the resources.
@@ -9,15 +11,32 @@ import de.hasait.cipa.Cipa
 class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements CipaAfterActivities, Serializable {
 
     public static final int AROUND_ACTIVITY_ORDER = 10000
+    private Set<CipaFileResource> fileResources
+
 
     CipaCleanupNodeActivity(Cipa cipa) {
         super(cipa)
+        fileResources = new HashSet<>()
+    }
+
+    @Override
+    void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
+        wrapper.getActivity().getRunProvides().each {
+            def resource = it.getResource()
+            if (resource instanceof CipaFileResource) {
+                fileResources.add(resource)
+            }
+        }
+        super.runAroundActivity(wrapper, next)
     }
 
     @NonCPS
     @Override
     void afterCipaActivities() {
-        script.echo(script.pwd())
+        fileResources.each {
+            rawScript.echo("Node: ${it.node}, Path: ${it.path}\n")
+        }
+        rawScript.echo(rawScript.env.WORKSPACE)
     }
 
     @NonCPS
