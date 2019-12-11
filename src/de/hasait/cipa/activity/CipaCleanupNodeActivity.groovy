@@ -37,7 +37,11 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
         fileResources.each {
             rawScript.echo("Node: ${it.node}, Path: ${it.path}\n")
         }
-        rawScript.echo(rawScript.env.WORKSPACE)
+        String cleanupDirectory = rawScript.echo(rawScript.env.WORKSPACE)
+        rawScript.dir(cleanupDirectory){
+            rawScript.echo("In the directory now!!!")
+            rawScript.pwd()
+        }
     }
 
     @NonCPS
