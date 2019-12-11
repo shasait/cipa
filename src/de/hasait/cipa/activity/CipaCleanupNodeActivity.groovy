@@ -40,11 +40,8 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
             resourcePath = it.path
         }
         rawScript.echo(rawScript.env.WORKSPACE)
-        rawScript.dir(resourcePath){
-            String baseDir = rawScript.sh('cd ..', true)
-            rawScript.dir(baseDir){
-                rawScript.echo("in base dir")
-            }
+        rawScript.dir("../${resourcePath}"){
+            rawScript.echo("in base dir")
         }
     }
 
