@@ -44,7 +44,7 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	}
 
 	private final Cipa cipa
-	private final PScript script
+	final PScript script
 	final CipaActivity activity
 	private final List<CipaAroundActivity> aroundActivities
 
