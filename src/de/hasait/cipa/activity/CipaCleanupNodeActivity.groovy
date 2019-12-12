@@ -21,6 +21,7 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
         this.cleanupResources = new HashSet<>()
     }
 
+    @NonCPS
     @Override
     int getRunAroundActivityOrder() {
         return AROUND_ACTIVITY_ORDER
