@@ -518,6 +518,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			cleanupResources.each {
 				rawScript.dir(it.path) {
 					rawScript.echo("Deleting resource ${it} for node ${node.runtimeHostname}...")
+					rawScript.deleteDir()
+					rawScript.echo("Resource ${it} successfully deleted!!!")
 				}
 			}
 		}
