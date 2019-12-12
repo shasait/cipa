@@ -14,7 +14,6 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
 
     private Set<CipaFileResource> cleanupResources
     public static final int AROUND_ACTIVITY_ORDER = 10000
-    private PScript pScript
 
     CipaCleanupNodeActivity(Cipa cipa) {
         super(cipa)
@@ -31,7 +30,6 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
     @Override
     void afterActivityFinished(CipaActivityWrapper wrapper) {
         super.afterActivityFinished(wrapper)
-        this.pScript = wrapper.script
         wrapper.activity.runProvides.each {
             if (it.resource instanceof CipaFileResource){
                 cleanupResources.add(it.resource)
@@ -43,8 +41,8 @@ class CipaCleanupNodeActivity extends AbstractCipaAroundActivity implements Cipa
     @Override
     void afterCipaActivities() {
         cleanupResources.each {
-            pScript.dir(it.path){
-                pScript.echo("Working Directory: ${pScript.pwd()}")
+            script.dir(it.path){
+                script.echo("Working Directory: ${script.pwd()}")
             }
         }
     }
