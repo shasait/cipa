@@ -353,6 +353,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		parallelNodeBranches.failFast = true
 		rawScript.parallel(parallelNodeBranches)
 
+		rawScript.echo("Starting clean up...")
+		performCleanup()
+
 		rawScript.echo(buildRunSummary())
 		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
 	}
@@ -403,6 +406,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					for (wrapper in nodeWrappers) {
 						wrapper.cleanupNode()
 					}
+
+					runContext.wrappersByNode
 
 					if (runContext.allFinished) {
 						List<CipaAfterActivities> afters = findBeansAsList(CipaAfterActivities.class)
@@ -495,6 +500,33 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		rawScript.withEnv(envVars) {
 			rawScript.configFileProvider(configFiles) {
 				body()
+			}
+		}
+	}
+
+	private void performCleanup(){
+		rawScript.echo("In perform clean up method...")
+		Set<CipaFileResource> cleanupResources = new HashSet<>()
+		for (CipaNode node : runContext.wrappersByNode.keySet()){
+			rawScript.echo("Retrieving wrappers for each node...")
+			List<CipaActivityWrapper> wrappers = new ArrayList<>()
+			wrappers = runContext.wrappersByNode.get(node)
+			wrappers.each {
+				it.activity.runProvides.each {
+					if (it.resource instanceof CipaFileResource){
+						cleanupResources.add(it.resource)
+					}
+				}
+			}
+		}
+		rawScript.echo("Wrappers retrieved ! Checking clean up resources if null...")
+		if (!cleanupResources){
+			rawScript.echo("clean up resources are null")
+		}
+		cleanupResources.each {
+			rawScript.dir(it.path){
+				rawScript.echo("In clean up resources...")
+				rawScript.echo(rawScript.pwd())
 			}
 		}
 	}
