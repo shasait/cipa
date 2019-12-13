@@ -411,8 +411,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 							after.afterCipaActivities()
 						}
 					}
-					rawScript.echo("Starting clean up...")
-					performCleanup(node)
+//					rawScript.echo("Starting clean up...")
+//					performCleanup(node)
 				}
 			}
 		}
