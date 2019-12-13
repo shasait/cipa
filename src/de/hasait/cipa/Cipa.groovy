@@ -404,14 +404,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 						wrapper.cleanupNode()
 					}
 
+					rawScript.echo("Checking if all activities are finished...")
 					if (runContext.allFinished) {
 						List<CipaAfterActivities> afters = findBeansAsList(CipaAfterActivities.class)
 						for (CipaAfterActivities after in afters) {
 							after.afterCipaActivities()
 						}
-						rawScript.echo("Starting clean up...")
-						performCleanup(node)
 					}
+					rawScript.echo("Starting clean up...")
+					performCleanup(node)
 				}
 			}
 		}
