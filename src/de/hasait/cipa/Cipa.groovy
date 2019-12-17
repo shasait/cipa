@@ -509,7 +509,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			String path = resource.path
 			rawScript.echo("Perform clean up of ${resource} for ${node} running on host ${node.runtimeHostname} with relative path ${path}...")
 			rawScript.dir(path){
-				rawScript.echo("testing testing")
+				rawScript.echo("Directory: ${rawScript.pwd()}")
 			}
 		})
 	}
