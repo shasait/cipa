@@ -508,14 +508,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		Set<CipaFileResource> cleanupSet = new HashSet<>()
 		cleanupSet = findBeans(CipaFileResource.class)
 		rawScript.echo("Size of resources set: ${cleanupSet.size()}")
-		List<CipaFileResource> cleanupList = new ArrayList<>()
-		cleanupList = findBeansAsList(CipaFileResource.class)
-		rawScript.echo("Size of resources list: ${cleanupList.size()}")
-		cleanupSet.findAll { it.node == node }.each {
-			rawScript.dir(it.path){
-				rawScript.echo(rawScript.pwd())
-				rawScript.deleteDir()
-			}
-		}
+		cleanupSet.findAll { it.node == node }.forEach({ resource ->
+			String path = resource.path
+			script.echo("Resource path: ${path}")
+		})
+//		cleanupSet.findAll { it.node == node }.each {
+//			script.dir(it.path){
+//				script.echo(script.pwd())
+//				script.deleteDir()
+//			}
+//		}
 	}
 }
