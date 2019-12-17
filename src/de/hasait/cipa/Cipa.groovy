@@ -504,22 +504,14 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	private void performCleanup(CipaNode node) {
-		rawScript.echo("Perform clean up for ${node} running on host ${node.runtimeHostname}...")
 		Set<CipaFileResource> cleanupSet = new HashSet<>()
 		cleanupSet = findBeans(CipaFileResource.class)
-		rawScript.echo("Size of resources set: ${cleanupSet.size()}")
 		cleanupSet.findAll { it.node == node }.forEach({ resource ->
 			String path = resource.path
-			script.echo("Resource path: ${path}")
-			rawScript.dir(path){
-				rawScript.echo("Full path: ${rawScript.pwd()}")
+			script.echo("Perform clean up of ${resource} for ${node} running on host ${node.runtimeHostname} with relative path ${path}...")
+			script.dir(path){
+				script.deleteDir()
 			}
 		})
-//		cleanupSet.findAll { it.node == node }.each {
-//			script.dir(it.path){
-//				script.echo(script.pwd())
-//				script.deleteDir()
-//			}
-//		}
 	}
 }
