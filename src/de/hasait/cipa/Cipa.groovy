@@ -411,8 +411,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 							after.afterCipaActivities()
 						}
 					}
-//					rawScript.echo("Starting clean up...")
-//					performCleanup(node)
+					rawScript.echo("Starting clean up...")
+					performCleanup(node)
 				}
 			}
 		}
@@ -502,26 +502,12 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 	}
 
+	@NonCPS
 	private void performCleanup(CipaNode node) {
 		rawScript.echo("In perform clean up method...")
-		Set<CipaFileResource> cleanupResources = new HashSet<>()
-		List<CipaActivityWrapper> wrappers = runContext.wrappersByNode.get(node)
-		wrappers.each {
-			it.activity.runProvides.each {
-				if (it.resource instanceof CipaFileResource) {
-					cleanupResources.add(it.resource)
-				}
-			}
-		}
-		rawScript.echo("Wrappers retrieved ! Checking clean up resources if null...")
-		if (cleanupResources) {
-			rawScript.echo("Clean up resources found")
-			cleanupResources.each {
-				rawScript.dir(it.path) {
-					rawScript.echo("Deleting resource ${it} for node ${node.runtimeHostname}...")
-					rawScript.deleteDir()
-					rawScript.echo("Resource ${it} successfully deleted!!!")
-				}
+		findBeans(CipaFileResource.class).each {
+			rawScript.dir(it.path){
+				rawScript.echo("Resource found ${it} for ${node}")
 			}
 		}
 	}
