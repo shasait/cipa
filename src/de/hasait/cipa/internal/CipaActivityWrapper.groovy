@@ -249,7 +249,9 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 
 	void cleanupNode() {
 		try {
+			script.echo("Checking if activity ${activity.name} is instance of CipaActivityWithCleanup...")
 			if (activity instanceof CipaActivityWithCleanup) {
+				script.echo("Performing clean up for activity ${activity.name}")
 				((CipaActivityWithCleanup) activity).cleanupNode()
 			}
 		} catch (Throwable throwable) {
