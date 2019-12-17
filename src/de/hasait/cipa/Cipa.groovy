@@ -16,6 +16,8 @@
 
 package de.hasait.cipa
 
+import de.hasait.cipa.resource.CleanupResource
+
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Supplier
 
@@ -412,7 +414,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 						}
 					}
 					rawScript.echo("Starting clean up...")
-					performCleanup(node)
+					List<CleanupResource> cleanupResources = findBeansAsList(CleanupResource.class)
+					cleanupResources.forEach({ cleanResource ->
+						cleanResource.performCleanup(node)
+					})
+
 				}
 			}
 		}
@@ -502,15 +508,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 	}
 
-	private void performCleanup(CipaNode node) {
-		Set<CipaFileResource> cleanupSet = new HashSet<>()
-		cleanupSet = findBeans(CipaFileResource.class)
-		cleanupSet.findAll { it.node == node }.forEach({ resource ->
-			String path = resource.path
-			rawScript.echo("Perform clean up of ${resource} running on host ${node.runtimeHostname} with relative path ${path}...")
-			rawScript.dir(path){
-				rawScript.deleteDir()
-			}
-		})
-	}
+//	private void performCleanup(CipaNode node) {
+//		Set<CipaFileResource> cleanupSet = new HashSet<>()
+//		cleanupSet = findBeans(CipaFileResource.class)
+//		cleanupSet.findAll { it.node == node }.forEach({ resource ->
+//			String path = resource.path
+//			rawScript.echo("Perform clean up of ${resource} running on host ${node.runtimeHostname} with relative path ${path}...")
+//			rawScript.dir(path){
+//				rawScript.deleteDir()
+//			}
+//		})
+//	}
 }
