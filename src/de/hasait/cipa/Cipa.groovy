@@ -511,6 +511,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		cleanupSet.findAll { it.node == node }.forEach({ resource ->
 			String path = resource.path
 			script.echo("Resource path: ${path}")
+			script.dir(path){
+				script.echo("Full path: ${script.pwd()}")
+			}
 		})
 //		cleanupSet.findAll { it.node == node }.each {
 //			script.dir(it.path){
