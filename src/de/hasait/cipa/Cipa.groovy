@@ -504,10 +504,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	private void performCleanup(CipaNode node) {
-		rawScript.echo("In perform clean up method...")
+		rawScript.echo("Perform clean up for ${node}...")
 		findBeans(CipaFileResource.class).each {
 			rawScript.dir(it.path){
-				rawScript.echo("Resource found ${it} for ${node}")
+				rawScript.deleteDir()
 			}
 		}
 	}
