@@ -331,7 +331,6 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 				runAroundActivity(i + 1)
 			})
 		} else {
-			script.echo("Executing runActivity for ${activity.name}")
 			activity.runActivity(this)
 		}
 	}
