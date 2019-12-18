@@ -415,6 +415,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					}
 					rawScript.echo("Starting clean up...")
 					List<CleanupResource> cleanupResources = findBeansAsList(CleanupResource.class)
+					rawScript.echo("Size of clean up resources: ${cleanupResources.size()}")
 					cleanupResources.forEach({ cleanResource ->
 						cleanResource.performCleanup(node)
 					})
