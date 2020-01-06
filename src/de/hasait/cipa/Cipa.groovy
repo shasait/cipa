@@ -36,6 +36,7 @@ import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor
 
 /**
  *
@@ -53,22 +54,26 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private final def rawScript
 	private final PScript script
+	private final boolean waitForCbpAvailable
 	private final CipaPrepareNodeLabelPrefix nodeLabelPrefixHolder
 
 	private final Set<Object> beans = new LinkedHashSet<>()
 
-	private CipaTool toolJdk
-	private CipaTool toolMvn
-
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
 	private final Set<CipaPrepare> alreadyPrepared = new HashSet<>()
+
+	private boolean waitForCbpEnabled = true
+	private String finishedCbpFormat = 'Activity-%s-Finished'
+
+	private CipaTool toolJdk
+	private CipaTool toolMvn
 
 	CipaRunContext runContext
 
 	boolean debug = false
 
 	Cipa(rawScript) {
-		if (!rawScript) {
+		if (rawScript == null) {
 			throw new IllegalArgumentException('rawScript is null')
 		}
 		try {
@@ -83,6 +88,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			throw new IllegalArgumentException('Duplicate construction - use getOrCreate')
 		}
 		script = addBean(new PScript(rawScript))
+
+		waitForCbpAvailable = StepDescriptor.byFunctionName('waitForCustomBuildProperties') != null
+
 		addBean(new CipaPrepareEnv())
 		addBean(new CipaPrepareJobProperties())
 		nodeLabelPrefixHolder = addBean(new CipaPrepareNodeLabelPrefix())
@@ -415,20 +423,46 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 	}
 
+	/**
+	 * Use the old way (waitUntil) to wait for dependencies.
+	 */
+	@NonCPS
+	void disableWaitForCustomBuildProperties() {
+		waitForCbpEnabled = false
+	}
+
+	/**
+	 * @param format The format to build the custom build property key from the activity name, e.g. Activity-%s-Finished.
+	 */
+	@NonCPS
+	void setFinishedCustomBuildPropertyFormat(String format) {
+		finishedCbpFormat = format
+	}
+
 	private Closure parallelActivityRunBranch(CipaActivityWrapper wrapper) {
 		return {
-			int countWait = 0
-			// TODO replace with sth silent
-			rawScript.waitUntil() {
-				countWait++
-				String notDoneDependency = wrapper.readyToRunActivity()
-				if (countWait > 10 && notDoneDependency) {
-					rawScript.echo("Activity [${wrapper.activity.name}] still waits for dependency [${notDoneDependency}] (and may be more)")
-					countWait = 0
+			boolean useWaitForCbp = waitForCbpAvailable && waitForCbpEnabled
+			if (useWaitForCbp) {
+				List<String> notDoneDependencyNames = wrapper.readyToRunActivity(false)
+				List<String> cbpKeys = notDoneDependencyNames.collect { String.format(finishedCbpFormat, it) }
+				rawScript.waitForCustomBuildProperties(keys: cbpKeys)
+			} else {
+				int countWait = 0
+				rawScript.waitUntil() {
+					countWait++
+					List<String> notDoneDependencyNames = wrapper.readyToRunActivity(true)
+					if (countWait > 10 && !notDoneDependencyNames.empty) {
+						rawScript.echo("Activity [${wrapper.activity.name}] still waits for at least one dependency: ${notDoneDependencyNames}")
+						countWait = 0
+					}
+					return notDoneDependencyNames.empty
 				}
-				return notDoneDependency == null
 			}
 			wrapper.runActivity()
+			if (useWaitForCbp) {
+				String finishedCbpKey = String.format(finishedCbpFormat, wrapper.activity.name)
+				rawScript.setCustomBuildProperty(key: finishedCbpKey, value: wrapper.finishedDate)
+			}
 		}
 	}
 

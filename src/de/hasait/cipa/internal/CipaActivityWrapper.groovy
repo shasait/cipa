@@ -16,6 +16,9 @@
 
 package de.hasait.cipa.internal
 
+import java.text.SimpleDateFormat
+import java.util.regex.Pattern
+
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.PScript
@@ -30,9 +33,6 @@ import hudson.model.Result
 import hudson.model.Run
 import hudson.tasks.junit.CaseResult
 import hudson.tasks.junit.TestResultAction
-
-import java.text.SimpleDateFormat
-import java.util.regex.Pattern
 
 class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 
@@ -268,9 +268,9 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	}
 
 	void runActivity() {
-		String notDoneDependencyName = readyToRunActivity()
-		if (notDoneDependencyName) {
-			throw new IllegalStateException("At least one not done dependency exists: ${notDoneDependencyName}")
+		List<String> notDoneDependencyNames = readyToRunActivity(true)
+		if (!notDoneDependencyNames.empty) {
+			throw new IllegalStateException("At least one not done dependency exists: ${notDoneDependencyNames}")
 		}
 
 		if (done) {
@@ -339,14 +339,18 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	 * @return null if ready; otherwise the name of an not yet done dependency.
 	 */
 	@NonCPS
-	String readyToRunActivity() {
+	List<String> readyToRunActivity(boolean returnFirst) {
+		List<String> notDoneNames = []
 		for (dependencyWrapper in dependsOn.keySet()) {
 			if (!dependencyWrapper.done) {
-				return dependencyWrapper.activity.name
+				notDoneNames.add(dependencyWrapper.activity.name)
+				if (returnFirst) {
+					break
+				}
 			}
 		}
 
-		return null
+		return notDoneNames
 	}
 
 	@NonCPS
