@@ -21,6 +21,7 @@ import de.hasait.cipa.activity.CheckoutConfiguration
 import groovy.json.JsonSlurper
 import hudson.model.Job
 import hudson.model.Run
+import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
 /**
@@ -473,6 +474,27 @@ class PScript implements Serializable {
 		}
 
 		return result
+	}
+
+	String determineCurrentFlowNodeUrl() {
+		def uuid = UUID.randomUUID().toString()
+		echo uuid
+		determineCurrentFlowNodeUrlInternal(uuid)
+	}
+
+	@NonCPS
+	private String determineCurrentFlowNodeUrlInternal(String uuid) {
+		def fgi = new FlowGraphWalker(currentRawBuild.execution).iterator()
+		while (fgi.hasNext()) {
+			def fn = fgi.next()
+			if (fn.typeFunctionName == 'echo') {
+				def argsAction = fn.getAction(org.jenkinsci.plugins.workflow.actions.ArgumentsAction)
+				if (argsAction?.getArgumentValue('message') == uuid) {
+					return fn.url
+				}
+			}
+		}
+		return null
 	}
 
 	static class CheckoutResult implements Serializable {
