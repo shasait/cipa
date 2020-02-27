@@ -5,8 +5,8 @@ import de.hasait.cipa.CipaNode
 /**
  * An interface to for performing clean up of resources.
  */
-interface CipaResourceCleanup {
+interface NodeCleanup {
 
-    void performCleanup(CipaNode node)
+    void cleanupNode(CipaNode node)
 
 }

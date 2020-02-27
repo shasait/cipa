@@ -26,7 +26,7 @@ class CipaFileResource implements CipaResource, Serializable {
 
 	private final CipaNode node
 	private final String path
-	boolean cleaning = true
+	boolean cleanupEnabled = true
 
 	def runtime = [:]
 
@@ -51,8 +51,8 @@ class CipaFileResource implements CipaResource, Serializable {
 	}
 
 	@NonCPS
-	boolean isCleaning() {
-		return cleaning
+	boolean isCleanupEnabled() {
+		return cleanupEnabled
 	}
 
 	@Override

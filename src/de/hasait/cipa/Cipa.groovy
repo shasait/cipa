@@ -17,7 +17,7 @@
 package de.hasait.cipa
 
 import de.hasait.cipa.activity.CipaFileResourceCleanup
-import de.hasait.cipa.resource.CipaResourceCleanup
+import de.hasait.cipa.resource.NodeCleanup
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Supplier
@@ -416,9 +416,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					}
 
 					// Will be invoked after all activities for each node
-					List<CipaResourceCleanup> cleanupResources = findBeansAsList(CipaResourceCleanup.class)
+					List<NodeCleanup> cleanupResources = findBeansAsList(NodeCleanup.class)
 					cleanupResources.forEach({ cleanResource ->
-						cleanResource.performCleanup(node)
+						cleanResource.cleanupNode(node)
 					})
 				}
 			}
