@@ -50,11 +50,6 @@ class CipaFileResource implements CipaResource, Serializable {
 		return path
 	}
 
-	@NonCPS
-	boolean isCleanupEnabled() {
-		return cleanupEnabled
-	}
-
 	@Override
 	@NonCPS
 	String toString() {
