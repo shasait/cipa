@@ -17,7 +17,6 @@
 package de.hasait.cipa
 
 import de.hasait.cipa.activity.CipaFileResourceCleanup
-import de.hasait.cipa.resource.NodeCleanup
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Supplier
@@ -69,6 +68,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	CipaRunContext runContext
 
 	boolean debug = false
+	boolean enableCleanup = true
 
 	Cipa(rawScript) {
 		if (!rawScript) {
@@ -112,7 +112,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		findOrAddBean(StageAroundActivity.class)
 		findOrAddBean(TimeoutAroundActivity.class).withDefaultTimeoutInMinutes(defaultTimeoutInMinutes)
 		findOrAddBean(UpdateGraphAroundActivity.class)
-		findOrAddBean(CipaFileResourceCleanup.class)
+		if (enableCleanup){
+			findOrAddBean(CipaFileResourceCleanup.class)
+		}
 	}
 
 	@Override
