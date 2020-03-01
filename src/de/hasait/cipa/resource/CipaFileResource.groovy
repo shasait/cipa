@@ -26,6 +26,7 @@ class CipaFileResource implements CipaResource, Serializable {
 
 	private final CipaNode node
 	private final String path
+	boolean cleanupEnabled = true
 
 	def runtime = [:]
 
