@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by azamafzaal (azamafzaal at gmail dot com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,29 +18,29 @@ package de.hasait.cipa.activity
 
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.NodeCleanup
+import de.hasait.cipa.resource.CipaFileResource
 
 /**
- * Performs clean up of all file resources for parallel activities with respect to each node.
+ * Perform clean up of all file resources on each node.
  */
 class CipaFileResourceCleanup extends AbstractCipaBean implements NodeCleanup {
 
-    CipaFileResourceCleanup(Cipa cipa) {
-        super(cipa)
-    }
+	CipaFileResourceCleanup(Cipa cipa) {
+		super(cipa)
+	}
 
-    @Override
-    void cleanupNode(CipaNode node) {
-        script.echo("Initializing clean up of ${node.getLabel()} for host ${node.runtimeHostname}")
-        Set<CipaFileResource> cleanupFileResources = cipa.findBeans(CipaFileResource.class)
-        script.echo("Cleaning up file resources on node ${node.runtimeHostname}...")
-        cleanupFileResources.findAll { it.node == node && it.cleanupEnabled }.forEach({ resource ->
-            String path = resource.path
-            script.echo("Perform clean up of ${resource} running on host ${node.runtimeHostname}...")
-            script.dir(path) {
-                script.deleteDir()
-            }
-        })
-    }
+	@Override
+	void cleanupNode(CipaNode node) {
+		Set<CipaFileResource> allFileResources = cipa.findBeans(CipaFileResource.class)
+		script.echo("Cleaning up file resources on host ${node.runtimeHostname} (${node.label})...")
+		allFileResources.findAll { it.node == node && it.cleanupEnabled }.forEach({ resource ->
+			String path = resource.path
+			script.echo('- ' + resource)
+			script.dir(path) {
+				script.deleteDir()
+			}
+		})
+	}
+
 }

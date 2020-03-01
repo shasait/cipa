@@ -16,13 +16,12 @@
 
 package de.hasait.cipa
 
-import de.hasait.cipa.activity.CipaFileResourceCleanup
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Supplier
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.activity.CipaAfterActivities
+import de.hasait.cipa.activity.CipaFileResourceCleanup
 import de.hasait.cipa.activity.StageAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.TimeoutAroundActivity
@@ -73,7 +72,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	CipaRunContext runContext
 
 	boolean debug = false
-	boolean enableCleanup = true
 
 	Cipa(rawScript) {
 		if (rawScript == null) {
@@ -116,11 +114,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	@NonCPS
-	void addStandardBeans(Integer defaultTimeoutInMinutes = null) {
+	void addStandardBeans(Integer defaultTimeoutInMinutes = null, boolean enableCleanup = true) {
 		findOrAddBean(StageAroundActivity.class)
 		findOrAddBean(TimeoutAroundActivity.class).withDefaultTimeoutInMinutes(defaultTimeoutInMinutes)
 		findOrAddBean(UpdateGraphAroundActivity.class)
-		if (enableCleanup){
+		if (enableCleanup) {
 			findOrAddBean(CipaFileResourceCleanup.class)
 		}
 	}
@@ -544,4 +542,5 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			}
 		}
 	}
+
 }

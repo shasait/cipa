@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by azamafzaal (azamafzaal at gmail dot com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,6 @@ package de.hasait.cipa
  */
 interface NodeCleanup {
 
-    void cleanupNode(CipaNode node)
+	void cleanupNode(CipaNode node)
 
 }
