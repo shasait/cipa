@@ -102,7 +102,7 @@
 		<dependency>
 			<groupId>io.jenkins.plugins</groupId>
 			<artifactId>custom-build-properties</artifactId>
-			<version>1.8.0</version>
+			<version>1.9.0</version>
 		</dependency>
 		<!-- Testing -->
 		<dependency>
