@@ -88,7 +88,7 @@ node('linux') {
 					}
 
 					if (params.releaseVersion) {
-						releaseTag = "v${params.releaseVersion}"
+						releaseTag = "${params.releaseVersion}"
 						def msg = "Changing POM versions to release version ${params.releaseVersion}"
 						echo "\u27A1 ${msg}..."
 						sh "${mvnCommand} release:update-versions -DautoVersionSubmodules=true -DdevelopmentVersion=${params.releaseVersion}-REMOVEME-SNAPSHOT"
