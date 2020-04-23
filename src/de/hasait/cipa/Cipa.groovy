@@ -455,7 +455,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			if (useWaitForCbp) {
 				List<String> notDoneDependencyNames = wrapper.readyToRunActivity(false)
 				List<String> cbpKeys = notDoneDependencyNames.collect { String.format(finishedCbpFormat, it) }
-				rawScript.waitForCustomBuildProperties(keys: cbpKeys)
+				if (!cbpKeys.empty) {
+					rawScript.waitForCustomBuildProperties(keys: cbpKeys)
+				}
 			} else {
 				int countWait = 0
 				rawScript.waitUntil() {
