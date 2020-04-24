@@ -23,16 +23,21 @@ properties([
 				string(name: 'developmentVersion', defaultValue: '', description: 'Next development version _without_ SNAPSHOT - if set POMs will be updated after build'),
 				string(name: 'gitUserName', defaultValue: 'ciserver', description: 'Git user name'),
 				string(name: 'gitUserEmail', defaultValue: 'ciserver@hasait.de', description: 'Git user email'),
-				booleanParam(name: 'mvnDebug', defaultValue: false, description: 'Add -X to Maven options')
+				booleanParam(name: 'forceTag', defaultValue: false, description: 'Replace an existing tag with the given name (add -f to git tag)'),
+				booleanParam(name: 'mvnDebug', defaultValue: false, description: 'Produce execution debug output (add -X to mvn)')
 		]),
 		pipelineTriggers([pollSCM('H/10 * * * *')])
 ])
 
 node('linux') {
-	echo "params.releaseVersion = ${params.releaseVersion}"
-	echo "params.developmentVersion = ${params.developmentVersion}"
-	echo "params.gitUserName = ${params.gitUserName}"
-	echo "params.gitUserEmail = ${params.gitUserEmail}"
+	echo """
+		params.releaseVersion = ${params.releaseVersion}
+		params.developmentVersion = ${params.developmentVersion}
+		params.gitUserName = ${params.gitUserName}
+		params.gitUserEmail = ${params.gitUserEmail}
+		params.forceTag = ${params.forceTag}
+		params.mvnDebug = ${params.mvnDebug}
+	""".stripIndent()
 
 	def wsHome
 	def jdkHome
@@ -95,7 +100,8 @@ node('linux') {
 						sh "find . -type f -name pom.xml -exec sed -i -e 's/${params.releaseVersion}-REMOVEME-SNAPSHOT/${params.releaseVersion}/' \\{\\} \\;"
 						sh "find . -type f -name pom.xml -exec git add \\{\\} \\;"
 						sh "git commit -m '[Jenkinsfile] ${msg}'"
-						sh "git tag ${releaseTag}"
+						def gitTagOptions = params.forceTag ? '-f' : ''
+						sh "git tag ${gitTagOptions} ${releaseTag}"
 					}
 				}
 
