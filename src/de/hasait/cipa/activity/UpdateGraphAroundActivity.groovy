@@ -25,6 +25,7 @@ import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaRunContext
 import de.hasait.cipa.internal.CipaActivityWrapper
 
+@Deprecated
 class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements CipaAfterActivities, Serializable {
 
 	public static final int AROUND_ACTIVITY_ORDER = 1000

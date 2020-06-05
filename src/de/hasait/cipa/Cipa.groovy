@@ -26,7 +26,6 @@ import de.hasait.cipa.activity.StageAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.TimeoutAroundActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
-import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.internal.CipaActivityBuilder
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaPrepareEnv
@@ -117,7 +116,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	void addStandardBeans(Integer defaultTimeoutInMinutes = null, boolean enableCleanup = true) {
 		findOrAddBean(StageAroundActivity.class)
 		findOrAddBean(TimeoutAroundActivity.class).withDefaultTimeoutInMinutes(defaultTimeoutInMinutes)
-		findOrAddBean(UpdateGraphAroundActivity.class)
+//		findOrAddBean(UpdateGraphAroundActivity.class)
 		if (enableCleanup) {
 			findOrAddBean(CipaFileResourceCleanup.class)
 		}

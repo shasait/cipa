@@ -30,6 +30,7 @@ class TestWriterActivity extends AbstractCipaActivity {
 	private final CipaResourceWithState<CipaFileResource> filesOut
 
 	private final Boolean failingTest
+	private String parent
 
 	TestWriterActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, String newState, Boolean failingTest = null) {
 		super(cipa)
@@ -50,6 +51,13 @@ class TestWriterActivity extends AbstractCipaActivity {
 	@NonCPS
 	String getName() {
 		return name
+	}
+
+	@Override
+	@NonCPS
+	TestWriterActivity withParent(String parent) {
+		this.parent = parent
+		return this
 	}
 
 	@Override

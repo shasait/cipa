@@ -121,4 +121,5 @@ abstract class AbstractCipaActivity extends AbstractCipaBean implements CipaActi
 		// empty default implementation
 	}
 
+	public abstract <T> T withParent(String parent);
 }

@@ -30,6 +30,7 @@ class TestReaderActivity extends AbstractCipaActivity {
 	private final CipaResourceWithState<CipaFileResource> filesIn
 
 	private final Boolean failing
+	private String parent
 
 	TestReaderActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> filesIn, Boolean failing = null) {
 		super(cipa)
@@ -46,6 +47,13 @@ class TestReaderActivity extends AbstractCipaActivity {
 	@NonCPS
 	String getName() {
 		return name
+	}
+
+	@Override
+	@NonCPS
+	TestReaderActivity withParent(String parent) {
+		this.parent = parent
+		return this
 	}
 
 	@Override
