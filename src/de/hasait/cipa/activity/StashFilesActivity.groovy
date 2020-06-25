@@ -33,7 +33,6 @@ class StashFilesActivity extends AbstractCipaActivity implements CipaActivityWit
 	private Set<String> fileIncludes = new LinkedHashSet<>()
 	private Set<String> fileExcludes = new LinkedHashSet<>()
 	private boolean useDefaultExcludes = true
-	private String parent
 
 	StashFilesActivity(Cipa cipa, String name, CipaResourceWithState<CipaFileResource> files, String subDir = null, boolean withStage = false) {
 		super(cipa)
@@ -55,13 +54,6 @@ class StashFilesActivity extends AbstractCipaActivity implements CipaActivityWit
 	@NonCPS
 	String getName() {
 		return name
-	}
-
-	@Override
-	@NonCPS
-	StashFilesActivity withParent(String parent) {
-		this.parent = parent
-		return this
 	}
 
 	@Override

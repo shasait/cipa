@@ -29,7 +29,6 @@ class UnstashFilesActivity extends AbstractCipaActivity implements CipaActivityW
 
 	private final String name
 	private final boolean withStage
-	private String parent
 
 	private final CipaResourceWithState<CipaStashResource> stash
 	private final CipaResourceWithState<CipaFileResource> files
@@ -86,12 +85,5 @@ class UnstashFilesActivity extends AbstractCipaActivity implements CipaActivityW
 	@NonCPS
 	String toString() {
 		return "Unstash ${stash} into ${files.resource}"
-	}
-
-	@Override
-	@NonCPS
-	UnstashFilesActivity withParent(String parent) {
-		this.parent = parent
-		return this
 	}
 }

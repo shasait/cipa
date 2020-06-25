@@ -35,7 +35,6 @@ class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithS
 	private String scmResolvedBranch
 	private String scmRev
 	private String forcedScmBranch
-	private String parent
 
 	CheckoutActivity(Cipa cipa, String name, CipaNode node, CheckoutConfiguration config, boolean withStage = true, String relDir = null) {
 		super(cipa)
@@ -58,13 +57,6 @@ class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithS
 	@NonCPS
 	String getName() {
 		return name
-	}
-
-	@Override
-	@NonCPS
-	CheckoutActivity withParent(String parent) {
-		this.parent = parent
-		return this
 	}
 
 	@Override
