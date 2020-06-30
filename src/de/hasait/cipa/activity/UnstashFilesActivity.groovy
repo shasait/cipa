@@ -86,4 +86,5 @@ class UnstashFilesActivity extends AbstractCipaActivity implements CipaActivityW
 	String toString() {
 		return "Unstash ${stash} into ${files.resource}"
 	}
+
 }

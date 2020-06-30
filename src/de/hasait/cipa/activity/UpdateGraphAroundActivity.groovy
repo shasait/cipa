@@ -27,7 +27,7 @@ import de.hasait.cipa.internal.CipaActivityWrapper
 
 class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements CipaAfterActivities, Serializable {
 
-	public static final int AROUND_ACTIVITY_ORDER = 3010
+	public static final int AROUND_ACTIVITY_ORDER = 1000
 
 	private final Map<CipaActivityWrapper, String> dotNodeNameByWrappers = new HashMap<>()
 

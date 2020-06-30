@@ -31,7 +31,7 @@ abstract class AbstractCipaActivity extends AbstractCipaBean implements CipaActi
 	private Set<CipaResourceWithState<?>> requiresWrite = []
 	private Set<CipaResourceWithState<?>> provides = []
 	private Set<CipaNode> nodesFromResources = []
-	String parent = null
+	String groupIdentifier = null
 
 	AbstractCipaActivity(rawScriptOrCipa) {
 		super(rawScriptOrCipa)
@@ -121,4 +121,5 @@ abstract class AbstractCipaActivity extends AbstractCipaBean implements CipaActi
 	void cleanupNode() {
 		// empty default implementation
 	}
+
 }

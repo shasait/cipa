@@ -26,6 +26,7 @@ import de.hasait.cipa.activity.StageAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.TimeoutAroundActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
+import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.internal.CipaActivityBuilder
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaPrepareEnv
@@ -37,7 +38,6 @@ import de.hasait.cipa.resource.CipaResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor
-import de.hasait.cipa.activity.UpdateGraphAroundActivity
 
 /**
  *
@@ -114,10 +114,12 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	@NonCPS
-	void addStandardBeans(Integer defaultTimeoutInMinutes = null, boolean enableCleanup = true) {
+	void addStandardBeans(Integer defaultTimeoutInMinutes = null, boolean enableCleanup = true, boolean withOldGraph = true) {
 		findOrAddBean(StageAroundActivity.class)
 		findOrAddBean(TimeoutAroundActivity.class).withDefaultTimeoutInMinutes(defaultTimeoutInMinutes)
-//		findOrAddBean(UpdateGraphAroundActivity.class)
+		if (withOldGraph) {
+			findOrAddBean(UpdateGraphAroundActivity.class)
+		}
 		if (enableCleanup) {
 			findOrAddBean(CipaFileResourceCleanup.class)
 		}
