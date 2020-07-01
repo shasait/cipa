@@ -25,12 +25,13 @@ import org.apache.commons.lang.StringUtils
 /**
  *
  */
-abstract class AbstractCipaActivity extends AbstractCipaBean implements CipaActivity, CipaActivityWithCleanup {
+abstract class AbstractCipaActivity extends AbstractCipaBean implements CipaActivity, CipaActivityOfGroup, CipaActivityWithCleanup {
 
 	private Set<CipaResourceWithState<?>> requiresRead = []
 	private Set<CipaResourceWithState<?>> requiresWrite = []
 	private Set<CipaResourceWithState<?>> provides = []
 	private Set<CipaNode> nodesFromResources = []
+	private String groupIdentifier
 
 	AbstractCipaActivity(rawScriptOrCipa) {
 		super(rawScriptOrCipa)
@@ -114,6 +115,17 @@ abstract class AbstractCipaActivity extends AbstractCipaBean implements CipaActi
 	@Override
 	void prepareNode() {
 		// empty default implementation
+	}
+
+	@Override
+	@NonCPS
+	String getGroupIdentifier() {
+		return groupIdentifier
+	}
+
+	@NonCPS
+	void setGroupIdentifier(String groupIdentifier) {
+		this.groupIdentifier = groupIdentifier
 	}
 
 	@Override
