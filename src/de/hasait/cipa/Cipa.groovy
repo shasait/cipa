@@ -114,10 +114,12 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	@NonCPS
-	void addStandardBeans(Integer defaultTimeoutInMinutes = null, boolean enableCleanup = true) {
+	void addStandardBeans(Integer defaultTimeoutInMinutes = null, boolean enableCleanup = true, boolean enableGraph = true) {
 		findOrAddBean(StageAroundActivity.class)
 		findOrAddBean(TimeoutAroundActivity.class).withDefaultTimeoutInMinutes(defaultTimeoutInMinutes)
-		findOrAddBean(UpdateGraphAroundActivity.class)
+		if (enableGraph) {
+			findOrAddBean(UpdateGraphAroundActivity.class)
+		}
 		if (enableCleanup) {
 			findOrAddBean(CipaFileResourceCleanup.class)
 		}
