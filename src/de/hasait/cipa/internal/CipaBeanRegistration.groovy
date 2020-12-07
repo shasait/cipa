@@ -14,36 +14,31 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.activity
+package de.hasait.cipa.internal
+
+import com.cloudbees.groovy.cps.NonCPS
 
 /**
- * Aspects for Activities.
+ *
  */
-interface CipaAroundActivity {
+class CipaBeanRegistration implements Serializable {
 
-	/**
-	 * Any dependency failed.
-	 */
-	void handleFailedDependencies(CipaActivityInfo activityInfo)
+	private final Object bean
+	private final String name
 
-	/**
-	 * Before startTime is set.
-	 */
-	void beforeActivityStarted(CipaActivityInfo activityInfo)
+	CipaBeanRegistration(Object bean, String name) {
+		this.bean = bean
+		this.name = name
+	}
 
-	/**
-	 * Around run of activity.
-	 */
-	void runAroundActivity(CipaActivityInfo activityInfo, Closure<?> next)
+	@NonCPS
+	Object getBean() {
+		return bean
+	}
 
-	/**
-	 * After finishedTime was set.
-	 */
-	void afterActivityFinished(CipaActivityInfo activityInfo)
-
-	/**
-	 * @return Value for ordering: Higher means later in chain.
-	 */
-	int getRunAroundActivityOrder()
+	@NonCPS
+	String getName() {
+		return name
+	}
 
 }

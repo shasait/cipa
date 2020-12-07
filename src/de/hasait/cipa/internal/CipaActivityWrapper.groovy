@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,19 +22,23 @@ import java.util.regex.Pattern
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.PScript
+import de.hasait.cipa.activity.AbstractCipaActivityPublished
 import de.hasait.cipa.activity.CipaActivity
+import de.hasait.cipa.activity.CipaActivityInfo
+import de.hasait.cipa.activity.CipaActivityPublished
+import de.hasait.cipa.activity.CipaActivityPublishedFile
+import de.hasait.cipa.activity.CipaActivityPublishedLink
 import de.hasait.cipa.activity.CipaActivityRunContext
 import de.hasait.cipa.activity.CipaActivityWithCleanup
 import de.hasait.cipa.activity.CipaAroundActivity
-import de.hasait.cipa.activity.CipaLogFile
 import de.hasait.cipa.activity.CipaTestResult
-import de.hasait.cipa.activity.CipaTestResults
+import de.hasait.cipa.activity.CipaTestSummary
 import hudson.model.Result
 import hudson.model.Run
 import hudson.tasks.junit.CaseResult
 import hudson.tasks.junit.TestResultAction
 
-class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
+class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, Serializable {
 
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat('yyyy-MM-dd\' \'HH:mm:ss\' \'Z')
 
@@ -58,9 +62,9 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	private List<CipaActivityWrapper> failedDependencies
 	private Throwable cleanupThrowable
 
-	private final List<CipaLogFile> logfiles = new ArrayList<>()
+	private final List<AbstractCipaActivityPublished> published = new ArrayList<>()
 
-	private final CipaTestResults testResults = new CipaTestResults()
+	private final CipaTestResultsManager testResultsManager = new CipaTestResultsManager()
 
 	CipaActivityWrapper(Cipa cipa, PScript script, CipaActivity activity, List<CipaAroundActivity> aroundActivities) {
 		this.cipa = cipa
@@ -140,11 +144,6 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	}
 
 	@NonCPS
-	CipaTestResults getTestResults() {
-		return testResults
-	}
-
-	@NonCPS
 	String buildFailedMessage() {
 		if (!failed) {
 			return null
@@ -167,13 +166,13 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	@Override
 	@NonCPS
 	void addPassedTest(String description) {
-		testResults.add(new CipaTestResult(description))
+		testResultsManager.add(new CipaTestResult(description))
 	}
 
 	@Override
 	@NonCPS
 	void addFailedTest(String description, int failingAge) {
-		testResults.add(new CipaTestResult(description, failingAge))
+		testResultsManager.add(new CipaTestResult(description, failingAge))
 	}
 
 	@Override
@@ -211,10 +210,20 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 		}
 	}
 
+	@NonCPS
+	CipaTestSummary getTestSummary() {
+		return testResultsManager.testSummary
+	}
+
+	@NonCPS
+	List<CipaTestResult> getTestResults() {
+		return testResultsManager.testResults
+	}
+
 	@Override
 	void archiveLogFile(String srcPath, String title = null) {
 		script.archiveArtifacts(srcPath)
-		logfiles.add(new CipaLogFile(srcPath, title))
+		publishFile(srcPath, title)
 	}
 
 	@Override
@@ -223,9 +232,21 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 		archiveLogFile(tgtPath, title)
 	}
 
+	@Override
 	@NonCPS
-	List<CipaLogFile> getLogfiles() {
-		return Collections.unmodifiableList(logfiles)
+	void publishFile(String path, String title) {
+		published.add(new CipaActivityPublishedFile(path, title))
+	}
+
+	@Override
+	@NonCPS
+	void publishLink(String url, String title) {
+		published.add(new CipaActivityPublishedLink(url, title))
+	}
+
+	@NonCPS
+	List<CipaActivityPublished> getPublished() {
+		return Collections.unmodifiableList(published)
 	}
 
 	@NonCPS
@@ -241,8 +262,9 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 		if (finishedDate) {
 			sb << " | Finished: ${format(finishedDate)}"
 		}
-		if (!testResults.empty) {
-			sb << " | TestResults: ${testResults.countPassed}/${testResults.countTotal} (${testResults.countFailed} failed)"
+		CipaTestSummary testSummary = testSummary
+		if (!testSummary.empty) {
+			sb << " | TestResults: ${testSummary.countPassed}/${testSummary.countTotal} (${testSummary.countFailed} failed)"
 		}
 		return sb.toString()
 	}
@@ -311,7 +333,7 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 
 		if (runThrowable) {
 			script.currentRawBuild.result = Result.FAILURE
-		} else if (!testResults.stable) {
+		} else if (!testResultsManager.stable) {
 			script.currentRawBuild.result = Result.UNSTABLE
 		}
 
@@ -339,12 +361,12 @@ class CipaActivityWrapper implements CipaActivityRunContext, Serializable {
 	 * @return null if ready; otherwise the name of an not yet done dependency.
 	 */
 	@NonCPS
-	List<String> readyToRunActivity(boolean returnFirst) {
+	List<String> readyToRunActivity(boolean onlyReturnFirst) {
 		List<String> notDoneNames = []
 		for (dependencyWrapper in dependsOn.keySet()) {
 			if (!dependencyWrapper.done) {
 				notDoneNames.add(dependencyWrapper.activity.name)
-				if (returnFirst) {
+				if (onlyReturnFirst) {
 					break
 				}
 			}

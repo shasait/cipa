@@ -16,34 +16,8 @@
 
 package de.hasait.cipa.activity
 
-/**
- * Aspects for Activities.
- */
-interface CipaAroundActivity {
+interface CipaActivityPublished {
 
-	/**
-	 * Any dependency failed.
-	 */
-	void handleFailedDependencies(CipaActivityInfo activityInfo)
-
-	/**
-	 * Before startTime is set.
-	 */
-	void beforeActivityStarted(CipaActivityInfo activityInfo)
-
-	/**
-	 * Around run of activity.
-	 */
-	void runAroundActivity(CipaActivityInfo activityInfo, Closure<?> next)
-
-	/**
-	 * After finishedTime was set.
-	 */
-	void afterActivityFinished(CipaActivityInfo activityInfo)
-
-	/**
-	 * @return Value for ordering: Higher means later in chain.
-	 */
-	int getRunAroundActivityOrder()
+	String getTitle()
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Supplier
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.activity.CipaActivityInfo
 import de.hasait.cipa.activity.CipaAfterActivities
 import de.hasait.cipa.activity.CipaFileResourceCleanup
 import de.hasait.cipa.activity.StageAroundActivity
@@ -29,9 +30,11 @@ import de.hasait.cipa.activity.UnstashFilesActivity
 import de.hasait.cipa.activity.UpdateGraphAroundActivity
 import de.hasait.cipa.internal.CipaActivityBuilder
 import de.hasait.cipa.internal.CipaActivityWrapper
+import de.hasait.cipa.internal.CipaBeanRegistration
 import de.hasait.cipa.internal.CipaPrepareEnv
 import de.hasait.cipa.internal.CipaPrepareJobProperties
 import de.hasait.cipa.internal.CipaPrepareNodeLabelPrefix
+import de.hasait.cipa.internal.CipaRunContext
 import de.hasait.cipa.resource.CipaCustomResource
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResource
@@ -58,7 +61,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private final boolean waitForCbpAvailable
 	private final CipaPrepareNodeLabelPrefix nodeLabelPrefixHolder
 
-	private final Set<Object> beans = new LinkedHashSet<>()
+	private final Map<Object, CipaBeanRegistration> beanRegistrations = new LinkedHashMap<>()
 
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
 	private final Set<CipaPrepare> alreadyPrepared = new HashSet<>()
@@ -69,7 +72,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private CipaTool toolJdk
 	private CipaTool toolMvn
 
-	CipaRunContext runContext
+	private CipaRunContext runContext
 
 	boolean debug = false
 
@@ -108,8 +111,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@Override
 	@NonCPS
-	public <T> T addBean(T bean) {
-		beans.add(bean)
+	public <T> T addBean(T bean, String name = null) {
+		beanRegistrations.put(bean, new CipaBeanRegistration(bean, name))
 		return bean
 	}
 
@@ -129,7 +132,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	public <T> Set<T> findBeans(Class<T> type) {
 		Set<T> results = new LinkedHashSet<>()
-		for (bean in beans) {
+		for (bean in beanRegistrations.keySet()) {
 			if (type.isInstance(bean)) {
 				results.add((T) bean)
 			}
@@ -141,7 +144,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	public <T> List<T> findBeansAsList(Class<T> type) {
 		List<T> results = new ArrayList<>()
-		for (bean in beans) {
+		for (bean in beanRegistrations.keySet()) {
 			if (type.isInstance(bean)) {
 				results.add((T) bean)
 			}
@@ -151,14 +154,17 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@Override
 	@NonCPS
-	public <T> T findBean(Class<T> type, boolean optional = false) {
+	public <T> T findBean(Class<T> type, boolean optional = false, String name = null) {
 		T result = null
-		for (bean in beans) {
+		for (beanRegistration in beanRegistrations.values()) {
+			Object bean = beanRegistration.bean
 			if (type.isInstance(bean)) {
-				if (!result) {
-					result = (T) bean
-				} else {
-					throw new IllegalStateException("Multiple beans found: ${type}")
+				if (name == null || name.equals(beanRegistration.name)) {
+					if (!result) {
+						result = (T) bean
+					} else {
+						throw new IllegalStateException("Multiple beans found: ${type}")
+					}
 				}
 			}
 		}
@@ -170,7 +176,14 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	/**
 	 * Either return already existing bean or create a new one.
-	 * Creation is either done by specified supplier; if not specified then constructor with cipa arg is tried, then rawscript, then no-arg.
+	 * Creation is either done by specified supplier; if not specified then the following constructors are tried:<ul>
+	 *     <li>cipa, name (if name != null)</li>
+	 *     <li>rawScript, name (if name != null)</li>
+	 *     <li>cipa</li>
+	 *     <li>rawScript</li>
+	 *     <li>name (if name != null)</li>
+	 *     <li>no arg</li>
+	 * </ul>
 	 *
 	 * @param type The type of the bean, never null.
 	 * @param supplier Optional construction strategy.
@@ -178,26 +191,55 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	 */
 	@Override
 	@NonCPS
-	public <T> T findOrAddBean(Class<T> type, Supplier<T> supplier = null) {
-		T bean = findBean(type, true)
+	public <T> T findOrAddBean(Class<T> type, Supplier<T> supplier = null, String name = null) {
+		T bean = findBean(type, true, name)
 		if (bean != null) {
 			return bean
 		}
 		T newBean
 		if (supplier != null) {
 			newBean = supplier.get()
-		} else {
+		}
+		if (newBean == null && name != null) {
 			try {
-				newBean = type.getConstructor(Cipa.class).newInstance(this)
-			} catch (NoSuchMethodException e1) {
-				try {
-					newBean = type.newInstance(rawScript)
-				} catch (GroovyRuntimeException e2) {
-					newBean = type.newInstance()
-				}
+				newBean = type.getConstructor(Cipa.class, String.class).newInstance(this, name)
+			} catch (NoSuchMethodException ignored) {
+				// ignore
 			}
 		}
-		return beans.contains(newBean) ? newBean : addBean(newBean)
+		if (newBean == null && name != null) {
+			try {
+				newBean = type.newInstance(rawScript, name)
+			} catch (GroovyRuntimeException ignored) {
+				// ignore
+			}
+		}
+		if (newBean == null) {
+			try {
+				newBean = type.getConstructor(Cipa.class).newInstance(this)
+			} catch (NoSuchMethodException ignored) {
+				// ignore
+			}
+		}
+		if (newBean == null) {
+			try {
+				newBean = type.newInstance(rawScript)
+			} catch (GroovyRuntimeException ignored) {
+				// ignore
+			}
+		}
+		if (newBean == null && name != null) {
+			try {
+				newBean = type.newInstance(name)
+			} catch (GroovyRuntimeException ignored) {
+				// ignore
+			}
+		}
+		if (newBean == null) {
+			newBean = type.newInstance()
+		}
+
+		return beanRegistrations.containsKey(newBean) ? newBean : addBean(newBean, name)
 	}
 
 	@NonCPS
@@ -371,6 +413,16 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
 	}
 
+	@NonCPS
+	Map<CipaNode, List<CipaActivityInfo>> getActivityInfosByNode() {
+		return Collections.unmodifiableMap(runContext.wrappersByNode)
+	}
+
+	@NonCPS
+	List<CipaActivityInfo> getActivityInfos() {
+		return Collections.unmodifiableList(runContext.wrappers)
+	}
+
 	/**
 	 * Do not contribute param; just read values from environment.
 	 */
@@ -427,9 +479,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 					// Will be invoked after all activities for each node
 					List<NodeCleanup> cleanupResources = findBeansAsList(NodeCleanup.class)
-					cleanupResources.forEach({ cleanResource ->
+					for (cleanResource in cleanupResources) {
 						cleanResource.cleanupNode(node)
-					})
+					}
 				}
 			}
 		}

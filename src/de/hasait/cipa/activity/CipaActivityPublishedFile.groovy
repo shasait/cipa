@@ -16,34 +16,21 @@
 
 package de.hasait.cipa.activity
 
-/**
- * Aspects for Activities.
- */
-interface CipaAroundActivity {
+import com.cloudbees.groovy.cps.NonCPS
 
-	/**
-	 * Any dependency failed.
-	 */
-	void handleFailedDependencies(CipaActivityInfo activityInfo)
+class CipaActivityPublishedFile extends AbstractCipaActivityPublished {
 
-	/**
-	 * Before startTime is set.
-	 */
-	void beforeActivityStarted(CipaActivityInfo activityInfo)
+	private final String path
 
-	/**
-	 * Around run of activity.
-	 */
-	void runAroundActivity(CipaActivityInfo activityInfo, Closure<?> next)
+	CipaActivityPublishedFile(String path, String title = null) {
+		super(title ?: path)
 
-	/**
-	 * After finishedTime was set.
-	 */
-	void afterActivityFinished(CipaActivityInfo activityInfo)
+		this.path = path
+	}
 
-	/**
-	 * @return Value for ordering: Higher means later in chain.
-	 */
-	int getRunAroundActivityOrder()
+	@NonCPS
+	String getPath() {
+		return path
+	}
 
 }

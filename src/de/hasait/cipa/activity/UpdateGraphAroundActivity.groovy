@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,12 @@ import java.util.regex.Pattern
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaRunContext
-import de.hasait.cipa.internal.CipaActivityWrapper
 
 class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements CipaAfterActivities, Serializable {
 
 	public static final int AROUND_ACTIVITY_ORDER = 1000
 
-	private final Map<CipaActivityWrapper, String> dotNodeNameByWrappers = new HashMap<>()
+	private final Map<CipaActivityInfo, String> dotNodeNameByActivityInfo = new HashMap<>()
 
 	private final AtomicBoolean produceSVGCalled = new AtomicBoolean()
 
@@ -46,13 +44,13 @@ class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements Ci
 	}
 
 	@Override
-	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
+	void runAroundActivity(CipaActivityInfo activityInfo, Closure<?> next) {
 		updateGraph()
 		next.call()
 	}
 
 	@Override
-	void afterActivityFinished(CipaActivityWrapper wrapper) {
+	void afterActivityFinished(CipaActivityInfo activityInfo) {
 		updateGraph()
 	}
 
@@ -88,8 +86,6 @@ class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements Ci
 
 	@NonCPS
 	private String produceDot() {
-		CipaRunContext runContext = cipa.runContext
-
 		StringBuilder dotContent = new StringBuilder()
 		dotContent << '\n'
 		dotContent << 'digraph pipeline {\n'
@@ -98,28 +94,28 @@ class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements Ci
 		dotContent << 'splines=ortho;\n'
 		dotContent << 'node[shape=box];\n'
 		int activityI = 0
-
-		for (wrapper in runContext.wrappers) {
-			dotNodeNameByWrappers.put(wrapper, "a${activityI++}")
+		for (activityInfo in cipa.activityInfos) {
+			dotNodeNameByActivityInfo.put(activityInfo, "a${activityI++}")
 		}
+
 		int nodeI = 0
-		for (node in runContext.nodes) {
+		cipa.activityInfosByNode.each { node, activityInfos ->
 			dotContent << "subgraph cluster_node${nodeI++} {\n"
 			dotContent << "label=\"${node.label}\";\n"
 			dotContent << 'style=dotted;\n'
-			for (wrapper in runContext.wrappersByNode.get(node)) {
-				dotContent << "${dotNodeNameByWrappers.get(wrapper)}[label=\"${wrapper.activity.name}\"];\n"
+			for (activityInfo in activityInfos) {
+				dotContent << "${dotNodeNameByActivityInfo.get(activityInfo)}[label=\"${activityInfo.activity.name}\"];\n"
 			}
 			dotContent << '}\n'
 		}
 		dotContent << 'start[shape=cds];\n'
-		for (wrapper in runContext.wrappers) {
-			Set<Map.Entry<CipaActivityWrapper, Boolean>> dependencies = wrapper.dependencies
+		for (activityInfo in cipa.activityInfos) {
+			Set<Map.Entry<CipaActivityInfo, Boolean>> dependencies = activityInfo.dependencies
 			if (dependencies.empty) {
-				dotContent << "start -> ${dotNodeNameByWrappers.get(wrapper)};\n"
+				dotContent << "start -> ${dotNodeNameByActivityInfo.get(activityInfo)};\n"
 			} else {
 				for (dependency in dependencies) {
-					dotContent << "${dotNodeNameByWrappers.get(dependency.key)} -> ${dotNodeNameByWrappers.get(wrapper)}"
+					dotContent << "${dotNodeNameByActivityInfo.get(dependency.key)} -> ${dotNodeNameByActivityInfo.get(activityInfo)}"
 					if (!dependency.value.booleanValue()) {
 						dotContent << ' [style=dashed]'
 					}
@@ -133,17 +129,17 @@ class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements Ci
 
 	@NonCPS
 	private String transformSVG(String svgContent) {
-		for (wrapperWithNodeName in dotNodeNameByWrappers) {
-			CipaActivityWrapper wrapper = wrapperWithNodeName.key
-			String nodeName = wrapperWithNodeName.value
-			boolean running = wrapper.running
-			boolean failed = wrapper.failed
-			boolean depsFailed = wrapper.failedDependencies
-			boolean done = wrapper.done
-			boolean stable = wrapper.testResults.stable
+		for (activityInfoWithNodeName in dotNodeNameByActivityInfo) {
+			CipaActivityInfo activityInfo = activityInfoWithNodeName.key
+			String nodeName = activityInfoWithNodeName.value
+			boolean running = activityInfo.running
+			boolean failed = activityInfo.failed
+			boolean depsFailed = activityInfo.failedDependencies
+			boolean done = activityInfo.done
+			boolean stable = activityInfo.testSummary.stable
 			String fill = depsFailed ? "gray" : (failed ? "red" : (done ? (stable ? "lightgreen" : "yellow") : "none"))
 			String stroke = running ? "blue" : "black"
-			String title = wrapper.activity.name.replace('<', '$lt;').replace('>', '$gt;')
+			String title = activityInfo.activity.name.replace('<', '$lt;').replace('>', '$gt;')
 			svgContent = Pattern.compile("(<title>)${nodeName}(</title>\\s+<[a-z]+ fill=\")[^\"]+(\" stroke=\")[^\"]+(\")").matcher(svgContent).replaceFirst("\$1${title}\$2${fill}\$3${stroke}\$4")
 		}
 

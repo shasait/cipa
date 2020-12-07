@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.PScript
-import de.hasait.cipa.internal.CipaActivityWrapper
 
 /**
  * Wrap each activity in a stage.
@@ -49,20 +48,20 @@ class StageAroundActivity implements CipaInit, CipaAroundActivity, Serializable 
 	}
 
 	@Override
-	void handleFailedDependencies(CipaActivityWrapper wrapper) {
+	void handleFailedDependencies(CipaActivityInfo activityInfo) {
 		// nop
 	}
 
 	@Override
-	void beforeActivityStarted(CipaActivityWrapper wrapper) {
+	void beforeActivityStarted(CipaActivityInfo activityInfo) {
 		// nop
 	}
 
 	@Override
-	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
+	void runAroundActivity(CipaActivityInfo activityInfo, Closure<?> next) {
 		boolean withStage = withStageDefault
 
-		CipaActivity activity = wrapper.activity
+		CipaActivity activity = activityInfo.activity
 
 		if (activity instanceof CipaActivityWithStage) {
 			withStage = ((CipaActivityWithStage) activity).withStage
@@ -76,7 +75,7 @@ class StageAroundActivity implements CipaInit, CipaAroundActivity, Serializable 
 	}
 
 	@Override
-	void afterActivityFinished(CipaActivityWrapper wrapper) {
+	void afterActivityFinished(CipaActivityInfo activityInfo) {
 		// nop
 	}
 

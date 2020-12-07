@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,36 @@
 
 package de.hasait.cipa.activity
 
-import com.cloudbees.groovy.cps.NonCPS
+interface CipaActivityInfo {
 
-class CipaLogFile implements Serializable {
+	CipaActivity getActivity()
 
-	private final String path
-	private final String title
+	Set<Map.Entry<CipaActivityInfo, Boolean>> getDependencies()
 
-	CipaLogFile(String path, String title) {
-		this.path = path
-		this.title = title ?: path
-	}
+	Date getStartedDate()
 
-	@NonCPS
-	String getPath() {
-		return path
-	}
+	Date getFinishedDate()
 
-	@NonCPS
-	String getTitle() {
-		return title
-	}
+	Throwable getRunThrowable()
+
+	Throwable getPrepareThrowable()
+
+	List<CipaActivityInfo> getFailedDependencies()
+
+	Throwable getCleanupThrowable()
+
+	boolean isFailed()
+
+	String buildFailedMessage()
+
+	boolean isDone()
+
+	boolean isRunning()
+
+	List<CipaActivityPublished> getPublished()
+
+	CipaTestSummary getTestSummary()
+
+	List<CipaTestResult> getTestResults()
 
 }

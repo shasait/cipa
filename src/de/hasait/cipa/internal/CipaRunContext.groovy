@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa
+package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.Cipa
+import de.hasait.cipa.CipaNode
+import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.internal.CipaActivityWrapper
@@ -121,7 +124,7 @@ class CipaRunContext implements Serializable {
 	}
 
 	@NonCPS
-	boolean getAllFinished() {
+	boolean isAllFinished() {
 		for (wrapper in wrappers) {
 			if (!wrapper.finishedDate) {
 				return false

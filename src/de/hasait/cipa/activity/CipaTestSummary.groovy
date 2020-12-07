@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,30 +18,20 @@ package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
 
-class CipaTestResults implements Serializable {
+class CipaTestSummary implements Serializable {
 
-	private final List<CipaTestResult> testResults = new ArrayList<>()
+	private final boolean stable
+	private final maxFailingAge
+	private final countPassed
+	private final countFailed
+	private final countTotal
 
-	private boolean stable = true
-	private int maxFailingAge = 0
-	private int countPassed = 0
-	private int countFailed = 0
-
-	@NonCPS
-	void add(CipaTestResult result) {
-		if (!result) {
-			throw new IllegalArgumentException('!result')
-		}
-
-		testResults.add(result)
-
-		if (result.failingAge) {
-			stable = false
-			countFailed++
-			maxFailingAge = Math.max(maxFailingAge, result.failingAge)
-		} else {
-			countPassed++
-		}
+	CipaTestSummary(boolean stable, maxFailingAge, countPassed, countFailed) {
+		this.stable = stable
+		this.maxFailingAge = maxFailingAge
+		this.countPassed = countPassed
+		this.countFailed = countFailed
+		this.countTotal = countPassed + countFailed
 	}
 
 	@NonCPS
@@ -71,17 +61,7 @@ class CipaTestResults implements Serializable {
 
 	@NonCPS
 	int getCountTotal() {
-		return testResults.size()
-	}
-
-	@NonCPS
-	List<String> getNewFailingTests() {
-		return testResults.findAll { it.failingAge && it.failingAge == 1 }.collect { it.description }
-	}
-	
-	@NonCPS
-	List<String> getStillFailingTests() {
-		return testResults.findAll { it.failingAge && it.failingAge > 1 }.collect { it.description }
+		return countTotal
 	}
 
 }

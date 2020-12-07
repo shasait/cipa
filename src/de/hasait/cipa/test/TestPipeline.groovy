@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.PScript
 import de.hasait.cipa.activity.CheckoutActivity
+import de.hasait.cipa.activity.CipaActivityInfo
 import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
-import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
@@ -76,29 +76,29 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	}
 
 	@Override
-	void handleFailedDependencies(CipaActivityWrapper wrapper) {
-		script.setCustomBuildProperty("${wrapper.activity.name}-DepsFailed", wrapper.failedDependencies.size())
+	void handleFailedDependencies(CipaActivityInfo activityInfo) {
+		script.setCustomBuildProperty("${activityInfo.activity.name}-DepsFailed", activityInfo.failedDependencies.size())
 	}
 
 	@Override
-	void beforeActivityStarted(CipaActivityWrapper wrapper) {
+	void beforeActivityStarted(CipaActivityInfo activityInfo) {
 	}
 
 	@Override
-	void runAroundActivity(CipaActivityWrapper wrapper, Closure<?> next) {
-		String name = wrapper.activity.name
-		script.setCustomBuildProperty("${name}-BeginTime", wrapper.startedDate)
+	void runAroundActivity(CipaActivityInfo activityInfo, Closure<?> next) {
+		String name = activityInfo.activity.name
+		script.setCustomBuildProperty("${name}-BeginTime", activityInfo.startedDate)
 		script.echo("runAroundActivity ${name}...")
 		next.call()
 	}
 
 	@Override
-	void afterActivityFinished(CipaActivityWrapper wrapper) {
-		String name = wrapper.activity.name
-		if (wrapper.failed) {
-			script.setCustomBuildProperty("${name}-Failed", wrapper.buildFailedMessage())
+	void afterActivityFinished(CipaActivityInfo activityInfo) {
+		String name = activityInfo.activity.name
+		if (activityInfo.failed) {
+			script.setCustomBuildProperty("${name}-Failed", activityInfo.buildFailedMessage())
 		}
-		script.setCustomBuildProperty("${name}-EndTime", wrapper.finishedDate)
+		script.setCustomBuildProperty("${name}-EndTime", activityInfo.finishedDate)
 	}
 
 	@Override
