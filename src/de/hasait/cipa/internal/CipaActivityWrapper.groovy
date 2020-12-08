@@ -80,6 +80,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		dependsOn.put(activity, propagateFailure)
 	}
 
+	@Override
 	@NonCPS
 	Set<Map.Entry<CipaActivityWrapper, Boolean>> getDependencies() {
 		return Collections.unmodifiableSet(dependsOn.entrySet())
@@ -90,11 +91,13 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		return creationDate
 	}
 
+	@Override
 	@NonCPS
 	Throwable getCleanupThrowable() {
 		return cleanupThrowable
 	}
 
+	@Override
 	@NonCPS
 	Throwable getPrepareThrowable() {
 		return prepareThrowable
@@ -108,41 +111,49 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		this.prepareThrowable = prepareThrowable
 	}
 
+	@Override
 	@NonCPS
 	List<CipaActivityWrapper> getFailedDependencies() {
 		return failedDependencies ? Collections.unmodifiableList(failedDependencies) : null
 	}
 
+	@Override
 	@NonCPS
 	Date getStartedDate() {
 		return startedDate
 	}
 
+	@Override
 	@NonCPS
 	Date getFinishedDate() {
 		return finishedDate
 	}
 
+	@Override
 	@NonCPS
 	Throwable getRunThrowable() {
 		return runThrowable
 	}
 
+	@Override
 	@NonCPS
 	boolean isFailed() {
 		return prepareThrowable || failedDependencies || runThrowable
 	}
 
+	@Override
 	@NonCPS
 	boolean isDone() {
 		return failed || finishedDate
 	}
 
+	@Override
 	@NonCPS
 	boolean isRunning() {
 		return startedDate && !done
 	}
 
+	@Override
 	@NonCPS
 	String buildFailedMessage() {
 		if (!failed) {
@@ -210,14 +221,28 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		}
 	}
 
+	@Override
 	@NonCPS
 	CipaTestSummary getTestSummary() {
 		return testResultsManager.testSummary
 	}
 
+	@Override
 	@NonCPS
 	List<CipaTestResult> getTestResults() {
 		return testResultsManager.testResults
+	}
+
+	@Override
+	@NonCPS
+	List<CipaTestResult> getNewFailingTestResults() {
+		return testResultsManager.newFailingTestResults
+	}
+
+	@Override
+	@NonCPS
+	List<CipaTestResult> getStillFailingTests() {
+		return testResultsManager.stillFailingTestResults
 	}
 
 	@Override
@@ -244,6 +269,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		published.add(new CipaActivityPublishedLink(url, title))
 	}
 
+	@Override
 	@NonCPS
 	List<CipaActivityPublished> getPublished() {
 		return Collections.unmodifiableList(published)

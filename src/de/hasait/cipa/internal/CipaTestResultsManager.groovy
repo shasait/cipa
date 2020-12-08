@@ -67,13 +67,13 @@ class CipaTestResultsManager implements Serializable {
 	}
 
 	@NonCPS
-	List<String> getNewFailingTests() {
-		return testResults.findAll { it.failingAge && it.failingAge == 1 }.collect { it.description }
+	List<CipaTestResult> getNewFailingTestResults() {
+		return testResults.findAll { it.failingAge && it.failingAge == 1 }.collect { it }
 	}
 
 	@NonCPS
-	List<String> getStillFailingTests() {
-		return testResults.findAll { it.failingAge && it.failingAge > 1 }.collect { it.description }
+	List<CipaTestResult> getStillFailingTestResults() {
+		return testResults.findAll { it.failingAge && it.failingAge > 1 }.collect { it }
 	}
 
 }

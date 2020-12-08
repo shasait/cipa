@@ -48,4 +48,8 @@ interface CipaActivityInfo {
 
 	List<CipaTestResult> getTestResults()
 
+	List<CipaTestResult> getNewFailingTestResults()
+
+	List<CipaTestResult> getStillFailingTests()
+
 }
