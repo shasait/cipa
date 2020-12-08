@@ -50,6 +50,6 @@ interface CipaActivityInfo {
 
 	List<CipaTestResult> getNewFailingTestResults()
 
-	List<CipaTestResult> getStillFailingTests()
+	List<CipaTestResult> getStillFailingTestResults()
 
 }

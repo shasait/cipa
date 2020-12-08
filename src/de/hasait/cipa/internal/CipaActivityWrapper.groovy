@@ -241,7 +241,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 
 	@Override
 	@NonCPS
-	List<CipaTestResult> getStillFailingTests() {
+	List<CipaTestResult> getStillFailingTestResults() {
 		return testResultsManager.stillFailingTestResults
 	}
 
