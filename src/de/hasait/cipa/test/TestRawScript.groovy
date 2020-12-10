@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package de.hasait.cipa.test
 
-import groovy.json.JsonSlurper
-
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+
+import groovy.json.JsonSlurper
 
 /**
  *
@@ -58,7 +58,12 @@ class TestRawScript {
 	}
 
 	boolean fileExists(String file) {
-		return readFileContents.containsKey(file)
+		for (e in readFileContents) {
+			if (Pattern.compile(e.key).matcher(file).matches()) {
+				return true
+			}
+		}
+		return false
 	}
 
 	Object httpRequest(Map args) {
