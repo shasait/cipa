@@ -210,8 +210,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		if (newBean == null && name != null) {
 			try {
 				newBean = type.newInstance(rawScript, name)
-			} catch (GroovyRuntimeException ignored) {
-				// ignore
+			} catch (GroovyRuntimeException e) {
+				analyzeGroovyRuntimeException(e)
 			}
 		}
 		if (newBean == null) {
@@ -224,15 +224,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		if (newBean == null) {
 			try {
 				newBean = type.newInstance(rawScript)
-			} catch (GroovyRuntimeException ignored) {
-				// ignore
+			} catch (GroovyRuntimeException e) {
+				analyzeGroovyRuntimeException(e)
 			}
 		}
 		if (newBean == null && name != null) {
 			try {
 				newBean = type.newInstance(name)
-			} catch (GroovyRuntimeException ignored) {
-				// ignore
+			} catch (GroovyRuntimeException e) {
+				analyzeGroovyRuntimeException(e)
 			}
 		}
 		if (newBean == null) {
@@ -240,6 +240,13 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 
 		return beanRegistrations.containsKey(newBean) ? newBean : addBean(newBean, name)
+	}
+
+	@NonCPS
+	private void analyzeGroovyRuntimeException(GroovyRuntimeException e) {
+		if (!e.message.startsWith('Could not find matching constructor for:')) {
+			throw e
+		}
 	}
 
 	@NonCPS
