@@ -21,12 +21,12 @@ import com.cloudbees.groovy.cps.NonCPS
 class CipaTestSummary implements Serializable {
 
 	private final boolean stable
-	private final maxFailingAge
-	private final countPassed
-	private final countFailed
-	private final countTotal
+	private final int maxFailingAge
+	private final int countPassed
+	private final int countFailed
+	private final int countTotal
 
-	CipaTestSummary(boolean stable, maxFailingAge, countPassed, countFailed) {
+	CipaTestSummary(boolean stable, int maxFailingAge, int countPassed, int countFailed) {
 		this.stable = stable
 		this.maxFailingAge = maxFailingAge
 		this.countPassed = countPassed
