@@ -28,6 +28,8 @@ import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.TimeoutAroundActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
 import de.hasait.cipa.activity.UpdateGraphAroundActivity
+import de.hasait.cipa.artifactstore.CipaArtifactStore
+import de.hasait.cipa.artifactstore.DefaultCipaArtifactStoreSupplier
 import de.hasait.cipa.internal.CipaActivityBuilder
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaBeanRegistration
@@ -398,6 +400,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@Override
 	void run() {
 		prepareBeans()
+
+		// if no other CipaArtifactStore exists create the default one
+		findOrAddBean(CipaArtifactStore.class, new DefaultCipaArtifactStoreSupplier(this))
 
 		rawScript.echo("[CIPA] Creating RunContext...")
 		runContext = new CipaRunContext(this)

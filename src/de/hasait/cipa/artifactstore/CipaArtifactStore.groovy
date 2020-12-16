@@ -14,30 +14,19 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.activity
+package de.hasait.cipa.artifactstore
 
-interface CipaActivityRunContext {
+import de.hasait.cipa.activity.CipaActivityRunContext
 
-	void archiveFile(String srcPath)
+/**
+ * Strategy for managing build artifacts.
+ */
+interface CipaArtifactStore {
 
-	void archiveFile(String srcPath, String title)
+	void archiveFile(CipaActivityRunContext runContext, String srcPath, String title)
 
-	void archiveLogFile(String srcPath)
+	void stash(CipaActivityRunContext runContext, String id, Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty)
 
-	void archiveLogFile(String srcPath, String title)
-
-	void archiveMvnLogFile(String tgtPath)
-
-	void archiveMvnLogFile(String tgtPath, String title)
-
-	void addPassedTest(String description)
-
-	void addFailedTest(String description, int failingAge)
-
-	void addJUnitTestResults(String includeRegex, String excludeRegex)
-
-	void publishLink(String url, String title)
-
-	void publishFile(String path, String title)
+	void unstash(CipaActivityRunContext runContext, String id)
 
 }

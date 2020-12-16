@@ -33,6 +33,7 @@ import de.hasait.cipa.activity.CipaActivityWithCleanup
 import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.activity.CipaTestResult
 import de.hasait.cipa.activity.CipaTestSummary
+import de.hasait.cipa.artifactstore.CipaArtifactStore
 import hudson.model.Result
 import hudson.model.Run
 import hudson.tasks.junit.CaseResult
@@ -63,8 +64,9 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 	private Throwable cleanupThrowable
 
 	private final List<AbstractCipaActivityPublished> published = new ArrayList<>()
-
 	private final CipaTestResultsManager testResultsManager = new CipaTestResultsManager()
+
+	private CipaArtifactStore cipaArtifactStore
 
 	CipaActivityWrapper(Cipa cipa, PScript script, CipaActivity activity, List<CipaAroundActivity> aroundActivities) {
 		this.cipa = cipa
@@ -246,9 +248,13 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 	}
 
 	@Override
+	void archiveFile(String srcPath, String title = null) {
+		cipaArtifactStore.archiveFile(this, srcPath, title)
+	}
+
+	@Override
 	void archiveLogFile(String srcPath, String title = null) {
-		script.archiveArtifacts(srcPath)
-		publishFile(srcPath, title)
+		archiveFile(srcPath, title)
 	}
 
 	@Override
@@ -316,6 +322,8 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 	}
 
 	void runActivity() {
+		cipaArtifactStore = cipa.findBean(CipaArtifactStore.class)
+
 		List<String> notDoneDependencyNames = readyToRunActivity(true)
 		if (!notDoneDependencyNames.empty) {
 			throw new IllegalStateException("At least one not done dependency exists: ${notDoneDependencyNames}")

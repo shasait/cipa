@@ -14,30 +14,28 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.activity
+package de.hasait.cipa.artifactstore
 
-interface CipaActivityRunContext {
+import java.util.function.Supplier
 
-	void archiveFile(String srcPath)
+import com.cloudbees.groovy.cps.NonCPS
+import de.hasait.cipa.Cipa
 
-	void archiveFile(String srcPath, String title)
+/**
+ *
+ */
+class DefaultCipaArtifactStoreSupplier implements Supplier<CipaArtifactStore>, Serializable {
 
-	void archiveLogFile(String srcPath)
+	private final Cipa cipa
 
-	void archiveLogFile(String srcPath, String title)
+	DefaultCipaArtifactStoreSupplier(Cipa cipa) {
+		this.cipa = cipa
+	}
 
-	void archiveMvnLogFile(String tgtPath)
-
-	void archiveMvnLogFile(String tgtPath, String title)
-
-	void addPassedTest(String description)
-
-	void addFailedTest(String description, int failingAge)
-
-	void addJUnitTestResults(String includeRegex, String excludeRegex)
-
-	void publishLink(String url, String title)
-
-	void publishFile(String path, String title)
+	@Override
+	@NonCPS
+	CipaArtifactStore get() {
+		return new DefaultCipaArtifactStore(cipa)
+	}
 
 }
