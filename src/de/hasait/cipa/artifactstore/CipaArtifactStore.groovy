@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
 
 package de.hasait.cipa.artifactstore
 
-import de.hasait.cipa.activity.CipaActivityRunContext
+import de.hasait.cipa.activity.CipaActivityPublished
 
 /**
  * Strategy for managing build artifacts.
  */
 interface CipaArtifactStore {
 
-	void archiveFile(CipaActivityRunContext runContext, String srcPath, String title)
+	void archiveFiles(Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty)
 
-	void stash(CipaActivityRunContext runContext, String id, Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty)
+	void stash(String id, Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty)
 
-	void unstash(CipaActivityRunContext runContext, String id)
+	void unstash(String id)
+
+	CipaActivityPublished archiveFile(String path)
 
 }

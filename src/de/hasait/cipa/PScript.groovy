@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package de.hasait.cipa
 
 import com.cloudbees.groovy.cps.NonCPS
+import com.google.common.collect.ImmutableSet
 import de.hasait.cipa.activity.CheckoutConfiguration
 import groovy.json.JsonSlurper
 import hudson.model.Job
@@ -28,6 +29,19 @@ import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
  * Wrapper for pipeline script allowing access to well known steps.
  */
 class PScript implements Serializable {
+
+	static final Set<String> ARCHIVE_INCLUDES_DEFAULT = ImmutableSet.of()
+	static final Set<String> ARCHIVE_EXCLUDES_DEFAULT = ImmutableSet.of()
+	static final boolean ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT = true
+	static final boolean ARCHIVE_ALLOW_EMPTY_DEFAULT = false
+	static final boolean ARCHIVE_CASE_SENSITIVE_DEFAULT = true
+	static final boolean ARCHIVE_FINGERPRINT_DEFAULT = false
+	static final boolean ARCHIVE_ONLY_IF_SUCCESSFUL_DEFAULT = false
+
+	static final Set<String> STASH_INCLUDES_DEFAULT = ImmutableSet.of()
+	static final Set<String> STASH_EXCLUDES_DEFAULT = ImmutableSet.of()
+	static final boolean STASH_USE_DEFAULT_EXCLUDES_DEFAULT = true
+	static final boolean STASH_ALLOW_EMPTY_DEFAULT = false
 
 	static final String MVN_LOG = 'mvn.log'
 	static final String MVN_REPO_RELDIR = '.repo'
@@ -45,7 +59,19 @@ class PScript implements Serializable {
 		return lines
 	}
 
-	void archiveArtifacts(String artifacts, String excludes = null, boolean allowEmptyArchive = false, boolean fingerprint = false, boolean onlyIfSuccessful = false, boolean defaultExcludes = true, boolean caseSensitive = true) {
+	/**
+	 * Wrapper for step archiveArtifacts with stash like parameters.
+	 * Prefer method of {@link de.hasait.cipa.activity.CipaActivityRunContext} if possible.
+	 */
+	void archiveFiles(Set<String> includes = ARCHIVE_INCLUDES_DEFAULT, Set<String> excludes = ARCHIVE_EXCLUDES_DEFAULT, boolean useDefaultExcludes = ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = ARCHIVE_ALLOW_EMPTY_DEFAULT, boolean caseSensitive = ARCHIVE_CASE_SENSITIVE_DEFAULT, boolean fingerprint = ARCHIVE_FINGERPRINT_DEFAULT, boolean onlyIfSuccessful = ARCHIVE_ONLY_IF_SUCCESSFUL_DEFAULT) {
+		rawScript.archiveArtifacts(allowEmptyArchive: allowEmpty, artifacts: includes?.join(','), caseSensitive: caseSensitive, defaultExcludes: useDefaultExcludes, excludes: excludes?.join(','), fingerprint: fingerprint, onlyIfSuccessful: onlyIfSuccessful)
+	}
+
+	/**
+	 * @deprecated Prefer method archiveFiles of this class or {@link de.hasait.cipa.activity.CipaActivityRunContext} if possible.
+	 */
+	@Deprecated
+	void archiveArtifacts(String artifacts, String excludes = null, boolean allowEmptyArchive = ARCHIVE_ALLOW_EMPTY_DEFAULT, boolean fingerprint = ARCHIVE_FINGERPRINT_DEFAULT, boolean onlyIfSuccessful = ARCHIVE_ONLY_IF_SUCCESSFUL_DEFAULT, boolean defaultExcludes = ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT, boolean caseSensitive = ARCHIVE_CASE_SENSITIVE_DEFAULT) {
 		rawScript.archiveArtifacts(allowEmptyArchive: allowEmptyArchive, artifacts: artifacts, caseSensitive: caseSensitive, defaultExcludes: defaultExcludes, excludes: excludes, fingerprint: fingerprint, onlyIfSuccessful: onlyIfSuccessful)
 	}
 
@@ -408,8 +434,12 @@ class PScript implements Serializable {
 		rawScript.stage(name, body)
 	}
 
-	void stash(String id, Set<String> includes = [], Set<String> excludes = [], boolean useDefaultExcludes = true, boolean allowEmpty = false) {
-		rawScript.stash(name: id, includes: includes.join(','), excludes: excludes.join(','), useDefaultExcludes: useDefaultExcludes, allowEmpty: allowEmpty)
+	/**
+	 * Wrapper for step stash.
+	 * Prefer method of {@link de.hasait.cipa.activity.CipaActivityRunContext} if possible.
+	 */
+	void stash(String id, Set<String> includes = STASH_INCLUDES_DEFAULT, Set<String> excludes = STASH_EXCLUDES_DEFAULT, boolean useDefaultExcludes = STASH_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = STASH_ALLOW_EMPTY_DEFAULT) {
+		rawScript.stash(name: id, includes: includes?.join(','), excludes: excludes?.join(','), useDefaultExcludes: useDefaultExcludes, allowEmpty: allowEmpty)
 	}
 
 	public <V> V timeout(int timeoutInMinutes, Closure<V> body) {
@@ -420,6 +450,10 @@ class PScript implements Serializable {
 		rawScript.writeFile(encoding: encoding, file: filepath, text: content)
 	}
 
+	/**
+	 * Wrapper for step unstash.
+	 * Prefer method of {@link de.hasait.cipa.activity.CipaActivityRunContext} if possible.
+	 */
 	void unstash(String id) {
 		rawScript.unstash(id)
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,20 @@ import com.cloudbees.groovy.cps.NonCPS
 
 abstract class AbstractCipaActivityPublished implements CipaActivityPublished, Serializable {
 
-	private final String title
-
-	AbstractCipaActivityPublished(String title) {
-		this.title = title
-	}
+	private String title
 
 	@NonCPS
 	String getTitle() {
 		return title
+	}
+
+	@NonCPS
+	void setTitle(String title) {
+		if (!title) {
+			throw new IllegalArgumentException('title is null or empty')
+		}
+
+		this.title = title
 	}
 
 }

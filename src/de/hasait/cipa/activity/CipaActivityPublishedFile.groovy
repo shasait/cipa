@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,15 @@ class CipaActivityPublishedFile extends AbstractCipaActivityPublished {
 
 	private final String path
 
-	CipaActivityPublishedFile(String path, String title = null) {
-		super(title ?: path)
+	CipaActivityPublishedFile(String path) {
+		super()
+
+		if (!path) {
+			throw new IllegalArgumentException('path is null or empty')
+		}
 
 		this.path = path
+		this.title = path
 	}
 
 	@NonCPS

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			Object bean = beanRegistration.bean
 			if (type.isInstance(bean)) {
 				if (name == null || name.equals(beanRegistration.name)) {
-					if (!result) {
+					if (result == null) {
 						result = (T) bean
 					} else {
 						throw new IllegalStateException("Multiple beans found: ${type}")
@@ -300,7 +300,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	CipaTool configureJDK(String version) {
-		if (!toolJdk) {
+		if (toolJdk == null) {
 			toolJdk = new CipaTool()
 			addBean(toolJdk)
 		}
@@ -313,7 +313,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@NonCPS
 	CipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
-		if (!toolMvn) {
+		if (toolMvn == null) {
 			toolMvn = new CipaTool()
 			addBean(toolMvn)
 		}
@@ -552,7 +552,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	void node(CipaNode cipaNode, Closure body) {
 		rawScript.node(nodeLabel(cipaNode)) {
 			CipaWorkspaceProvider workspaceProvider = findBean(CipaWorkspaceProvider.class, true)
-			if (!workspaceProvider) {
+			if (workspaceProvider == null) {
 				body()
 			} else {
 				String wsPath = workspaceProvider.determineWorkspacePath()

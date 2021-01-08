@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,14 +31,15 @@ class CipaCustomResource implements CipaResource, Serializable {
 	def runtime = [:]
 
 	CipaCustomResource(CipaNode node, String type, String id) {
-		this.node = node
-		if (!type || type.length() == 0) {
+		if (!type) {
 			throw new IllegalArgumentException('type is null or empty')
 		}
-		this.type = type
-		if (!id || id.length() == 0) {
+		if (!id) {
 			throw new IllegalArgumentException('id is null or empty')
 		}
+
+		this.node = node
+		this.type = type
 		this.id = id
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,10 @@ class CipaStashResource implements CipaResource, Serializable {
 	private final String srcRelDir
 
 	CipaStashResource(String id, String srcRelDir) {
-		if (!id || id.length() == 0) {
+		if (!id) {
 			throw new IllegalArgumentException('id is null or empty')
 		}
+
 		this.id = id
 		this.srcRelDir = srcRelDir
 	}

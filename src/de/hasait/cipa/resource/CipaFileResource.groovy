@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ class CipaFileResource implements CipaResource, Serializable {
 	def runtime = [:]
 
 	CipaFileResource(CipaNode node, String path) {
-		if (!path || path.length() == 0) {
-			throw new IllegalArgumentException('relDir is null or empty')
+		if (!path) {
+			throw new IllegalArgumentException('path is null or empty')
 		}
 
 		this.node = node

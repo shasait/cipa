@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package de.hasait.cipa.artifactstore
 
 import de.hasait.cipa.activity.AbstractCipaBean
-import de.hasait.cipa.activity.CipaActivityRunContext
+import de.hasait.cipa.activity.CipaActivityPublished
+import de.hasait.cipa.activity.CipaActivityPublishedFile
 
 /**
  *
@@ -29,19 +30,25 @@ class DefaultCipaArtifactStore extends AbstractCipaBean implements CipaArtifactS
 	}
 
 	@Override
-	void archiveFile(CipaActivityRunContext runContext, String srcPath, String title) {
-		script.archiveArtifacts(srcPath)
-		runContext.publishFile(srcPath, title)
+	void archiveFiles(Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty) {
+		script.archiveFiles(includes, excludes, useDefaultExcludes, allowEmpty)
 	}
 
 	@Override
-	void stash(CipaActivityRunContext runContext, String id, Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty) {
+	void stash(String id, Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty) {
 		script.stash(id, includes, excludes, useDefaultExcludes, allowEmpty)
 	}
 
 	@Override
-	void unstash(CipaActivityRunContext runContext, String id) {
+	void unstash(String id) {
 		script.unstash(id)
+	}
+
+	@Override
+	CipaActivityPublished archiveFile(String path) {
+		script.archiveFiles([path] as Set)
+
+		return new CipaActivityPublishedFile(path)
 	}
 
 }

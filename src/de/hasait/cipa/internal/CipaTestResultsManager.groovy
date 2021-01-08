@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ class CipaTestResultsManager implements Serializable {
 
 	@NonCPS
 	void add(CipaTestResult result) {
-		if (!result) {
-			throw new IllegalArgumentException('!result')
+		if (result == null) {
+			throw new IllegalArgumentException('result is null')
 		}
 
 		testResults.add(result)

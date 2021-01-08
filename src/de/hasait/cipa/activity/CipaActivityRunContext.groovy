@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,26 +18,56 @@ package de.hasait.cipa.activity
 
 interface CipaActivityRunContext {
 
-	void archiveFile(String srcPath)
+	void archiveFiles(Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty)
 
-	void archiveFile(String srcPath, String title)
+	void archiveFiles(Set<String> includes, Set<String> excludes, boolean useDefaultExcludes)
 
-	void archiveLogFile(String srcPath)
+	void archiveFiles(Set<String> includes, Set<String> excludes)
 
-	void archiveLogFile(String srcPath, String title)
+	void archiveFiles(Set<String> includes)
 
-	void archiveMvnLogFile(String tgtPath)
+	void archiveFiles()
 
-	void archiveMvnLogFile(String tgtPath, String title)
+	void stash(String id, Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty)
+
+	void stash(String id, Set<String> includes, Set<String> excludes, boolean useDefaultExcludes)
+
+	void stash(String id, Set<String> includes, Set<String> excludes)
+
+	void stash(String id, Set<String> includes)
+
+	void stash(String id)
+
+	void unstash(String id)
+
+	CipaActivityPublished archiveFile(String path)
+
+	CipaActivityPublished archiveLogFile(String path)
+
+	CipaActivityPublished archiveMvnLogFile(String tgtPath)
+
+	void publishFile(String path, String title)
+
+	void publishFile(String path)
+
+	void publishLogFile(String path, String title)
+
+	void publishLogFile(String path)
+
+	void publishMvnLogFile(String tgtPath, String title)
+
+	void publishLink(String url, String title)
+
+	void publishLink(String url)
+
+	void addPublished(CipaActivityPublished newPublished, String title)
+
+	void addPublished(CipaActivityPublished newPublished)
 
 	void addPassedTest(String description)
 
 	void addFailedTest(String description, int failingAge)
 
 	void addJUnitTestResults(String includeRegex, String excludeRegex)
-
-	void publishLink(String url, String title)
-
-	void publishFile(String path, String title)
 
 }

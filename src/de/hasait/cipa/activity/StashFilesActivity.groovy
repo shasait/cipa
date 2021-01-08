@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.artifactstore.CipaArtifactStore
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
@@ -103,12 +102,10 @@ class StashFilesActivity extends AbstractCipaActivity implements CipaActivityWit
 
 	@Override
 	void runActivity(CipaActivityRunContext runContext) {
-		CipaArtifactStore cipaArtifactStore = cipa.findBean(CipaArtifactStore.class)
-
 		script.echo("Stashing ${files}...")
 
 		script.dir(relDir) {
-			cipaArtifactStore.stash(runContext, stash.resource.id, fileIncludes, fileExcludes, useDefaultExcludes, allowEmpty)
+			runContext.stash(stash.resource.id, fileIncludes, fileExcludes, useDefaultExcludes, allowEmpty)
 		}
 	}
 

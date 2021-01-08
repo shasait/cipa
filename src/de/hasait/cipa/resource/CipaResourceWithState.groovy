@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@ class CipaResourceWithState<R extends CipaResource> implements Serializable {
 	private final String state
 
 	CipaResourceWithState(R resource, String state) {
-		if (!resource) {
+		if (resource == null) {
 			throw new IllegalArgumentException('resource is null')
 		}
-		this.resource = resource
-
-		if (!state || state.length() == 0) {
+		if (!state) {
 			throw new IllegalArgumentException('state is null or empty')
 		}
+
+		this.resource = resource
 		this.state = state
 	}
 

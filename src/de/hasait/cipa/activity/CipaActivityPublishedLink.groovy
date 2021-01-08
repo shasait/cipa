@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,21 @@
 package de.hasait.cipa.activity
 
 import com.cloudbees.groovy.cps.NonCPS
+import org.apache.commons.lang.StringUtils
 
 class CipaActivityPublishedLink extends AbstractCipaActivityPublished {
 
 	private final String url
 
-	CipaActivityPublishedLink(String url, String title) {
-		super(title)
+	CipaActivityPublishedLink(String url) {
+		super()
+
+		if (!url) {
+			throw new IllegalArgumentException('url is null or empty')
+		}
 
 		this.url = url
+		this.title = StringUtils.substringAfterLast(StringUtils.removeEnd(url, '/'), '/')
 	}
 
 	@NonCPS

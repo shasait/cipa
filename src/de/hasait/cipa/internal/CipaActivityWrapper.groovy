@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,24 @@
 
 package de.hasait.cipa.internal
 
+import static de.hasait.cipa.PScript.ARCHIVE_ALLOW_EMPTY_DEFAULT
+import static de.hasait.cipa.PScript.ARCHIVE_EXCLUDES_DEFAULT
+import static de.hasait.cipa.PScript.ARCHIVE_INCLUDES_DEFAULT
+import static de.hasait.cipa.PScript.ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT
+import static de.hasait.cipa.PScript.STASH_ALLOW_EMPTY_DEFAULT
+import static de.hasait.cipa.PScript.STASH_EXCLUDES_DEFAULT
+import static de.hasait.cipa.PScript.STASH_INCLUDES_DEFAULT
+import static de.hasait.cipa.PScript.STASH_USE_DEFAULT_EXCLUDES_DEFAULT
+
 import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.PScript
-import de.hasait.cipa.activity.AbstractCipaActivityPublished
 import de.hasait.cipa.activity.CipaActivity
 import de.hasait.cipa.activity.CipaActivityInfo
 import de.hasait.cipa.activity.CipaActivityPublished
-import de.hasait.cipa.activity.CipaActivityPublishedFile
 import de.hasait.cipa.activity.CipaActivityPublishedLink
 import de.hasait.cipa.activity.CipaActivityRunContext
 import de.hasait.cipa.activity.CipaActivityWithCleanup
@@ -48,6 +55,15 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		return date ? DATE_FORMAT.format(date) : ''
 	}
 
+	@NonCPS
+	static void throwOnAnyActivityFailure(String msgPrefix, Collection<CipaActivityWrapper> wrappers) {
+		List<CipaActivityWrapper> failedWrappers = findFailedWrappers(wrappers)
+		String msg = buildFailedWrappersMessage(msgPrefix, failedWrappers)
+		if (msg) {
+			throw new RuntimeException(msg)
+		}
+	}
+
 	private final Cipa cipa
 	private final PScript script
 	final CipaActivity activity
@@ -63,7 +79,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 	private List<CipaActivityWrapper> failedDependencies
 	private Throwable cleanupThrowable
 
-	private final List<AbstractCipaActivityPublished> published = new ArrayList<>()
+	private final List<CipaActivityPublished> published = new ArrayList<>()
 	private final CipaTestResultsManager testResultsManager = new CipaTestResultsManager()
 
 	private CipaArtifactStore cipaArtifactStore
@@ -107,9 +123,10 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 
 	@NonCPS
 	void setPrepareThrowable(Throwable prepareThrowable) {
-		if (!prepareThrowable) {
-			throw new IllegalArgumentException('!prepareThrowable')
+		if (prepareThrowable == null) {
+			throw new IllegalArgumentException('prepareThrowable is null')
 		}
+
 		this.prepareThrowable = prepareThrowable
 	}
 
@@ -173,112 +190,6 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		}
 
 		return 'Unknown (BUG?!)'
-	}
-
-
-	@Override
-	@NonCPS
-	void addPassedTest(String description) {
-		testResultsManager.add(new CipaTestResult(description))
-	}
-
-	@Override
-	@NonCPS
-	void addFailedTest(String description, int failingAge) {
-		testResultsManager.add(new CipaTestResult(description, failingAge))
-	}
-
-	@Override
-	void addJUnitTestResults(String includeRegex, String excludeRegex) {
-		script.rawScript.junit('**/target/surefire-reports/*.xml')
-		applyJUnitTestResults(includeRegex, excludeRegex)
-	}
-
-	@NonCPS
-	void applyJUnitTestResults(String includeRegex, String excludeRegex) {
-		Pattern includePattern = includeRegex && includeRegex.trim().length() > 0 ? Pattern.compile(includeRegex) : null
-		Pattern excludePattern = excludeRegex && excludeRegex.trim().length() > 0 ? Pattern.compile(excludeRegex) : null
-
-		Closure patternFilter = { CaseResult caseResult ->
-			if (includePattern && !includePattern.matcher(caseResult.className).matches()) {
-				return false
-			}
-			if (excludePattern && excludePattern.matcher(caseResult.className).matches()) {
-				return false
-			}
-			return true
-		}
-
-		Run<?, ?> build = script.currentRawBuild
-		synchronized (build) {
-			TestResultAction testResultAction = build.getAction(TestResultAction.class)
-			if (testResultAction) {
-				if (testResultAction.passedTests) {
-					testResultAction.passedTests.findAll(patternFilter).each { addPassedTest(it.fullName) }
-				}
-				if (testResultAction.failedTests) {
-					testResultAction.failedTests.findAll(patternFilter).each { addFailedTest(it.fullName, it.age) }
-				}
-			}
-		}
-	}
-
-	@Override
-	@NonCPS
-	CipaTestSummary getTestSummary() {
-		return testResultsManager.testSummary
-	}
-
-	@Override
-	@NonCPS
-	List<CipaTestResult> getTestResults() {
-		return testResultsManager.testResults
-	}
-
-	@Override
-	@NonCPS
-	List<CipaTestResult> getNewFailingTestResults() {
-		return testResultsManager.newFailingTestResults
-	}
-
-	@Override
-	@NonCPS
-	List<CipaTestResult> getStillFailingTestResults() {
-		return testResultsManager.stillFailingTestResults
-	}
-
-	@Override
-	void archiveFile(String srcPath, String title = null) {
-		cipaArtifactStore.archiveFile(this, srcPath, title)
-	}
-
-	@Override
-	void archiveLogFile(String srcPath, String title = null) {
-		archiveFile(srcPath, title)
-	}
-
-	@Override
-	void archiveMvnLogFile(String tgtPath, String title = null) {
-		script.sh("mv -vf ${PScript.MVN_LOG} \"${tgtPath}\"")
-		archiveLogFile(tgtPath, title)
-	}
-
-	@Override
-	@NonCPS
-	void publishFile(String path, String title) {
-		published.add(new CipaActivityPublishedFile(path, title))
-	}
-
-	@Override
-	@NonCPS
-	void publishLink(String url, String title) {
-		published.add(new CipaActivityPublishedLink(url, title))
-	}
-
-	@Override
-	@NonCPS
-	List<CipaActivityPublished> getPublished() {
-		return Collections.unmodifiableList(published)
 	}
 
 	@NonCPS
@@ -409,6 +320,144 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		return notDoneNames
 	}
 
+	@Override
+	void archiveFiles(Set<String> includes = ARCHIVE_INCLUDES_DEFAULT, Set<String> excludes = ARCHIVE_EXCLUDES_DEFAULT, boolean useDefaultExcludes = ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = ARCHIVE_ALLOW_EMPTY_DEFAULT) {
+		cipaArtifactStore.archiveFiles(includes, excludes, useDefaultExcludes, allowEmpty)
+	}
+
+	@Override
+	void stash(String id, Set<String> includes = STASH_INCLUDES_DEFAULT, Set<String> excludes = STASH_EXCLUDES_DEFAULT, boolean useDefaultExcludes = STASH_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = STASH_ALLOW_EMPTY_DEFAULT) {
+		cipaArtifactStore.stash(id, includes, excludes, useDefaultExcludes, allowEmpty)
+	}
+
+	@Override
+	void unstash(String id) {
+		cipaArtifactStore.unstash(id)
+	}
+
+	@Override
+	CipaActivityPublished archiveFile(String path) {
+		return cipaArtifactStore.archiveFile(path)
+	}
+
+	@Override
+	CipaActivityPublished archiveLogFile(String path) {
+		return archiveFile(path)
+	}
+
+	@Override
+	CipaActivityPublished archiveMvnLogFile(String tgtPath) {
+		script.sh("mv -vf ${PScript.MVN_LOG} \"${tgtPath}\"")
+		return archiveLogFile(tgtPath)
+	}
+
+	@Override
+	void publishFile(String path, String title = null) {
+		addPublished(archiveFile(path), title)
+	}
+
+	@Override
+	void publishLogFile(String path, String title = null) {
+		addPublished(archiveLogFile(path), title)
+	}
+
+	@Override
+	void publishMvnLogFile(String tgtPath, String title = null) {
+		addPublished(archiveMvnLogFile(tgtPath), title)
+	}
+
+	@Override
+	@NonCPS
+	void publishLink(String url, String title = null) {
+		addPublished(new CipaActivityPublishedLink(url), title)
+	}
+
+	@Override
+	@NonCPS
+	void addPublished(CipaActivityPublished newPublished, String title = null) {
+		if (title) {
+			newPublished.title = title
+		}
+		published.add(newPublished)
+	}
+
+	@Override
+	@NonCPS
+	List<CipaActivityPublished> getPublished() {
+		return Collections.unmodifiableList(published)
+	}
+
+	@Override
+	@NonCPS
+	void addPassedTest(String description) {
+		testResultsManager.add(new CipaTestResult(description))
+	}
+
+	@Override
+	@NonCPS
+	void addFailedTest(String description, int failingAge) {
+		testResultsManager.add(new CipaTestResult(description, failingAge))
+	}
+
+	@Override
+	void addJUnitTestResults(String includeRegex, String excludeRegex) {
+		script.rawScript.junit('**/target/surefire-reports/*.xml')
+		applyJUnitTestResults(includeRegex, excludeRegex)
+	}
+
+	@NonCPS
+	void applyJUnitTestResults(String includeRegex, String excludeRegex) {
+		Pattern includePattern = includeRegex && includeRegex.trim().length() > 0 ? Pattern.compile(includeRegex) : null
+		Pattern excludePattern = excludeRegex && excludeRegex.trim().length() > 0 ? Pattern.compile(excludeRegex) : null
+
+		Closure patternFilter = { CaseResult caseResult ->
+			if (includePattern && !includePattern.matcher(caseResult.className).matches()) {
+				return false
+			}
+			if (excludePattern && excludePattern.matcher(caseResult.className).matches()) {
+				return false
+			}
+			return true
+		}
+
+		Run<?, ?> build = script.currentRawBuild
+		synchronized (build) {
+			TestResultAction testResultAction = build.getAction(TestResultAction.class)
+			if (testResultAction) {
+				if (testResultAction.passedTests) {
+					testResultAction.passedTests.findAll(patternFilter).each { addPassedTest(it.fullName) }
+				}
+				if (testResultAction.failedTests) {
+					testResultAction.failedTests.findAll(patternFilter).each { addFailedTest(it.fullName, it.age) }
+				}
+			}
+		}
+	}
+
+	@Override
+	@NonCPS
+	CipaTestSummary getTestSummary() {
+		return testResultsManager.testSummary
+	}
+
+	@Override
+	@NonCPS
+	List<CipaTestResult> getTestResults() {
+		return testResultsManager.testResults
+	}
+
+	@Override
+	@NonCPS
+	List<CipaTestResult> getNewFailingTestResults() {
+		return testResultsManager.newFailingTestResults
+	}
+
+	@Override
+	@NonCPS
+	List<CipaTestResult> getStillFailingTestResults() {
+		return testResultsManager.stillFailingTestResults
+	}
+
 	@NonCPS
 	private List<CipaActivityWrapper> findFailedDependencyWrappers() {
 		Set<CipaActivityWrapper> wrappersToInheritFailuresFrom = new LinkedHashSet<>()
@@ -429,15 +478,6 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			}
 		}
 		return failedWrappers.empty ? null : failedWrappers
-	}
-
-	@NonCPS
-	static void throwOnAnyActivityFailure(String msgPrefix, Collection<CipaActivityWrapper> wrappers) {
-		List<CipaActivityWrapper> failedWrappers = findFailedWrappers(wrappers)
-		String msg = buildFailedWrappersMessage(msgPrefix, failedWrappers)
-		if (msg) {
-			throw new RuntimeException(msg)
-		}
 	}
 
 	@NonCPS

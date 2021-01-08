@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,9 @@ class CipaNode implements Serializable {
 
 	CipaNode(String label, boolean applyPrefix = true) {
 		if (!label) {
-			throw new IllegalArgumentException('label is null')
+			throw new IllegalArgumentException('label is null or empty')
 		}
+
 		this.label = label
 		this.applyPrefix = applyPrefix
 	}
