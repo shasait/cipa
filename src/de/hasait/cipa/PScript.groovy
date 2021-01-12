@@ -20,8 +20,10 @@ import com.cloudbees.groovy.cps.NonCPS
 import com.google.common.collect.ImmutableSet
 import de.hasait.cipa.activity.CheckoutConfiguration
 import groovy.json.JsonSlurper
+import hudson.FilePath
 import hudson.model.Job
 import hudson.model.Run
+import hudson.remoting.VirtualChannel
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
@@ -30,18 +32,23 @@ import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
  */
 class PScript implements Serializable {
 
-	static final Set<String> ARCHIVE_INCLUDES_DEFAULT = ImmutableSet.of()
-	static final Set<String> ARCHIVE_EXCLUDES_DEFAULT = ImmutableSet.of()
-	static final boolean ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT = true
-	static final boolean ARCHIVE_ALLOW_EMPTY_DEFAULT = false
+	static final Set<String> FIND_FILES_INCLUDES_DEFAULT = ImmutableSet.of()
+	static final Set<String> FIND_FILES_EXCLUDES_DEFAULT = ImmutableSet.of()
+	static final boolean FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT = true
+	static final boolean FIND_FILES_ALLOW_EMPTY_DEFAULT = false
+
+	static final Set<String> ARCHIVE_INCLUDES_DEFAULT = FIND_FILES_INCLUDES_DEFAULT
+	static final Set<String> ARCHIVE_EXCLUDES_DEFAULT = FIND_FILES_EXCLUDES_DEFAULT
+	static final boolean ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT
+	static final boolean ARCHIVE_ALLOW_EMPTY_DEFAULT = FIND_FILES_ALLOW_EMPTY_DEFAULT
 	static final boolean ARCHIVE_CASE_SENSITIVE_DEFAULT = true
 	static final boolean ARCHIVE_FINGERPRINT_DEFAULT = false
 	static final boolean ARCHIVE_ONLY_IF_SUCCESSFUL_DEFAULT = false
 
-	static final Set<String> STASH_INCLUDES_DEFAULT = ImmutableSet.of()
-	static final Set<String> STASH_EXCLUDES_DEFAULT = ImmutableSet.of()
-	static final boolean STASH_USE_DEFAULT_EXCLUDES_DEFAULT = true
-	static final boolean STASH_ALLOW_EMPTY_DEFAULT = false
+	static final Set<String> STASH_INCLUDES_DEFAULT = FIND_FILES_INCLUDES_DEFAULT
+	static final Set<String> STASH_EXCLUDES_DEFAULT = FIND_FILES_EXCLUDES_DEFAULT
+	static final boolean STASH_USE_DEFAULT_EXCLUDES_DEFAULT = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT
+	static final boolean STASH_ALLOW_EMPTY_DEFAULT = FIND_FILES_ALLOW_EMPTY_DEFAULT
 
 	static final String MVN_LOG = 'mvn.log'
 	static final String MVN_REPO_RELDIR = '.repo'
@@ -333,6 +340,48 @@ class PScript implements Serializable {
 
 	boolean fileExists(String relativePath) {
 		return rawScript.fileExists(relativePath)
+	}
+
+	Set<String> findFiles(Set<String> includes = FIND_FILES_INCLUDES_DEFAULT, Set<String> excludes = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT, boolean useDefaultExcludes = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = FIND_FILES_ALLOW_EMPTY_DEFAULT) {
+		String nodeName = rawScript.env['NODE_NAME']
+		String path = pwd()
+		return findFilesInternal(nodeName, path, includes, excludes, useDefaultExcludes, allowEmpty)
+	}
+
+	@NonCPS
+	private Set<String> findFilesInternal(String nodeName, String path, Set<String> includes, Set<String> excludes, boolean useDefaultExcludes, boolean allowEmpty) {
+		Set<String> result = new LinkedHashSet<>()
+
+		FilePath base = createFilePath(nodeName, path)
+		int relPathBaseIndex = base.remote.length() + 1
+
+		FilePath[] matchList = base.list(includes.join(','), excludes.join(','), useDefaultExcludes)
+		for (FilePath match in matchList) {
+			if (!match.directory) {
+				result.add(match.remote.substring(relPathBaseIndex))
+			}
+		}
+
+		if (result.empty && !allowEmpty) {
+			throw new IllegalArgumentException("No files found: nodeName=${nodeName}, path=${path}, includes=${includes}, excludes=${excludes}, useDefaultExcludes=${useDefaultExcludes}")
+		}
+
+		return result
+	}
+
+	@NonCPS
+	private FilePath createFilePath(String nodeName, String path) {
+		if (nodeName == null) {
+			throw new IllegalArgumentException('nodeName is null')
+		}
+
+		if (nodeName == 'master') {
+			return new FilePath(new File(path))
+		}
+
+		VirtualChannel channel = jenkins.getNode(nodeName).getChannel()
+
+		return new FilePath(channel, path);
 	}
 
 	@NonCPS
