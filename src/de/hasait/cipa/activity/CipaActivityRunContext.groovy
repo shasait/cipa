@@ -56,6 +56,8 @@ interface CipaActivityRunContext {
 
 	void publishMvnLogFile(String tgtPath, String title)
 
+	void publishMvnLogFile(String tgtPath)
+
 	void publishLink(String url, String title)
 
 	void publishLink(String url)
