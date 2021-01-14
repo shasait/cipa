@@ -77,6 +77,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 	private Date finishedDate
 	private Throwable runThrowable
 	private List<CipaActivityWrapper> failedDependencies
+	private Throwable aroundThrowable
 	private Throwable cleanupThrowable
 
 	private final List<CipaActivityPublished> published = new ArrayList<>()
@@ -137,7 +138,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 	@Override
 	@NonCPS
 	boolean isFailed() {
-		return prepareThrowable || failedDependencies || runThrowable
+		return prepareThrowable || failedDependencies || runThrowable || aroundThrowable
 	}
 
 	@Override
@@ -155,6 +156,9 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		}
 		if (runThrowable) {
 			return runThrowable.message
+		}
+		if (aroundThrowable) {
+			return aroundThrowable.message
 		}
 
 		return 'Unknown (BUG?!)'
@@ -185,6 +189,12 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 	@NonCPS
 	Throwable getRunThrowable() {
 		return runThrowable
+	}
+
+	@Override
+	@NonCPS
+	Throwable getAroundThrowable() {
+		return aroundThrowable
 	}
 
 	@Override
@@ -240,8 +250,8 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 				try {
 					aroundActivity.handleFailedDependencies(this)
 				} catch (Throwable throwable) {
+					aroundThrowable = throwable
 					script.echoStacktrace('handleFailedDependencies', throwable)
-					throw throwable
 				}
 			}
 			return
@@ -251,9 +261,12 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			try {
 				aroundActivity.beforeActivityStarted(this)
 			} catch (Throwable throwable) {
+				aroundThrowable = throwable
 				script.echoStacktrace('beforeActivityStarted', throwable)
-				throw throwable
 			}
+		}
+		if (aroundThrowable) {
+			return
 		}
 
 		try {
@@ -276,8 +289,8 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			try {
 				aroundActivity.afterActivityFinished(this)
 			} catch (Throwable throwable) {
+				aroundThrowable = throwable
 				script.echoStacktrace('afterActivityFinished', throwable)
-				throw throwable
 			}
 		}
 	}

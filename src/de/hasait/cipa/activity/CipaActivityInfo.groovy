@@ -42,6 +42,8 @@ interface CipaActivityInfo {
 
 	Throwable getRunThrowable()
 
+	Throwable getAroundThrowable()
+
 	Throwable getCleanupThrowable()
 
 	List<CipaActivityPublished> getPublished()
