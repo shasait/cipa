@@ -342,7 +342,7 @@ class PScript implements Serializable {
 		return rawScript.fileExists(relativePath)
 	}
 
-	Set<String> findFiles(Set<String> includes = FIND_FILES_INCLUDES_DEFAULT, Set<String> excludes = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT, boolean useDefaultExcludes = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = FIND_FILES_ALLOW_EMPTY_DEFAULT) {
+	Set<String> findFiles(Set<String> includes = FIND_FILES_INCLUDES_DEFAULT, Set<String> excludes = FIND_FILES_EXCLUDES_DEFAULT, boolean useDefaultExcludes = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = FIND_FILES_ALLOW_EMPTY_DEFAULT) {
 		String nodeName = rawScript.env['NODE_NAME']
 		String path = pwd()
 		return findFilesInternal(nodeName, path, includes, excludes, useDefaultExcludes, allowEmpty)
