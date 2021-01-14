@@ -104,6 +104,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		return Collections.unmodifiableSet(dependsOn.entrySet())
 	}
 
+	@Override
 	@NonCPS
 	Date getCreationDate() {
 		return creationDate
@@ -111,8 +112,52 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 
 	@Override
 	@NonCPS
-	Throwable getCleanupThrowable() {
-		return cleanupThrowable
+	Date getStartedDate() {
+		return startedDate
+	}
+
+	@Override
+	@NonCPS
+	Date getFinishedDate() {
+		return finishedDate
+	}
+
+	@Override
+	@NonCPS
+	boolean isRunning() {
+		return startedDate && !done
+	}
+
+	@Override
+	@NonCPS
+	boolean isDone() {
+		return failed || finishedDate
+	}
+
+	@Override
+	@NonCPS
+	boolean isFailed() {
+		return prepareThrowable || failedDependencies || runThrowable
+	}
+
+	@Override
+	@NonCPS
+	String buildFailedMessage() {
+		if (!failed) {
+			return null
+		}
+
+		if (prepareThrowable) {
+			return prepareThrowable.message
+		}
+		if (failedDependencies) {
+			return buildFailedWrappersMessage('Dependencies', failedDependencies)
+		}
+		if (runThrowable) {
+			return runThrowable.message
+		}
+
+		return 'Unknown (BUG?!)'
 	}
 
 	@Override
@@ -138,58 +183,14 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 
 	@Override
 	@NonCPS
-	Date getStartedDate() {
-		return startedDate
-	}
-
-	@Override
-	@NonCPS
-	Date getFinishedDate() {
-		return finishedDate
-	}
-
-	@Override
-	@NonCPS
 	Throwable getRunThrowable() {
 		return runThrowable
 	}
 
 	@Override
 	@NonCPS
-	boolean isFailed() {
-		return prepareThrowable || failedDependencies || runThrowable
-	}
-
-	@Override
-	@NonCPS
-	boolean isDone() {
-		return failed || finishedDate
-	}
-
-	@Override
-	@NonCPS
-	boolean isRunning() {
-		return startedDate && !done
-	}
-
-	@Override
-	@NonCPS
-	String buildFailedMessage() {
-		if (!failed) {
-			return null
-		}
-
-		if (prepareThrowable) {
-			return prepareThrowable.message
-		}
-		if (failedDependencies) {
-			return buildFailedWrappersMessage('Dependencies', failedDependencies)
-		}
-		if (runThrowable) {
-			return runThrowable.message
-		}
-
-		return 'Unknown (BUG?!)'
+	Throwable getCleanupThrowable() {
+		return cleanupThrowable
 	}
 
 	@NonCPS
@@ -210,17 +211,6 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			sb << " | TestResults: ${testSummary.countPassed}/${testSummary.countTotal} (${testSummary.countFailed} failed)"
 		}
 		return sb.toString()
-	}
-
-	void cleanupNode() {
-		try {
-			if (activity instanceof CipaActivityWithCleanup) {
-				((CipaActivityWithCleanup) activity).cleanupNode()
-			}
-		} catch (Throwable throwable) {
-			cleanupThrowable = throwable
-			script.echoStacktrace('cleanupNode', throwable)
-		}
 	}
 
 	void prepareNode() {
@@ -318,6 +308,17 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		}
 
 		return notDoneNames
+	}
+
+	void cleanupNode() {
+		try {
+			if (activity instanceof CipaActivityWithCleanup) {
+				((CipaActivityWithCleanup) activity).cleanupNode()
+			}
+		} catch (Throwable throwable) {
+			cleanupThrowable = throwable
+			script.echoStacktrace('cleanupNode', throwable)
+		}
 	}
 
 	@Override

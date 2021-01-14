@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,25 +22,27 @@ interface CipaActivityInfo {
 
 	Set<Map.Entry<CipaActivityInfo, Boolean>> getDependencies()
 
+	Date getCreationDate()
+
 	Date getStartedDate()
 
 	Date getFinishedDate()
 
-	Throwable getRunThrowable()
+	boolean isRunning()
 
-	Throwable getPrepareThrowable()
-
-	List<CipaActivityInfo> getFailedDependencies()
-
-	Throwable getCleanupThrowable()
+	boolean isDone()
 
 	boolean isFailed()
 
 	String buildFailedMessage()
 
-	boolean isDone()
+	Throwable getPrepareThrowable()
 
-	boolean isRunning()
+	List<CipaActivityInfo> getFailedDependencies()
+
+	Throwable getRunThrowable()
+
+	Throwable getCleanupThrowable()
 
 	List<CipaActivityPublished> getPublished()
 
