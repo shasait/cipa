@@ -473,6 +473,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				if (prepareThrowable) {
 					for (wrapper in nodeWrappers) {
 						wrapper.prepareThrowable = prepareThrowable
+						// will never run so mark here
+						waitForCbpMarkFinished(wrapper)
 					}
 				} else {
 					parallelActivitiesBranches.failFast = true
@@ -517,8 +519,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private Closure parallelActivityRunBranch(CipaActivityWrapper wrapper) {
 		return {
-			boolean useWaitForCbp = waitForCbpAvailable && waitForCbpEnabled
-			if (useWaitForCbp) {
+			if (waitForCbpUsed) {
 				List<String> notDoneDependencyNames = wrapper.readyToRunActivity(false)
 				List<String> cbpKeys = notDoneDependencyNames.collect { String.format(finishedCbpFormat, it) }
 				if (!cbpKeys.empty) {
@@ -537,11 +538,21 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				}
 			}
 			wrapper.runActivity()
-			if (useWaitForCbp) {
-				String finishedCbpKey = String.format(finishedCbpFormat, wrapper.activity.name)
-				rawScript.setCustomBuildProperty(key: finishedCbpKey, value: wrapper.finishedDate)
-			}
+			waitForCbpMarkFinished(wrapper)
 		}
+	}
+
+	private void waitForCbpMarkFinished(CipaActivityWrapper wrapper) {
+		if (waitForCbpUsed) {
+			String finishedCbpKey = String.format(finishedCbpFormat, wrapper.activity.name)
+			// wrapper.finishedDate will be null in most error cases, which is ok
+			rawScript.setCustomBuildProperty(key: finishedCbpKey, value: wrapper.finishedDate)
+		}
+	}
+
+	@NonCPS
+	private boolean isWaitForCbpUsed() {
+		return waitForCbpAvailable && waitForCbpEnabled
 	}
 
 	@NonCPS
