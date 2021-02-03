@@ -26,21 +26,23 @@ import de.hasait.cipa.resource.CipaFileResource
  */
 class CipaFileResourceCleanup extends AbstractCipaBean implements NodeCleanup {
 
-	CipaFileResourceCleanup(Cipa cipa) {
-		super(cipa)
-	}
+    CipaFileResourceCleanup(Cipa cipa) {
+        super(cipa)
+    }
 
-	@Override
-	void cleanupNode(CipaNode node) {
-		Set<CipaFileResource> allFileResources = cipa.findBeans(CipaFileResource.class)
-		script.echo("Cleaning up file resources on host ${node.runtimeHostname} (${node.label})...")
-		allFileResources.findAll { it.node == node && it.cleanupEnabled }.forEach({ resource ->
-			String path = resource.path
-			script.echo('- ' + resource)
-			script.dir(path) {
-				script.deleteDir()
-			}
-		})
-	}
+    @Override
+    void cleanupNode(CipaNode node) {
+        Set<CipaFileResource> allFileResources = cipa.findBeans(CipaFileResource.class)
+        script.echo("Cleaning up file resources on host ${node.runtimeHostname} (${node.label})...")
+        for (resource in allFileResources) {
+            if (resource.node == node && resource.cleanupEnabled) {
+                String path = resource.path
+                script.echo('- ' + resource)
+                script.dir(path) {
+                    script.deleteDir()
+                }
+            }
+        }
+    }
 
 }
