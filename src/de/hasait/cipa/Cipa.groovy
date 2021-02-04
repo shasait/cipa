@@ -156,6 +156,18 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@Override
 	@NonCPS
+	public <T> Map<T, String> findBeansWithName(Class<T> type) {
+		Map<T, String> results = new LinkedHashMap<>()
+		for (beanRegistration in beanRegistrations.values()) {
+			if (type.isInstance(beanRegistration.bean)) {
+				results.put((T) beanRegistration.bean, beanRegistration.name)
+			}
+		}
+		return results
+	}
+
+	@Override
+	@NonCPS
 	public <T> T findBean(Class<T> type, boolean optional = false, String name = null) {
 		T result = null
 		for (beanRegistration in beanRegistrations.values()) {

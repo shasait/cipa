@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,24 @@ interface CipaBeanContainer {
 
 	public <T> T addBean(T bean)
 
+	public <T> T addBean(T bean, String name)
+
 	public <T> Set<T> findBeans(Class<T> type)
 
 	public <T> List<T> findBeansAsList(Class<T> type)
 
-	public <T> T findBean(Class<T> type, boolean optional)
+	public <T> Map<T, String> findBeansWithName(Class<T> type)
 
 	public <T> T findBean(Class<T> type)
 
-	public <T> T findOrAddBean(Class<T> type, Supplier<T> constructor)
+	public <T> T findBean(Class<T> type, boolean optional)
+
+	public <T> T findBean(Class<T> type, boolean optional, String name)
 
 	public <T> T findOrAddBean(Class<T> type)
+
+	public <T> T findOrAddBean(Class<T> type, Supplier<T> constructor)
+
+	public <T> T findOrAddBean(Class<T> type, Supplier<T> constructor, String name)
 
 }
