@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,29 +20,25 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.PScript
+import de.hasait.cipa.activity.AbstractCipaAroundActivity
 import de.hasait.cipa.activity.CheckoutActivity
 import de.hasait.cipa.activity.CipaActivityInfo
-import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.activity.StashFilesActivity
 import de.hasait.cipa.activity.UnstashFilesActivity
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
+import org.jenkinsci.plugins.custombuildproperties.CustomBuildPropertiesAction
 
 /**
  *
  */
-class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
-
-	private final Cipa cipa
-	private PScript script
-	private def rawScript
+class TestPipeline extends AbstractCipaAroundActivity implements CipaInit, Serializable {
 
 	TestPipeline(rawScript, Boolean ra1f = null, Boolean ra2f = null, Boolean ra3f = null, Boolean wa1f = null, Boolean wa2f = null, Boolean wa3f = null, Boolean rb1f = null) {
-		cipa = Cipa.getOrCreate(rawScript)
+		super(rawScript)
+
 		cipa.debug = true
-		cipa.addBean(this)
 
 		cipa.addStandardBeans(10)
 
@@ -63,12 +59,11 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 
 	@Override
 	void initCipa(Cipa cipa) {
-		script = cipa.findBean(PScript.class)
-		rawScript = script.rawScript
-
 		cipa.configureJDK('JDK8')
 		cipa.configureMaven('M3', 'ciserver-settings.xml', 'ciserver-toolchains.xml')
 				.setOptions('-Xms1g -Xmx4g -XX:ReservedCodeCacheSize=256m -Dproject.build.sourceEncoding=UTF-8 -Dfile.encoding=UTF-8 -Dmaven.compile.fork=true')
+
+		script.setCustomBuildProperty("${CustomBuildPropertiesAction.CBP_TABLE_PREFIX}Activities", "Activity-(.*?)-(.*)")
 	}
 
 	void run() {
@@ -77,18 +72,13 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 
 	@Override
 	void handleFailedDependencies(CipaActivityInfo activityInfo) {
-		script.setCustomBuildProperty("${activityInfo.activity.name}-DepsFailed", activityInfo.failedDependencies.size())
-	}
-
-	@Override
-	void beforeActivityStarted(CipaActivityInfo activityInfo) {
+		script.setCustomBuildProperty("Activity-${activityInfo.activity.name}-DepsFailed", activityInfo.failedDependencies.size())
 	}
 
 	@Override
 	void runAroundActivity(CipaActivityInfo activityInfo, Closure<?> next) {
 		String name = activityInfo.activity.name
-		script.setCustomBuildProperty("${name}-BeginTime", activityInfo.startedDate)
-		script.echo("runAroundActivity ${name}...")
+		script.setCustomBuildProperty("Activity-${name}-BeginTime", activityInfo.startedDate)
 		next.call()
 	}
 
@@ -96,9 +86,9 @@ class TestPipeline implements CipaInit, CipaAroundActivity, Serializable {
 	void afterActivityFinished(CipaActivityInfo activityInfo) {
 		String name = activityInfo.activity.name
 		if (activityInfo.failed) {
-			script.setCustomBuildProperty("${name}-Failed", activityInfo.buildFailedMessage())
+			script.setCustomBuildProperty("Activity-${name}-Failed", activityInfo.buildFailedMessage())
 		}
-		script.setCustomBuildProperty("${name}-EndTime", activityInfo.finishedDate)
+		// Activity-${name}-Finished set by cipa internally
 	}
 
 	@Override

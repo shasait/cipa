@@ -33,10 +33,14 @@ import de.hasait.cipa.artifactstore.DefaultCipaArtifactStoreSupplier
 import de.hasait.cipa.internal.CipaActivityBuilder
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaBeanRegistration
+import de.hasait.cipa.internal.CipaCleanupNodeHandler
 import de.hasait.cipa.internal.CipaPrepareEnv
 import de.hasait.cipa.internal.CipaPrepareJobProperties
 import de.hasait.cipa.internal.CipaPrepareNodeLabelPrefix
 import de.hasait.cipa.internal.CipaRunContext
+import de.hasait.cipa.internal.CipaToolNodeHandler
+import de.hasait.cipa.internal.CipaWorkspaceNodeHandler
+import de.hasait.cipa.nodehandler.CipaNodeHandler
 import de.hasait.cipa.resource.CipaCustomResource
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResource
@@ -62,6 +66,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private final PScript script
 	private final boolean waitForCbpAvailable
 	private final CipaPrepareNodeLabelPrefix nodeLabelPrefixHolder
+	private final CipaToolNodeHandler toolNodeHandler
 
 	private final Map<Object, CipaBeanRegistration> beanRegistrations = new LinkedHashMap<>()
 
@@ -70,9 +75,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private boolean waitForCbpEnabled = true
 	private String finishedCbpFormat = 'Activity-%s-Finished'
-
-	private CipaTool toolJdk
-	private CipaTool toolMvn
 
 	private CipaRunContext runContext
 
@@ -93,13 +95,16 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		if (existingCipa != null) {
 			throw new IllegalArgumentException('Duplicate construction - use getOrCreate')
 		}
-		script = addBean(new PScript(rawScript))
+		script = findOrAddBean(PScript.class)
 
 		waitForCbpAvailable = StepDescriptor.byFunctionName('waitForCustomBuildProperties') != null
 
-		addBean(new CipaPrepareEnv())
-		addBean(new CipaPrepareJobProperties())
-		nodeLabelPrefixHolder = addBean(new CipaPrepareNodeLabelPrefix())
+		findOrAddBean(CipaPrepareEnv.class)
+		findOrAddBean(CipaPrepareJobProperties.class)
+		nodeLabelPrefixHolder = findOrAddBean(CipaPrepareNodeLabelPrefix.class)
+		findOrAddBean(CipaWorkspaceNodeHandler.class)
+		toolNodeHandler = findOrAddBean(CipaToolNodeHandler.class)
+		findOrAddBean(CipaCleanupNodeHandler.class)
 	}
 
 	@NonCPS
@@ -311,44 +316,19 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		return addBean(new CipaResourceWithState<R>(resourceWithState.resource, state))
 	}
 
+	@NonCPS
 	CipaTool configureJDK(String version) {
-		if (toolJdk == null) {
-			toolJdk = new CipaTool()
-			addBean(toolJdk)
-		}
-		toolJdk.name = version
-		toolJdk.type = 'hudson.model.JDK'
-		toolJdk.addToPathWithSuffix = '/bin'
-		toolJdk.dedicatedEnvVar = ENV_VAR___JDK_HOME
-		return toolJdk
+		return toolNodeHandler.configureJDK(version)
 	}
 
 	@NonCPS
 	CipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
-		if (toolMvn == null) {
-			toolMvn = new CipaTool()
-			addBean(toolMvn)
-		}
-		toolMvn.name = version
-		toolMvn.type = 'hudson.tasks.Maven$MavenInstallation'
-		toolMvn.addToPathWithSuffix = '/bin'
-		toolMvn.dedicatedEnvVar = ENV_VAR___MVN_HOME
-		if (mvnSettingsFileId) {
-			toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_SETTINGS, mvnSettingsFileId)
-		}
-		if (mvnToolchainsFileId) {
-			toolMvn.addConfigFileEnvVar(ENV_VAR___MVN_TOOLCHAINS, mvnToolchainsFileId)
-		}
-		return toolMvn
+		return toolNodeHandler.configureMaven(version, mvnSettingsFileId, mvnToolchainsFileId)
 	}
 
 	@NonCPS
 	CipaTool configureTool(String name, String type) {
-		CipaTool tool = new CipaTool()
-		tool.name = name
-		tool.type = type
-		addBean(tool)
-		return tool
+		return toolNodeHandler.configureTool(name, type)
 	}
 
 	@NonCPS
@@ -465,7 +445,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		return sb.toString()
 	}
 
-	private Closure parallelNodeWithActivitiesBranch(int nodeI, CipaNode node, List<CipaActivityWrapper> nodeWrappers) {
+	private Closure parallelNodeWithActivitiesBranch(int nodeI, CipaNode cipaNode, List<CipaActivityWrapper> nodeWrappers) {
 		return {
 			def parallelActivitiesBranches = [:]
 			for (int activityI = 0; activityI < nodeWrappers.size(); activityI++) {
@@ -473,7 +453,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				parallelActivitiesBranches["${nodeI}-${activityI}-${wrapper.activity.name}"] = parallelActivityRunBranch(wrapper)
 			}
 
-			nodeWithEnv(node) {
+			node(cipaNode) {
 				Throwable prepareThrowable = null
 				for (wrapper in nodeWrappers) {
 					wrapper.prepareNode()
@@ -501,12 +481,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 						for (CipaAfterActivities after in afters) {
 							after.afterCipaActivities()
 						}
-					}
-
-					// Will be invoked after all activities for each node
-					List<NodeCleanup> cleanupResources = findBeansAsList(NodeCleanup.class)
-					for (cleanResource in cleanupResources) {
-						cleanResource.cleanupNode(node)
 					}
 				}
 			}
@@ -574,63 +548,28 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	void node(CipaNode cipaNode, Closure body) {
 		rawScript.node(nodeLabel(cipaNode)) {
-			CipaWorkspaceProvider workspaceProvider = findBean(CipaWorkspaceProvider.class, true)
-			if (workspaceProvider == null) {
-				body()
-			} else {
-				String wsPath = workspaceProvider.determineWorkspacePath()
-				rawScript.ws(wsPath) {
-					body()
-				}
-			}
+			cipaNode.runtimeHostname = script.determineHostname()
+			script.echo('[CIPA] On host: ' + cipaNode.runtimeHostname)
+
+			List<CipaNodeHandler> cipaNodeHandlers = determineNodeHandlers()
+			handleNode(cipaNode, cipaNodeHandlers, 0, body)
 		}
 	}
 
-	private void nodeWithEnv(CipaNode cipaNode, Closure body) {
-		node(cipaNode) {
-			nodeWithEnvLogic(cipaNode, body)
-		}
+	@NonCPS
+	private List<CipaNodeHandler> determineNodeHandlers() {
+		List<CipaNodeHandler> cipaNodeHandlers = findBeansAsList(CipaNodeHandler.class)
+		cipaNodeHandlers.sort({ it.handleNodeOrder })
+		return cipaNodeHandlers
 	}
 
-	private void nodeWithEnvLogic(CipaNode node, Closure body) {
-		node.runtimeHostname = script.determineHostname()
-		rawScript.echo('[CIPA] On host: ' + node.runtimeHostname)
-		String workspace = rawScript.env.WORKSPACE
-		rawScript.echo("[CIPA] workspace: ${workspace}")
-
-		def envVars = []
-		def pathEntries = []
-		def configFiles = []
-
-		List<CipaTool> tools = findBeansAsList(CipaTool.class)
-		for (tool in tools) {
-			def toolHome = rawScript.tool(name: tool.name, type: tool.type)
-			rawScript.echo("[CIPA] Tool ${tool.name}: ${toolHome}")
-			if (tool.dedicatedEnvVar) {
-				envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
-			}
-			if (tool.addToPathWithSuffix) {
-				pathEntries.add("${toolHome}${tool.addToPathWithSuffix}")
-			}
-			if (tool.is(toolMvn)) {
-				String mvnRepo = script.determineMvnRepo()
-				rawScript.echo("[CIPA] mvnRepo: ${mvnRepo}")
-				envVars.add("${ENV_VAR___MVN_REPO}=${mvnRepo}")
-				envVars.add("${ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[ENV_VAR___MVN_OPTIONS] ?: ''}")
-			}
-
-			List<List<String>> configFileEnvVarsList = tool.buildConfigFileEnvVarsList()
-			for (configFileEnvVar in configFileEnvVarsList) {
-				configFiles.add(rawScript.configFile(fileId: configFileEnvVar[1], variable: configFileEnvVar[0]))
-			}
-		}
-
-		envVars.add('PATH+=' + pathEntries.join(':'))
-
-		rawScript.withEnv(envVars) {
-			rawScript.configFileProvider(configFiles) {
-				body()
-			}
+	private void handleNode(CipaNode cipaNode, List<CipaNodeHandler> cipaNodeHandlers, int i, Closure last) {
+		if (i < cipaNodeHandlers.size()) {
+			cipaNodeHandlers.get(i).handleNode(cipaNode, {
+				handleNode(cipaNode, cipaNodeHandlers, i + 1, last)
+			})
+		} else {
+			last.call()
 		}
 	}
 
