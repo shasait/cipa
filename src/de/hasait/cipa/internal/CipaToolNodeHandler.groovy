@@ -21,11 +21,15 @@ import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.CipaTool
 import de.hasait.cipa.nodehandler.AbstractCipaNodeHandler
+import de.hasait.cipa.tool.CipaToolContribution
 
 /**
  *
  */
 class CipaToolNodeHandler extends AbstractCipaNodeHandler {
+
+	private static final String TOOL_TYPE___JDK = 'hudson.model.JDK'
+	private static final String TOOL_TYPE___MAVEN = 'hudson.tasks.Maven$MavenInstallation'
 
 	private CipaTool toolJdk
 	private CipaTool toolMvn
@@ -40,26 +44,36 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 		def pathEntries = []
 		def configFiles = []
 
+		List<CipaToolContribution> toolContributions = cipa.findBeansAsList(CipaToolContribution.class)
+		if (!toolContributions.empty) {
+			CipaToolContainerDelegate toolContainerDelegate = new CipaToolContainerDelegate(node, this)
+			for (toolContribution in toolContributions) {
+				toolContribution.contributeCipaTools(toolContainerDelegate)
+			}
+		}
+
 		List<CipaTool> tools = cipa.findBeansAsList(CipaTool.class)
 		for (tool in tools) {
-			def toolHome = rawScript.tool(name: tool.name, type: tool.type)
-			script.echo("[CIPA] Tool ${tool.name}: ${toolHome}")
-			if (tool.dedicatedEnvVar) {
-				envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
-			}
-			if (tool.addToPathWithSuffix) {
-				pathEntries.add("${toolHome}${tool.addToPathWithSuffix}")
-			}
-			if (tool.is(toolMvn)) {
-				String mvnRepo = script.determineMvnRepo()
-				script.echo("[CIPA] mvnRepo: ${mvnRepo}")
-				envVars.add("${Cipa.ENV_VAR___MVN_REPO}=${mvnRepo}")
-				envVars.add("${Cipa.ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}")
-			}
+			if (tool.node == null || tool.node.is(node)) {
+				def toolHome = rawScript.tool(name: tool.name, type: tool.type)
+				script.echo("[CIPA] Tool ${tool.name}: ${toolHome}")
+				if (tool.dedicatedEnvVar) {
+					envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
+				}
+				if (tool.addToPathWithSuffix) {
+					pathEntries.add("${toolHome}${tool.addToPathWithSuffix}")
+				}
+				if (tool.type == TOOL_TYPE___MAVEN) {
+					String mvnRepo = script.determineMvnRepo()
+					script.echo("[CIPA] mvnRepo: ${mvnRepo}")
+					envVars.add("${Cipa.ENV_VAR___MVN_REPO}=${mvnRepo}")
+					envVars.add("${Cipa.ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}")
+				}
 
-			List<List<String>> configFileEnvVarsList = tool.buildConfigFileEnvVarsList()
-			for (configFileEnvVar in configFileEnvVarsList) {
-				configFiles.add(rawScript.configFile(fileId: configFileEnvVar[1], variable: configFileEnvVar[0]))
+				List<List<String>> configFileEnvVarsList = tool.buildConfigFileEnvVarsList()
+				for (configFileEnvVar in configFileEnvVarsList) {
+					configFiles.add(rawScript.configFile(fileId: configFileEnvVar[1], variable: configFileEnvVar[0]))
+				}
 			}
 		}
 
@@ -79,44 +93,59 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 	}
 
 	@NonCPS
-	CipaTool configureJDK(String version) {
-		if (toolJdk == null) {
-			toolJdk = new CipaTool()
-			cipa.addBean(toolJdk)
+	CipaTool configureJDK(String version, CipaNode node = null) {
+		CipaTool tool
+		if (node == null) {
+			if (toolJdk == null) {
+				toolJdk = new CipaTool()
+				cipa.addBean(toolJdk)
+			}
+			tool = toolJdk
+		} else {
+			tool = new CipaTool(node)
+			cipa.addBean(tool)
 		}
-		toolJdk.name = version
-		toolJdk.type = 'hudson.model.JDK'
-		toolJdk.addToPathWithSuffix = '/bin'
-		toolJdk.dedicatedEnvVar = Cipa.ENV_VAR___JDK_HOME
-		return toolJdk
+
+		tool.name = version
+		tool.type = TOOL_TYPE___JDK
+		tool.addToPathWithSuffix = '/bin'
+		tool.dedicatedEnvVar = Cipa.ENV_VAR___JDK_HOME
+		return tool
 	}
 
 	@NonCPS
-	CipaTool configureMaven(String version, String mvnSettingsFileId, String mvnToolchainsFileId) {
-		if (toolMvn == null) {
-			toolMvn = new CipaTool()
-			cipa.addBean(toolMvn)
+	CipaTool configureMaven(String version, String mvnSettingsFileId, String mvnToolchainsFileId, CipaNode node = null) {
+		CipaTool tool
+		if (node == null) {
+			if (toolMvn == null) {
+				toolMvn = new CipaTool(node)
+				cipa.addBean(toolMvn)
+			}
+			tool = toolMvn
+		} else {
+			tool = new CipaTool(node)
+			cipa.addBean(tool)
 		}
-		toolMvn.name = version
-		toolMvn.type = 'hudson.tasks.Maven$MavenInstallation'
-		toolMvn.addToPathWithSuffix = '/bin'
-		toolMvn.dedicatedEnvVar = Cipa.ENV_VAR___MVN_HOME
+
+		tool.name = version
+		tool.type = TOOL_TYPE___MAVEN
+		tool.addToPathWithSuffix = '/bin'
+		tool.dedicatedEnvVar = Cipa.ENV_VAR___MVN_HOME
 		if (mvnSettingsFileId) {
-			toolMvn.addConfigFileEnvVar(Cipa.ENV_VAR___MVN_SETTINGS, mvnSettingsFileId)
+			tool.addConfigFileEnvVar(Cipa.ENV_VAR___MVN_SETTINGS, mvnSettingsFileId)
 		}
 		if (mvnToolchainsFileId) {
-			toolMvn.addConfigFileEnvVar(Cipa.ENV_VAR___MVN_TOOLCHAINS, mvnToolchainsFileId)
+			tool.addConfigFileEnvVar(Cipa.ENV_VAR___MVN_TOOLCHAINS, mvnToolchainsFileId)
 		}
-		return toolMvn
+		return tool
 	}
 
 	@NonCPS
-	CipaTool configureTool(String name, String type) {
-		CipaTool tool = new CipaTool()
+	CipaTool configureTool(String name, String type, CipaNode node = null) {
+		CipaTool tool = new CipaTool(node)
 		tool.name = name
 		tool.type = type
-		cipa.addBean(tool)
-		return tool
+		return cipa.addBean(tool)
 	}
 
 }
