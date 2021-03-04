@@ -98,6 +98,8 @@ class PScript implements Serializable {
 		String scmResolvedBranch
 		String scmRev
 
+		config.beforeCheckout()
+
 		scmUrl = config.scmUrl
 		String scmBranch = forcedScmBranch ?: config.scmBranch
 
