@@ -30,10 +30,10 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	static final String SBT_BRANCH_FROM_FOLDER = 'branch-from-folder'
 	static final String SBT_NONE = 'none'
 
-	private static final String PARAM___SCM_URL = '_SCM_URL'
-	private static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
-	private static final String PARAM___SCM_BRANCH = '_SCM_BRANCH'
-	private static final String PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX = '_SCM_BFF_PREFIX'
+	protected static final String PARAM___SCM_URL = '_SCM_URL'
+	protected static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
+	protected static final String PARAM___SCM_BRANCH = '_SCM_BRANCH'
+	protected static final String PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX = '_SCM_BFF_PREFIX'
 
 	final String id
 	final String idUpperCase
@@ -169,8 +169,12 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 		return pollingExcludedUsers.join('\n')
 	}
 
-	void beforeCheckout() {
-		// nop
+	/**
+	 * @return The SCM-URL used for checkout; defaults to scmUrl.
+	 */
+	@NonCPS
+	String getEffectiveScmUrl() {
+		return scmUrl
 	}
 
 	@Override
