@@ -67,7 +67,7 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 					String mvnRepo = script.determineMvnRepo()
 					script.echo("[CIPA] mvnRepo: ${mvnRepo}")
 					envVars.add("${Cipa.ENV_VAR___MVN_REPO}=${mvnRepo}")
-					envVars.add("${Cipa.ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${toolMvn.options} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}")
+					envVars.add("${Cipa.ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${tool.options} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}")
 				}
 
 				List<List<String>> configFileEnvVarsList = tool.buildConfigFileEnvVarsList()
