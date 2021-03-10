@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,20 @@ package de.hasait.cipa.activity
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaNode
+import de.hasait.cipa.activity.scm.ScmUrlTransformerChain
 import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResourceWithState
 
+/**
+ * TODO move to package scm.
+ */
 class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithStage {
 
 	private final String name
 	private final boolean withStage
 	private final CheckoutConfiguration config
+
+	private final ScmUrlTransformerChain scmUrlTransformerChain
 
 	private final CipaResourceWithState<CipaFileResource> checkedOutFiles
 
@@ -44,6 +50,8 @@ class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithS
 
 		this.config = config
 		cipa.addBean(config)
+
+		this.scmUrlTransformerChain = cipa.findOrAddBean(ScmUrlTransformerChain.class)
 
 		this.checkedOutFiles = cipa.newFileResourceWithState(node, relDir ?: config.id + 'Files', 'CheckedOut')
 		addRunProvides(checkedOutFiles)
@@ -158,7 +166,7 @@ class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithS
 
 	private void checkout() {
 		script.dir(checkedOutFiles.resource.path) {
-			def result = script.checkout(config, forcedScmBranch)
+			def result = script.checkout(config, forcedScmBranch, scmUrlTransformerChain)
 			scmUrl = result.scmUrl
 			scmRef = result.scmRef
 			scmResolvedBranch = result.scmResolvedBranch

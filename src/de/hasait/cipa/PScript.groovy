@@ -19,6 +19,7 @@ package de.hasait.cipa
 import com.cloudbees.groovy.cps.NonCPS
 import com.google.common.collect.ImmutableSet
 import de.hasait.cipa.activity.CheckoutConfiguration
+import de.hasait.cipa.activity.scm.ScmUrlTransformer
 import groovy.json.JsonSlurper
 import hudson.FilePath
 import hudson.model.Job
@@ -92,13 +93,13 @@ class PScript implements Serializable {
 		return runWrapper
 	}
 
-	CheckoutResult checkout(CheckoutConfiguration config, String forcedScmBranch = null) {
+	CheckoutResult checkout(CheckoutConfiguration config, String forcedScmBranch = null, ScmUrlTransformer scmUrlTransformer = null) {
 		String scmUrl
 		String scmRef
 		String scmResolvedBranch
 		String scmRev
 
-		scmUrl = config.effectiveScmUrl
+		scmUrl = scmUrlTransformer != null ? scmUrlTransformer.transformScmUrl(config.scmUrl) : config.scmUrl
 		String scmBranch = forcedScmBranch ?: config.scmBranch
 
 		if (!scmUrl) {

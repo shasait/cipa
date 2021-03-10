@@ -21,6 +21,9 @@ import de.hasait.cipa.jobprops.JobParameterContainer
 import de.hasait.cipa.jobprops.JobParameterContribution
 import de.hasait.cipa.jobprops.JobParameterValues
 
+/**
+ * TODO move to package scm.
+ */
 class CheckoutConfiguration implements JobParameterContribution, Serializable {
 
 	static final String SBT_TRUNK = 'trunk'
@@ -167,14 +170,6 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	@NonCPS
 	String buildExcludeUsersValue() {
 		return pollingExcludedUsers.join('\n')
-	}
-
-	/**
-	 * @return The SCM-URL used for checkout; defaults to scmUrl.
-	 */
-	@NonCPS
-	String getEffectiveScmUrl() {
-		return scmUrl
 	}
 
 	@Override
