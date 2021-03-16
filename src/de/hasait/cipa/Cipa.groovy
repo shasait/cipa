@@ -119,8 +119,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@Override
 	@NonCPS
 	public <T> T addBean(T bean, String name = null) {
-		beanRegistrations.put(bean, new CipaBeanRegistration(bean, name))
-		return bean
+		synchronized (beanRegistrations) {
+			beanRegistrations.put(bean, new CipaBeanRegistration(bean, name))
+			return bean
+		}
 	}
 
 	@NonCPS
@@ -139,11 +141,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	public <T> Set<T> findBeans(Class<T> type) {
 		Set<T> results = new LinkedHashSet<>()
-		for (bean in beanRegistrations.keySet()) {
-			if (type.isInstance(bean)) {
-				results.add((T) bean)
+
+		synchronized (beanRegistrations) {
+			for (bean in beanRegistrations.keySet()) {
+				if (type.isInstance(bean)) {
+					results.add((T) bean)
+				}
 			}
 		}
+
 		return results
 	}
 
@@ -151,11 +157,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	public <T> List<T> findBeansAsList(Class<T> type) {
 		List<T> results = new ArrayList<>()
-		for (bean in beanRegistrations.keySet()) {
-			if (type.isInstance(bean)) {
-				results.add((T) bean)
+
+		synchronized (beanRegistrations) {
+			for (bean in beanRegistrations.keySet()) {
+				if (type.isInstance(bean)) {
+					results.add((T) bean)
+				}
 			}
 		}
+
 		return results
 	}
 
@@ -163,11 +173,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	public <T> Map<T, String> findBeansWithName(Class<T> type) {
 		Map<T, String> results = new LinkedHashMap<>()
-		for (beanRegistration in beanRegistrations.values()) {
-			if (type.isInstance(beanRegistration.bean)) {
-				results.put((T) beanRegistration.bean, beanRegistration.name)
+
+		synchronized (beanRegistrations) {
+			for (beanRegistration in beanRegistrations.values()) {
+				if (type.isInstance(beanRegistration.bean)) {
+					results.put((T) beanRegistration.bean, beanRegistration.name)
+				}
 			}
 		}
+
 		return results
 	}
 
@@ -175,21 +189,26 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	public <T> T findBean(Class<T> type, boolean optional = false, String name = null) {
 		T result = null
-		for (beanRegistration in beanRegistrations.values()) {
-			Object bean = beanRegistration.bean
-			if (type.isInstance(bean)) {
-				if (name == null || name.equals(beanRegistration.name)) {
-					if (result == null) {
-						result = (T) bean
-					} else {
-						throw new IllegalStateException("Multiple beans found: ${type}")
+
+		synchronized (beanRegistrations) {
+			for (beanRegistration in beanRegistrations.values()) {
+				Object bean = beanRegistration.bean
+				if (type.isInstance(bean)) {
+					if (name == null || name.equals(beanRegistration.name)) {
+						if (result == null) {
+							result = (T) bean
+						} else {
+							throw new IllegalStateException("Multiple beans found: ${type}")
+						}
 					}
 				}
 			}
 		}
+
 		if (result == null && !optional) {
 			throw new IllegalStateException("No bean found: ${type}")
 		}
+
 		return result
 	}
 
@@ -211,54 +230,56 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@Override
 	@NonCPS
 	public <T> T findOrAddBean(Class<T> type, Supplier<T> supplier = null, String name = null) {
-		T bean = findBean(type, true, name)
-		if (bean != null) {
-			return bean
-		}
-		T newBean
-		if (supplier != null) {
-			newBean = supplier.get()
-		}
-		if (newBean == null && name != null) {
-			try {
-				newBean = type.getConstructor(Cipa.class, String.class).newInstance(this, name)
-			} catch (NoSuchMethodException ignored) {
-				// ignore
+		synchronized (beanRegistrations) {
+			T bean = findBean(type, true, name)
+			if (bean != null) {
+				return bean
 			}
-		}
-		if (newBean == null && name != null) {
-			try {
-				newBean = type.newInstance(rawScript, name)
-			} catch (GroovyRuntimeException e) {
-				analyzeGroovyRuntimeException(e)
+			T newBean
+			if (supplier != null) {
+				newBean = supplier.get()
 			}
-		}
-		if (newBean == null) {
-			try {
-				newBean = type.getConstructor(Cipa.class).newInstance(this)
-			} catch (NoSuchMethodException ignored) {
-				// ignore
+			if (newBean == null && name != null) {
+				try {
+					newBean = type.getConstructor(Cipa.class, String.class).newInstance(this, name)
+				} catch (NoSuchMethodException ignored) {
+					// ignore
+				}
 			}
-		}
-		if (newBean == null) {
-			try {
-				newBean = type.newInstance(rawScript)
-			} catch (GroovyRuntimeException e) {
-				analyzeGroovyRuntimeException(e)
+			if (newBean == null && name != null) {
+				try {
+					newBean = type.newInstance(rawScript, name)
+				} catch (GroovyRuntimeException e) {
+					analyzeGroovyRuntimeException(e)
+				}
 			}
-		}
-		if (newBean == null && name != null) {
-			try {
-				newBean = type.newInstance(name)
-			} catch (GroovyRuntimeException e) {
-				analyzeGroovyRuntimeException(e)
+			if (newBean == null) {
+				try {
+					newBean = type.getConstructor(Cipa.class).newInstance(this)
+				} catch (NoSuchMethodException ignored) {
+					// ignore
+				}
 			}
-		}
-		if (newBean == null) {
-			newBean = type.newInstance()
-		}
+			if (newBean == null) {
+				try {
+					newBean = type.newInstance(rawScript)
+				} catch (GroovyRuntimeException e) {
+					analyzeGroovyRuntimeException(e)
+				}
+			}
+			if (newBean == null && name != null) {
+				try {
+					newBean = type.newInstance(name)
+				} catch (GroovyRuntimeException e) {
+					analyzeGroovyRuntimeException(e)
+				}
+			}
+			if (newBean == null) {
+				newBean = type.newInstance()
+			}
 
-		return beanRegistrations.containsKey(newBean) ? newBean : addBean(newBean, name)
+			return beanRegistrations.containsKey(newBean) ? newBean : addBean(newBean, name)
+		}
 	}
 
 	@NonCPS
