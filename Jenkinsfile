@@ -1,3 +1,5 @@
+#!groovy
+
 /*
  * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
  *
@@ -13,10 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#!groovy
-
-
 
 properties([
 		buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '3', daysToKeepStr: '', numToKeepStr: '20')),
