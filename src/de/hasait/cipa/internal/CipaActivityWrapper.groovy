@@ -41,6 +41,7 @@ import de.hasait.cipa.activity.CipaAroundActivity
 import de.hasait.cipa.activity.CipaTestResult
 import de.hasait.cipa.activity.CipaTestSummary
 import de.hasait.cipa.artifactstore.CipaArtifactStore
+import de.hasait.cipa.tool.MavenExecution
 import hudson.model.Result
 import hudson.model.Run
 import hudson.tasks.junit.CaseResult
@@ -361,7 +362,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 
 	@Override
 	CipaActivityPublished archiveMvnLogFile(String tgtPath) {
-		script.sh("mv -vf ${PScript.MVN_LOG} \"${tgtPath}\"")
+		script.sh("mv -vf ${MavenExecution.MVN_LOG_FILE} \"${tgtPath}\"")
 		return archiveLogFile(tgtPath)
 	}
 

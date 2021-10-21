@@ -20,6 +20,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import com.google.common.collect.ImmutableSet
 import de.hasait.cipa.activity.CheckoutConfiguration
 import de.hasait.cipa.activity.scm.ScmUrlTransformer
+import de.hasait.cipa.tool.MavenExecution
 import groovy.json.JsonSlurper
 import hudson.FilePath
 import hudson.model.Job
@@ -51,8 +52,10 @@ class PScript implements Serializable {
 	static final boolean STASH_USE_DEFAULT_EXCLUDES_DEFAULT = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT
 	static final boolean STASH_ALLOW_EMPTY_DEFAULT = FIND_FILES_ALLOW_EMPTY_DEFAULT
 
-	static final String MVN_LOG = 'mvn.log'
-	static final String MVN_REPO_RELDIR = '.repo'
+	@Deprecated
+	static final String MVN_LOG = MavenExecution.MVN_LOG_FILE
+	@Deprecated
+	static final String MVN_REPO_RELDIR = MavenExecution.MVN_DEFAULT_REPO_RELDIR
 
 	def rawScript
 
@@ -69,14 +72,15 @@ class PScript implements Serializable {
 
 	/**
 	 * Wrapper for step archiveArtifacts with stash like parameters.
-	 * Prefer method of {@link de.hasait.cipa.activity.CipaActivityRunContext} if possible.
+	 * @deprecated Prefer{@link de.hasait.cipa.activity.CipaActivityRunContext#archiveFiles(java.util.Set, java.util.Set, boolean, boolean)}.
 	 */
+	@Deprecated
 	void archiveFiles(Set<String> includes = ARCHIVE_INCLUDES_DEFAULT, Set<String> excludes = ARCHIVE_EXCLUDES_DEFAULT, boolean useDefaultExcludes = ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = ARCHIVE_ALLOW_EMPTY_DEFAULT, boolean caseSensitive = ARCHIVE_CASE_SENSITIVE_DEFAULT, boolean fingerprint = ARCHIVE_FINGERPRINT_DEFAULT, boolean onlyIfSuccessful = ARCHIVE_ONLY_IF_SUCCESSFUL_DEFAULT) {
 		rawScript.archiveArtifacts(allowEmptyArchive: allowEmpty, artifacts: includes?.join(','), caseSensitive: caseSensitive, defaultExcludes: useDefaultExcludes, excludes: excludes?.join(','), fingerprint: fingerprint, onlyIfSuccessful: onlyIfSuccessful)
 	}
 
 	/**
-	 * @deprecated Prefer method archiveFiles of this class or {@link de.hasait.cipa.activity.CipaActivityRunContext} if possible.
+	 * @deprecated Prefer{@link de.hasait.cipa.activity.CipaActivityRunContext#archiveFiles(java.util.Set, java.util.Set, boolean, boolean)}.
 	 */
 	@Deprecated
 	void archiveArtifacts(String artifacts, String excludes = null, boolean allowEmptyArchive = ARCHIVE_ALLOW_EMPTY_DEFAULT, boolean fingerprint = ARCHIVE_FINGERPRINT_DEFAULT, boolean onlyIfSuccessful = ARCHIVE_ONLY_IF_SUCCESSFUL_DEFAULT, boolean defaultExcludes = ARCHIVE_USE_DEFAULT_EXCLUDES_DEFAULT, boolean caseSensitive = ARCHIVE_CASE_SENSITIVE_DEFAULT) {
@@ -104,6 +108,7 @@ class PScript implements Serializable {
 
 		if (!scmUrl) {
 			if (!config.dry) {
+				// If it fails here first check if the config without scmUrl is intended.
 				rawScript.checkout rawScript.scm
 				if (fileExists('.git')) {
 					// Git
@@ -382,7 +387,7 @@ class PScript implements Serializable {
 
 		VirtualChannel channel = jenkins.getNode(nodeName).getChannel()
 
-		return new FilePath(channel, path);
+		return new FilePath(channel, path)
 	}
 
 	@NonCPS
@@ -414,37 +419,25 @@ class PScript implements Serializable {
 		return current
 	}
 
+	@NonCPS
+	MavenExecution mvn() {
+		return new MavenExecution(rawScript)
+	}
+
+	/**
+	 *
+	 * @deprecated Prefer{@link #mvn()}.
+	 */
+	@Deprecated
 	String mvn(
 			List<String> goals,
 			List<String> profiles = [],
 			List<String> arguments = [],
 			List<String> options = [],
 			boolean returnStdout = false,
-			List<String> mvnStdoutFilters = ['[INFO] Building', '[INFO] BUILD ', '[INFO] Finished at']
+			List<String> stdoutFilters = MavenExecution.MVN_DEFAULT_STDOUT_FILTERS
 	) {
-		def allArguments = ['-B', '-V', '-e']
-		if (rawScript.env[Cipa.ENV_VAR___MVN_SETTINGS]) {
-			allArguments.add('-s "${' + Cipa.ENV_VAR___MVN_SETTINGS + '}"')
-		}
-		if (rawScript.env[Cipa.ENV_VAR___MVN_TOOLCHAINS]) {
-			allArguments.add('--global-toolchains "${' + Cipa.ENV_VAR___MVN_TOOLCHAINS + '}"')
-		}
-		allArguments.add('-Dmaven.repo.local="${' + Cipa.ENV_VAR___MVN_REPO + '}"')
-		if (!profiles.empty) {
-			allArguments.add('-P' + profiles.join(','))
-		}
-		allArguments.addAll(goals)
-		allArguments.addAll(arguments)
-
-		def allArgumentsString = allArguments.empty ? '' : allArguments.join(' ')
-
-		def optionsString = options.join(' ')
-
-		rawScript.withEnv(["${Cipa.ENV_VAR___MVN_OPTIONS}=${optionsString} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}"]) {
-			writeFile(MVN_LOG, "Executing: mvn ${allArgumentsString}\nEnvironment:\n")
-			sh("printenv | sort | tee -a ${MVN_LOG}")
-			return sh("#!/bin/bash\nset -o pipefail\nmvn ${allArgumentsString} | tee -a ${MVN_LOG} ${buildGrep(mvnStdoutFilters)}", returnStdout)
-		}
+		return mvn().addGoals(*goals).addProfiles(*profiles).addArguments(*arguments).addOptions(*options).replaceStdoutFilters(*stdoutFilters).execute(returnStdout)
 	}
 
 	String pwd() {
@@ -486,8 +479,9 @@ class PScript implements Serializable {
 
 	/**
 	 * Wrapper for step stash.
-	 * Prefer method of {@link de.hasait.cipa.activity.CipaActivityRunContext} if possible.
+	 * @deprecated Prefer{@link de.hasait.cipa.activity.CipaActivityRunContext#stash(java.lang.String)}.
 	 */
+	@Deprecated
 	void stash(String id, Set<String> includes = STASH_INCLUDES_DEFAULT, Set<String> excludes = STASH_EXCLUDES_DEFAULT, boolean useDefaultExcludes = STASH_USE_DEFAULT_EXCLUDES_DEFAULT, boolean allowEmpty = STASH_ALLOW_EMPTY_DEFAULT) {
 		rawScript.stash(name: id, includes: includes?.join(','), excludes: excludes?.join(','), useDefaultExcludes: useDefaultExcludes, allowEmpty: allowEmpty)
 	}
@@ -502,30 +496,25 @@ class PScript implements Serializable {
 
 	/**
 	 * Wrapper for step unstash.
-	 * Prefer method of {@link de.hasait.cipa.activity.CipaActivityRunContext} if possible.
+	 * @deprecated Prefer{@link de.hasait.cipa.activity.CipaActivityRunContext#unstash(java.lang.String)}.
 	 */
+	@Deprecated
 	void unstash(String id) {
 		rawScript.unstash(id)
 	}
 
 	/**
-	 * Use folder {@link PScript#MVN_REPO_RELDIR} in current working directory as mvn repo (will be created automatically).
+	 * Use folder {@link MavenExecution#MVN_DEFAULT_REPO_RELDIR} in current working directory as mvn repo (will be created automatically).
+	 * @deprecated Prefer{@link MavenExecution#withPrivateRepo(java.lang.String)}.
 	 */
+	@Deprecated
 	public <V> V withPrivateMvnRepo(Closure<V> body) {
 		def envVars = []
-		String mvnRepo = pwd() + '/' + MVN_REPO_RELDIR
+		String mvnRepo = pwd() + '/' + MavenExecution.MVN_DEFAULT_REPO_RELDIR
 		envVars.add("${Cipa.ENV_VAR___MVN_REPO}=${mvnRepo}")
 		rawScript.withEnv(envVars) {
 			body()
 		}
-	}
-
-	@NonCPS
-	private String buildGrep(List<String> filters) {
-		if (filters) {
-			return '| grep -E "' + filters.collect { it.replace('[', '\\[').replace(']', '\\]').replace('"', '\\"') }.join('|') + '"'
-		}
-		return ''
 	}
 
 	@NonCPS
