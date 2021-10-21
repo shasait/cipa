@@ -581,6 +581,18 @@ class PScript implements Serializable {
 		return null
 	}
 
+	/**
+	 * Provided string will be placed within single quotes (') and escaped accordingly.
+	 * @param string The string to encapsulate in single quotes, e.g. a path to a file
+	 * @return The string ready for use in <code>script.sh(...)</code>.
+	 */
+	@NonCPS
+	static String encapsulateStringInSingleQuotesForShell(String string) {
+		String escaped = string
+		escaped = escaped.replace('\'', '\'"\'"\'')
+		return "'${escaped}'"
+	}
+
 	static class CheckoutResult implements Serializable {
 		String scmUrl
 		String scmRef
