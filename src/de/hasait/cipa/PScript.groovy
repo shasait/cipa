@@ -437,7 +437,7 @@ class PScript implements Serializable {
 			boolean returnStdout = false,
 			List<String> stdoutFilters = MavenExecution.MVN_DEFAULT_STDOUT_FILTERS
 	) {
-		return mvn().addGoals(*goals).addProfiles(*profiles).addArguments(*arguments).addOptions(*options).replaceStdoutFilters(*stdoutFilters).execute(returnStdout)
+		return mvn().addGoals(goals).addProfiles(profiles).addArguments(arguments).addOptions(options).replaceStdoutFilters(stdoutFilters).execute(returnStdout)
 	}
 
 	String pwd() {

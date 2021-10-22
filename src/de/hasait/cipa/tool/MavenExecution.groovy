@@ -41,37 +41,37 @@ class MavenExecution extends AbstractCipaBean {
 	}
 
 	@NonCPS
-	MavenExecution addGoals(String... goals) {
+	MavenExecution addGoals(List<String> goals) {
 		this.goals.addAll(goals)
 		return this
 	}
 
 	@NonCPS
-	MavenExecution addProfiles(String... profiles) {
+	MavenExecution addProfiles(List<String> profiles) {
 		this.profiles.addAll(profiles)
 		return this
 	}
 
 	@NonCPS
-	MavenExecution addArguments(String... arguments) {
+	MavenExecution addArguments(List<String> arguments) {
 		this.arguments.addAll(arguments)
 		return this
 	}
 
 	@NonCPS
-	MavenExecution addOptions(String... options) {
+	MavenExecution addOptions(List<String> options) {
 		this.options.addAll(options)
 		return this
 	}
 
 	@NonCPS
-	MavenExecution addStdoutFilters(String... stdoutFilters) {
+	MavenExecution addStdoutFilters(List<String> stdoutFilters) {
 		this.stdoutFilters.addAll(stdoutFilters)
 		return this
 	}
 
 	@NonCPS
-	MavenExecution replaceStdoutFilters(String... stdoutFilters) {
+	MavenExecution replaceStdoutFilters(List<String> stdoutFilters) {
 		this.stdoutFilters.clear()
 		this.stdoutFilters.addAll(stdoutFilters)
 		return this
