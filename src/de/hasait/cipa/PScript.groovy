@@ -25,6 +25,7 @@ import groovy.json.JsonSlurper
 import hudson.FilePath
 import hudson.model.Job
 import hudson.model.Run
+import hudson.model.TaskListener
 import hudson.remoting.VirtualChannel
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
@@ -333,6 +334,11 @@ class PScript implements Serializable {
 
 	void echoStacktrace(String message, Throwable throwable) {
 		echo(message + ': ' + extractStacktrace(throwable))
+	}
+
+	@NonCPS
+	void echoNonCPS(String message) {
+		rawScript.getContext(TaskListener.class).getLogger().println(message)
 	}
 
 	@NonCPS
