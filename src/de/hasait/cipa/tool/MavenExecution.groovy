@@ -148,7 +148,7 @@ class MavenExecution extends AbstractCipaBean {
 			return script.sh("#!/bin/bash\nset -o pipefail\nmvn ${allArgumentsString} | tee -a '${MVN_LOG_FILE}' ${grepString}", returnStdout)
 		} catch (e) {
 			if (currentTry < retriesIfRepoAccessRace && privateRepo == null) {
-				String matchedLines = script.sh("cat '${MVN_LOG_FILE}' | grep 'Caused by: java.io.FileNotFoundException:' | grep '.part (No such file or directory)'", true)
+				String matchedLines = script.sh("cat '${MVN_LOG_FILE}' | grep 'Caused by: java.io.FileNotFoundException:' | grep '.part (No such file or directory)' || true", true)
 				if (matchedLines.readLines().size() > 0) {
 					script.echo('Retry after repo access race:\n' + matchedLines)
 					script.sleep(5)
