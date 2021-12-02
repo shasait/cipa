@@ -46,6 +46,8 @@ import de.hasait.cipa.resource.CipaFileResource
 import de.hasait.cipa.resource.CipaResource
 import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
+import de.hasait.cipa.runhandler.CipaRunHandler
+import de.hasait.cipa.runhandler.TimeoutCipaRunHandler
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor
 
 /**
@@ -128,7 +130,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	void addStandardBeans(Integer defaultTimeoutInMinutes = null, boolean enableCleanup = true, boolean enableGraph = true) {
 		findOrAddBean(StageAroundActivity.class)
-		findOrAddBean(TimeoutAroundActivity.class).withDefaultTimeoutInMinutes(defaultTimeoutInMinutes)
+		findOrAddBean(TimeoutCipaRunHandler.class).withTimeoutInMinutes(defaultTimeoutInMinutes)
+		findOrAddBean(TimeoutAroundActivity.class)
 		if (enableGraph) {
 			findOrAddBean(UpdateGraphAroundActivity.class)
 		}
@@ -417,25 +420,45 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		// if no other CipaArtifactStore exists create the default one
 		findOrAddBean(CipaArtifactStore.class, new DefaultCipaArtifactStoreSupplier(this))
 
-		rawScript.echo("[CIPA] Creating RunContext...")
-		runContext = new CipaRunContext(this)
+		List<CipaRunHandler> cipaRunHandlers = determineRunHandlers()
+		handleRun(cipaRunHandlers, 0) {
+			rawScript.echo("[CIPA] Creating RunContext...")
+			runContext = new CipaRunContext(this)
 
-		rawScript.echo("[CIPA] Executing activities...")
-		def parallelNodeBranches = [:]
-		for (int nodeI = 0; nodeI < runContext.nodes.size(); nodeI++) {
-			CipaNode node = runContext.nodes.get(nodeI)
-			List<CipaActivityWrapper> nodeWrappers = runContext.wrappersByNode.get(node)
-			if (nodeWrappers.empty) {
-				rawScript.echo("[CIPA] WARNING: ${node} has no activities!")
+			rawScript.echo("[CIPA] Executing activities...")
+			def parallelNodeBranches = [:]
+			for (int nodeI = 0; nodeI < runContext.nodes.size(); nodeI++) {
+				CipaNode node = runContext.nodes.get(nodeI)
+				List<CipaActivityWrapper> nodeWrappers = runContext.wrappersByNode.get(node)
+				if (nodeWrappers.empty) {
+					rawScript.echo("[CIPA] WARNING: ${node} has no activities!")
+				}
+				parallelNodeBranches["${nodeI}-${node.label}"] = parallelNodeWithActivitiesBranch(nodeI, node, nodeWrappers)
 			}
-			parallelNodeBranches["${nodeI}-${node.label}"] = parallelNodeWithActivitiesBranch(nodeI, node, nodeWrappers)
+
+			parallelNodeBranches.failFast = true
+			rawScript.parallel(parallelNodeBranches)
+
+			rawScript.echo(buildRunSummary())
+			CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
 		}
+	}
 
-		parallelNodeBranches.failFast = true
-		rawScript.parallel(parallelNodeBranches)
+	@NonCPS
+	private List<CipaRunHandler> determineRunHandlers() {
+		List<CipaRunHandler> cipaRunHandlers = findBeansAsList(CipaRunHandler.class)
+		cipaRunHandlers.sort({ it.handleRunOrder })
+		return cipaRunHandlers
+	}
 
-		rawScript.echo(buildRunSummary())
-		CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
+	private void handleRun(List<CipaRunHandler> cipaRunHandlers, int i, Closure last) {
+		if (i < cipaRunHandlers.size()) {
+			cipaRunHandlers.get(i).handleRun() {
+				handleRun(cipaRunHandlers, i + 1, last)
+			}
+		} else {
+			last.call()
+		}
 	}
 
 	@NonCPS
