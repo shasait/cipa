@@ -1,13 +1,16 @@
 # cipa - Continuous Integration Pipeline Activities
 
+[![Maven Central](https://img.shields.io/maven-central/v/de.hasait.cipa/cipa.svg?label=Maven%20Central)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.hasait.cipa%22%20AND%20a%3A%22cipa%22)
+
 ## What is cipa?
-Cipa is a shared library for Jenkins Pipelines.
-It is useful for massive parallel pipelines to reduce cyclomatic complexity and boilerplate code.
+
+Cipa is a shared library for Jenkins Pipelines. It is useful for massive parallel pipelines to reduce cyclomatic complexity and boilerplate
+code.
 
 Currently it is focused to Java and Maven projects, but can be easily extended.
 
-
 ## Concept
+
 * You define nodes.
 * Then you define resources (e.g. directories, db schemas) in different states (e.g. checked out, compiled for directories).
 * Then you will add activities which require some resources and produce others using steps
