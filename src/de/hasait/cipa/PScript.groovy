@@ -53,6 +53,8 @@ class PScript implements Serializable {
 	static final boolean STASH_USE_DEFAULT_EXCLUDES_DEFAULT = FIND_FILES_USE_DEFAULT_EXCLUDES_DEFAULT
 	static final boolean STASH_ALLOW_EMPTY_DEFAULT = FIND_FILES_ALLOW_EMPTY_DEFAULT
 
+	static final boolean COPY_LIBRARY_RESOURCE_ARCHIVE_DEFAULT = false
+
 	@Deprecated
 	static final String MVN_LOG = MavenExecution.MVN_LOG_FILE
 	@Deprecated
@@ -265,6 +267,24 @@ class PScript implements Serializable {
 			current = current.hasProperty('parent') ? current.parent : null
 		}
 		return descriptions
+	}
+
+	/**
+	 * Copy library resource to current dir.
+	 */
+	void copyLibraryResource(String resource, String filepath, boolean archive = COPY_LIBRARY_RESOURCE_ARCHIVE_DEFAULT) {
+		String content = rawScript.libraryResource(resource: resource, encoding: 'Base64')
+		writeFile(filepath, content, 'Base64')
+		if (archive) {
+			archiveArtifacts(filepath)
+		}
+	}
+
+	/**
+	 * Copy library resources to current dir.
+	 */
+	void copyLibraryResources(Map<String, String> resourceToFilepathMap, boolean archive = COPY_LIBRARY_RESOURCE_ARCHIVE_DEFAULT) {
+		resourceToFilepathMap.each { copyLibraryResource(it.key, it.value, archive) }
 	}
 
 	void deleteDir() {
