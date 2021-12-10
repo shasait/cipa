@@ -97,7 +97,10 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 
 	@NonCPS
 	void addDependency(CipaActivityWrapper activity, boolean propagateFailure = true) {
-		dependsOn.put(activity, propagateFailure)
+		Boolean currentValue = dependsOn.get(activity)
+		if (currentValue == null || !currentValue) {
+			dependsOn.put(activity, propagateFailure)
+		}
 	}
 
 	@Override
