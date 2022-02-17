@@ -20,6 +20,7 @@ import javax.annotation.Nonnull
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.PScript
+import hudson.model.ParameterDefinition
 
 /**
  * Pipeline Job Properties Manager.
@@ -211,6 +212,12 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 	@NonCPS
 	final void addChoiceParameter(String name, List<String> choices, String description) {
 		def parameter = rawScript.choice(name: name, choices: choices.join('\n'), description: description)
+		parameters.add(parameter)
+	}
+
+	@Override
+	@NonCPS
+	void addCustomParameter(ParameterDefinition parameter) {
 		parameters.add(parameter)
 	}
 

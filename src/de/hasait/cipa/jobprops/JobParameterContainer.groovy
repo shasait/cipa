@@ -16,6 +16,8 @@
 
 package de.hasait.cipa.jobprops
 
+import hudson.model.ParameterDefinition
+
 interface JobParameterContainer {
 
 	public <T> void addArgument(PJobArgument<T> argument)
@@ -31,5 +33,7 @@ interface JobParameterContainer {
 	void addPasswordParameter(String name, String description)
 
 	void addChoiceParameter(String name, List<String> choices, String description)
+
+	void addCustomParameter(ParameterDefinition parameter)
 
 }
