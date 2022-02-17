@@ -22,6 +22,8 @@ interface JobParameterContainer {
 
 	void addStringParameter(String name, String defaultValue, String description)
 
+	void addStringParameter(String name, String defaultValue, String description, String regex, String failedValidationMessage)
+
 	void addBooleanParameter(String name, boolean defaultValue, String description)
 
 	void addBooleanChoiceParameter(String name, Boolean defaultValue, String description)

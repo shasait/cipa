@@ -171,6 +171,13 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		parameters.add(parameter)
 	}
 
+	@Override
+	@NonCPS
+	final void addStringParameter(String name, String defaultValue, String description, String regex, String failedValidationMessage) {
+		def parameter = rawScript.validatingString(name: name, defaultValue: defaultValue, description: description, regex: regex, failedValidationMessage: failedValidationMessage)
+		parameters.add(parameter)
+	}
+
 	/**
 	 * Add a native boolean parameter. It cannot be null and therefore the environment fallback is not working for it - see {@link #addBooleanChoiceParameter}.
 	 */
