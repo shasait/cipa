@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		this.rawScript = script.rawScript
 	}
 
+	@Override
 	@NonCPS
 	final <T> void addArgument(PJobArgument<T> argument) {
 		Objects.requireNonNull(argument)
@@ -124,6 +125,7 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		}
 	}
 
+	@Override
 	@NonCPS
 	final <T> T retrieveArgumentValue(PJobArgument<T> argument) {
 		Objects.requireNonNull(argument)
@@ -166,6 +168,7 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		return result
 	}
 
+	@Override
 	@NonCPS
 	final void addStringParameter(String name, String defaultValue, String description) {
 		def parameter = rawScript.string(name: name, defaultValue: defaultValue, description: description)
@@ -182,12 +185,14 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 	/**
 	 * Add a native boolean parameter. It cannot be null and therefore the environment fallback is not working for it - see {@link #addBooleanChoiceParameter}.
 	 */
+	@Override
 	@NonCPS
 	final void addBooleanParameter(String name, boolean defaultValue, String description) {
 		def parameter = rawScript.booleanParam(name: name, defaultValue: defaultValue, description: description)
 		parameters.add(parameter)
 	}
 
+	@Override
 	@NonCPS
 	final void addBooleanChoiceParameter(String name, Boolean defaultValue, String description) {
 		List<String> choices = []
@@ -203,12 +208,14 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		addChoiceParameter(name, choices, description)
 	}
 
+	@Override
 	@NonCPS
 	final void addPasswordParameter(String name, String description) {
 		def parameter = rawScript.password(name: name, defaultValue: '', description: description)
 		parameters.add(parameter)
 	}
 
+	@Override
 	@NonCPS
 	final void addChoiceParameter(String name, List<String> choices, String description) {
 		def parameter = rawScript.choice(name: name, choices: choices.join('\n'), description: description)
