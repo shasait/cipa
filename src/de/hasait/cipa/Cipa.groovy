@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -281,7 +281,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				newBean = type.newInstance()
 			}
 
-			return beanRegistrations.containsKey(newBean) ? newBean : addBean(newBean, name)
+			CipaBeanRegistration beanRegistration = beanRegistrations.get(newBean)
+			if (beanRegistration != null) {
+				if (beanRegistration.name != name) {
+					throw new RuntimeException("Bean already registered with different name: ${beanRegistration.name} vs. ${name}")
+				}
+				return newBean
+			} else {
+				return addBean(newBean, name)
+			}
 		}
 	}
 

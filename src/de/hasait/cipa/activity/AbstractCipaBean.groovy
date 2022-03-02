@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package de.hasait.cipa.activity
 
+
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.PScript
 
@@ -25,20 +26,28 @@ import de.hasait.cipa.PScript
 abstract class AbstractCipaBean implements Serializable {
 
 	protected final Cipa cipa
+	protected final String cipaBeanName
+
 	protected final PScript script
 	protected final rawScript
 
-	AbstractCipaBean(rawScriptOrCipa, boolean addToCipa = true) {
+	AbstractCipaBean(rawScriptOrCipa, boolean addToCipa) {
+		this(rawScriptOrCipa, null, addToCipa)
+	}
+
+	AbstractCipaBean(rawScriptOrCipa, String cipaBeanName = null, boolean addToCipa = true) {
 		if (rawScriptOrCipa instanceof Cipa) {
 			this.cipa = rawScriptOrCipa
 		} else {
 			this.cipa = Cipa.getOrCreate(rawScriptOrCipa)
 		}
+		this.cipaBeanName = cipaBeanName
+
 		this.script = cipa.findBean(PScript.class)
 		this.rawScript = script.rawScript
 
 		if (addToCipa) {
-			cipa.addBean(this)
+			cipa.addBean(this, cipaBeanName)
 		}
 	}
 
