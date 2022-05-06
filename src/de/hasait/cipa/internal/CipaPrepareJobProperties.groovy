@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,14 @@ import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaPrepare
 import de.hasait.cipa.PScript
-import de.hasait.cipa.jobprops.JobParameterContainer
+import de.hasait.cipa.jobprops.CipaParamValueProvider
 import de.hasait.cipa.jobprops.JobParameterContribution
-import de.hasait.cipa.jobprops.JobParameterValues
-import de.hasait.cipa.jobprops.JobPropertiesContainer
 import de.hasait.cipa.jobprops.JobPropertiesContribution
-import de.hasait.cipa.jobprops.PJobArgument
 import de.hasait.cipa.jobprops.PJobPropertiesManager
 
 class CipaPrepareJobProperties implements CipaInit, CipaPrepare, Serializable {
+
+	static final int PREPARE_CIPA_ORDER = 2000
 
 	private PScript script
 	private PJobPropertiesManager manager
@@ -43,11 +42,13 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, Serializable {
 	@Override
 	@NonCPS
 	int getPrepareCipaOrder() {
-		return 2000
+		return PREPARE_CIPA_ORDER
 	}
 
 	@Override
 	void prepareCipa(Cipa cipa) {
+		manager.addParamValueProviders(cipa.findBeansAsList(CipaParamValueProvider.class))
+
 		List<JobParameterContribution> parameterContributions = cipa.findBeansAsList(JobParameterContribution.class)
 
 		script.echo("Collecting parameters via ${JobParameterContribution.class.simpleName}s...")

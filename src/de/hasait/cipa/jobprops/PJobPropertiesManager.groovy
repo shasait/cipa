@@ -16,11 +16,13 @@
 
 package de.hasait.cipa.jobprops
 
-import javax.annotation.Nonnull
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.PScript
+import hudson.model.Item
+import hudson.model.ItemGroup
 import hudson.model.ParameterDefinition
+import jenkins.model.Jenkins
 
 /**
  * Pipeline Job Properties Manager.
@@ -31,7 +33,7 @@ import hudson.model.ParameterDefinition
  * After {@link #applyJobProperties} has been called they are configured and the values can be retrieved.
  * Parameter values will be obtained not only from the parameters itself but additionally from a json block in the job description and/or parent folder descriptions.
  */
-class PJobPropertiesManager implements JobParameterContainer, JobParameterValues, JobPropertiesContainer {
+class PJobPropertiesManager implements JobParameterContainer, JobParameterValues, JobPropertiesContainer, Serializable {
 
 	private static final String BC_TRUE_VALUE = '(X)'
 	private static final String BC_FALSE_VALUE = '( )'
@@ -47,11 +49,28 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 	private boolean rebuildSettingsRebuildDisabled = false
 	private final List customJobProperties = []
 
-	private Map<String, Object> descriptionValues
+	private final List<CipaParamValueProvider> paramValueProviders = []
 
 	PJobPropertiesManager(PScript script) {
 		this.script = script
 		this.rawScript = script.rawScript
+
+		addParamValueProviders([
+				new ItemDescriptionParamValues(script),
+				new ManagedFilesParamValues(script)
+		])
+	}
+
+	@NonCPS
+	final void replaceParamValueProviders(List<CipaParamValueProvider> paramValueProviders) {
+		this.paramValueProviders.clear()
+		addParamValueProviders(paramValueProviders)
+	}
+
+	@NonCPS
+	final void addParamValueProviders(List<CipaParamValueProvider> paramValueProviders) {
+		this.paramValueProviders.addAll(paramValueProviders)
+		this.paramValueProviders.sort({ it.paramValueProviderOrder })
 	}
 
 	@Override
@@ -66,11 +85,11 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		if (argument.retrieveFromParam) {
 			String description = argument.description
 
-			boolean optionalParam = !argument.required || argument.retrieveFromDescriptions
+			boolean optionalParam = !argument.required || argument.retrieveExternally
 			description += optionalParam ? ' (optional)' : ' (required)'
 
-			T paramDefaultValue = argument.retrieveFromDescriptions ? null : argument.defaultValue
-			if (argument.retrieveFromDescriptions && argument.defaultValue) {
+			T paramDefaultValue = argument.retrieveExternally ? null : argument.defaultValue
+			if (argument.retrieveExternally && argument.defaultValue) {
 				description += ' (default: ' + argument.defaultValue + ')'
 			}
 
@@ -137,24 +156,24 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		T result = null
 
 		if (argument.retrieveFromParam) {
-			boolean optionalParam = !argument.required || argument.retrieveFromDescriptions
+			boolean optionalParam = !argument.required || argument.retrieveExternally
 
 			if (argument.valueType == Boolean.class) {
 				if (optionalParam) {
-					String paramValue = readParam(name)
+					String paramValue = retrieveParamValue(name)
 					if (paramValue) {
-						result = BC_TRUE_VALUE.equals(paramValue)
+						result = BC_TRUE_VALUE == paramValue
 					}
 				} else {
-					result = readBooleanParam(name)
+					result = retrieveParamValue(name)
 				}
 			} else {
-				result = readParam(name) ?: null
+				result = retrieveParamValue(name)
 			}
 		}
 
-		if (result == null && argument.retrieveFromDescriptions) {
-			result = descriptionValues[name] ?: null
+		if (result == null && argument.retrieveExternally) {
+			result = retrieveExternalValue(name)
 		}
 
 		if (result == null) {
@@ -162,7 +181,7 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		}
 
 		if (result == null && argument.required) {
-			throw new RuntimeException("Argument {name} missing")
+			throw new RuntimeException("Argument ${name} missing")
 		}
 
 		return result
@@ -240,12 +259,12 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 
 	@NonCPS
 	final Object retrieveRequiredValue(String name) {
-		return retrieveValueFromParametersOrEnvironment(name)
+		return retrieveValue(name)
 	}
 
 	@NonCPS
 	final Object retrieveOptionalValue(String name, Object defaultValue) {
-		return retrieveValueFromParametersOrEnvironment(name, false) ?: defaultValue
+		return retrieveValue(name, false) ?: defaultValue
 	}
 
 	/**
@@ -253,22 +272,28 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 	 * If required and both are null throw an exception otherwise return null.
 	 */
 	@NonCPS
-	final Object retrieveValueFromParametersOrEnvironment(String name, boolean required = true) {
-		def value = readParam(name) ?: descriptionValues[name] ?: null
-		if (value || !required) {
+	final Object retrieveValue(String name, boolean required = true) {
+		Object paramValue = retrieveParamValue(name)
+		Object value
+		if (paramValue != null) {
+			value = paramValue
+		} else {
+			value = retrieveExternalValue(name)
+		}
+		if (value != null || !required) {
 			return value
 		}
-		throw new RuntimeException("${name} is neither in params nor in descriptionValues")
+		throw new RuntimeException("${name} is neither a param nor an external value")
 	}
 
 	@NonCPS
 	final String retrieveOptionalStringParameterValue(String name, String defaultValue) {
-		return (String) retrieveValueFromParametersOrEnvironment(name, false) ?: defaultValue
+		return (String) retrieveValue(name, false) ?: defaultValue
 	}
 
 	@NonCPS
 	final String retrieveRequiredStringParameterValue(String name) {
-		return (String) retrieveValueFromParametersOrEnvironment(name)
+		return (String) retrieveValue(name)
 	}
 
 	@NonCPS
@@ -283,7 +308,7 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 
 	@NonCPS
 	final boolean retrieveBooleanParameterValue(String name) {
-		return readBooleanParam(name).booleanValue()
+		return ((Boolean) retrieveValue(name)).booleanValue()
 	}
 
 	@NonCPS
@@ -327,31 +352,52 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		}
 
 		rawScript.properties(jobProperties)
-
-		descriptionValues = script.determineParametersFromDescriptionValues()
 	}
 
 	@NonCPS
-	private Object readParam(String name) {
+	private Object retrieveParamValue(String name) {
 		Objects.requireNonNull(name)
 
-		// TODO remove fallback to P_ after projects migrated
-		return rawScript.params['P_' + name] ?: rawScript.params[name]
-	}
-
-	@NonCPS
-	@Nonnull
-	private Boolean readBooleanParam(String name) {
-		Objects.requireNonNull(name)
-
-		// TODO remove fallback to P_ after projects migrated
-		Boolean value = (Boolean) rawScript.params['P_' + name]
-		value = value != null ? value : rawScript.params[name]
-		if (value == null) {
-			// cannot be null
-			throw new RuntimeException("${name} is not a param (yet?)")
+		Object value = rawScript.params[name]
+		if (value instanceof String && value.empty) {
+			return null
 		}
 		return value
+	}
+
+	@NonCPS
+	private Object retrieveExternalValue(String name) {
+		for (CipaParamValueProvider provider in paramValueProviders) {
+			def value = provider.getParamValueForCurrentRun(name)
+			if (value != null) {
+				return value
+			}
+		}
+
+		Item current = script.currentRawBuild.parent
+		while (current != null) {
+			for (CipaParamValueProvider provider in paramValueProviders) {
+				Object value = provider.getParamValueForItem(name, current)
+				if (value != null) {
+					return value
+				}
+			}
+			ItemGroup<? extends Item> parent = current.parent
+			if (parent instanceof Item) {
+				current = parent
+			} else {
+				current = null
+				if (parent instanceof Jenkins) {
+					for (CipaParamValueProvider provider in paramValueProviders) {
+						Object value = provider.getParamValueForJenkins(name, parent)
+						if (value != null) {
+							return value
+						}
+					}
+				}
+			}
+		}
+		return null
 	}
 
 }

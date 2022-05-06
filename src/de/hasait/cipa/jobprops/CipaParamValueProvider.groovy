@@ -16,25 +16,22 @@
 
 package de.hasait.cipa.jobprops
 
-interface JobParameterValues {
+import com.cloudbees.groovy.cps.NonCPS
+import hudson.model.Item
+import jenkins.model.Jenkins
 
-	@Deprecated
-	Object retrieveOptionalValue(String name, Object defaultValue)
+interface CipaParamValueProvider {
 
-	@Deprecated
-	Object retrieveRequiredValue(String name)
+	@NonCPS
+	Object getParamValueForCurrentRun(String name)
 
-	@Deprecated
-	public <T> T retrieveArgumentValue(PJobArgument<T> argument)
+	@NonCPS
+	Object getParamValueForItem(String name, Item item)
 
-	String retrieveOptionalStringParameterValue(String name, String defaultValue)
+	@NonCPS
+	Object getParamValueForJenkins(String name, Jenkins jenkins)
 
-	String retrieveRequiredStringParameterValue(String name)
-
-	boolean retrieveOptionalBooleanChoiceParameterValue(String name, boolean defaultValue)
-
-	boolean retrieveRequiredBooleanChoiceParameterValue(String name)
-
-	boolean retrieveBooleanParameterValue(String name)
+	@NonCPS
+	int getParamValueProviderOrder()
 
 }

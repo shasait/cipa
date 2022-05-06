@@ -20,6 +20,7 @@ import hudson.model.ParameterDefinition
 
 interface JobParameterContainer {
 
+	@Deprecated
 	public <T> void addArgument(PJobArgument<T> argument)
 
 	void addStringParameter(String name, String defaultValue, String description)

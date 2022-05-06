@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -301,6 +301,10 @@ class PScript implements Serializable {
 		return workspace + '/' + MVN_REPO_RELDIR
 	}
 
+	/**
+	 * @deprecated Use JobParameterContribution.
+	 */
+	@Deprecated
 	@NonCPS
 	Map<String, Object> determineParametersFromDescriptionValues(Job<?, ?> job = currentRawBuild.parent) {
 		List<String> descriptions = collectDescriptions(job)
@@ -544,21 +548,20 @@ class PScript implements Serializable {
 	}
 
 	@NonCPS
-	Map<String, Object> parseJsonBlocks(List<String> descriptions, String... blockIds) {
-
+	Map<String, Object> parseJsonBlocks(List<String> textBlocks, String... blockIds) {
 		Map<String, Object> result = new LinkedHashMap<>()
 
-		for (description in descriptions.reverse()) {
+		textBlocks.reverseEach { textBlock ->
 			for (String blockId in blockIds) {
 				String blockBeginMarker = "vvv ${blockId}.json vvv"
 				String blockEndMarker = "^^^ ${blockId}.json ^^^"
-				int ioBeginOfStartKey = description.indexOf(blockBeginMarker)
+				int ioBeginOfStartKey = textBlock.indexOf(blockBeginMarker)
 				if (ioBeginOfStartKey >= 0) {
 					int ioAfterStartKey = ioBeginOfStartKey + blockBeginMarker.length()
-					int ioAfterEndKey = description.lastIndexOf(blockEndMarker)
+					int ioAfterEndKey = textBlock.lastIndexOf(blockEndMarker)
 					if (ioAfterStartKey < ioAfterEndKey) {
-						String additionalEnvJSON = description.substring(ioAfterStartKey, ioAfterEndKey)
-						Object parsedObject = new JsonSlurper().parseText(additionalEnvJSON)
+						String jsonText = textBlock.substring(ioAfterStartKey, ioAfterEndKey)
+						Object parsedObject = new JsonSlurper().parseText(jsonText)
 						if (parsedObject instanceof Map) {
 							Map<?, ?> parsedMap = (Map<?, ?>) parsedObject
 							for (parsedMapEntry in parsedMap) {
