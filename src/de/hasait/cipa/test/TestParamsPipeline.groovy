@@ -24,7 +24,7 @@ import de.hasait.cipa.jobprops.JobParameterContainer
 import de.hasait.cipa.jobprops.JobParameterContribution
 import de.hasait.cipa.jobprops.JobParameterValues
 
-class SimpleParamPipeline extends AbstractCipaActivity implements JobParameterContribution, Serializable {
+class TestParamsPipeline extends AbstractCipaActivity implements JobParameterContribution, Serializable {
 
 	static final String PARAM___SOME_STRING = 'SOME_STRING'
 
@@ -32,7 +32,7 @@ class SimpleParamPipeline extends AbstractCipaActivity implements JobParameterCo
 
 	private String someString
 
-	SimpleParamPipeline(rawScript) {
+	TestParamsPipeline(rawScript) {
 		super(rawScript)
 
 		this.node = cipa.newNode('linux')

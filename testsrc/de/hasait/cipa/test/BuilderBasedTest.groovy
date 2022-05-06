@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,19 @@ import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertTrue
 
 import de.hasait.cipa.internal.CipaActivityWrapper
+import de.hasait.cipa.testsupport.CipaTestBase
+import org.junit.Before
 import org.junit.Test
 
 /**
  *
  */
 class BuilderBasedTest extends CipaTestBase {
+
+	@Before
+	void init() {
+		initCipa()
+	}
 
 	@Test
 	void test_run_succeeds() {

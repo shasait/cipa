@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,43 +14,42 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.test
+package de.hasait.cipa.testsupport
 
 import static org.hamcrest.CoreMatchers.allOf
 import static org.hamcrest.CoreMatchers.containsString
 
-import hudson.model.Job
-import hudson.model.Run
-import org.junit.Before
+import de.hasait.cipa.testsupport.model.TmJob
+import de.hasait.cipa.testsupport.model.TmRawScript
+import de.hasait.cipa.testsupport.model.TmRun
 import org.junit.Rule
 import org.junit.rules.ExpectedException
-import org.mockito.Mockito
 
 /**
  *
  */
-class RawScriptTestBase {
+class RawScriptTestBase extends JenkinsTestBase {
 
-	TestRawScript rawScript
+	static final String DEFAULT_CURRENT_JOB_FQN = 'Level1/Level2/SomeJob'
 
-	Run currentBuildMock
-	Job currentJobMock
+	TmRawScript rawScript
+
+	TmJob currentJob
+	TmRun currentBuild
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none()
 
-	@Before
-	void beforeTest() {
-		rawScript = new TestRawScript()
+	void initRawScript(String currentJobFullQualifiedName = DEFAULT_CURRENT_JOB_FQN) {
+		initJenkins()
 
-		currentBuildMock = Mockito.mock(Run.class)
-		currentJobMock = Mockito.mock(Job.class)
-		Mockito.when(currentBuildMock.getParent()).thenReturn(currentJobMock)
-
-		rawScript.currentBuild.rawBuild = currentBuildMock
+		rawScript = new TmRawScript()
+		currentJob = tmJenkins.getOrCreateTmJob(currentJobFullQualifiedName)
+		currentBuild = new TmRun(currentJob)
+		rawScript.currentBuild.rawBuild = currentBuild.mock
 	}
 
-	void expectFailingActivites(Map<String, String> activityWithMessage) {
+	void expectFailingActivities(Map<String, String> activityWithMessage) {
 		thrown.expect(RuntimeException.class)
 		thrown.expectMessage(allOf(activityWithMessage.collect { containsString("${it.key} = ${it.value}") }))
 	}

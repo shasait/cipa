@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.test
+package de.hasait.cipa.testsupport.model
 
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
@@ -24,7 +24,7 @@ import groovy.json.JsonSlurper
 /**
  *
  */
-class TestRawScript {
+class TmRawScript {
 
 	private static void log(String message) {
 		System.out.println('[' + Thread.currentThread().name + ']' + message)

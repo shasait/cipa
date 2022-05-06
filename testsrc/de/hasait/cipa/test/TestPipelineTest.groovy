@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,23 @@
 
 package de.hasait.cipa.test
 
-
+import de.hasait.cipa.test.TestPipeline
+import de.hasait.cipa.testsupport.CipaTestBase
 import hudson.tasks.junit.CaseResult
 import hudson.tasks.junit.TestResultAction
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
 
 /**
  *
  */
-class TestPipelineTest extends RawScriptTestBase {
+class TestPipelineTest extends CipaTestBase {
+
+	@Before
+	void init() {
+		initCipa()
+	}
 
 	@Test
 	void testTestPipelineAllGreen() {
@@ -33,13 +40,13 @@ class TestPipelineTest extends RawScriptTestBase {
 		CaseResult caseResult1 = Mockito.mock(CaseResult)
 		Mockito.when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
 		Mockito.when(testResultAction.getPassedTests()).thenReturn([caseResult1])
-		Mockito.when(currentBuildMock.getAction(TestResultAction.class)).thenReturn(testResultAction)
-		Mockito.when(currentJobMock.getDescription()).thenReturn('''
+		Mockito.when(currentBuild.mock.getAction(TestResultAction.class)).thenReturn(testResultAction)
+		currentJob.description = '''
 vvv parameters.json vvv {
   "MAIN_SCM_URL": "scm://somewhere.git"
 , "MAIN_SCM_CREDENTIALS_ID": "somecreds"
 } ^^^ parameters.json ^^^
-''')
+'''
 
 		TestPipeline testPipeline = new TestPipeline(rawScript, false, false, false, false, false, false, false)
 		testPipeline.run()
@@ -47,19 +54,19 @@ vvv parameters.json vvv {
 
 	@Test
 	void testTestPipelineRa1Fails() {
-		expectFailingActivites(['TestRa1': 'Failure'])
+		expectFailingActivities(['TestRa1': 'Failure'])
 
 		TestResultAction testResultAction = Mockito.mock(TestResultAction)
 		CaseResult caseResult1 = Mockito.mock(CaseResult)
 		Mockito.when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
 		Mockito.when(testResultAction.getPassedTests()).thenReturn([caseResult1])
-		Mockito.when(currentBuildMock.getAction(TestResultAction.class)).thenReturn(testResultAction)
-		Mockito.when(currentJobMock.getDescription()).thenReturn('''
+		Mockito.when(currentBuild.mock.getAction(TestResultAction.class)).thenReturn(testResultAction)
+		currentJob.description = '''
 vvv parameters.json vvv {
   "MAIN_SCM_URL": "scm://somewhere.git"
 , "MAIN_SCM_CREDENTIALS_ID": "somecreds"
 } ^^^ parameters.json ^^^
-''')
+'''
 
 		TestPipeline testPipeline = new TestPipeline(rawScript, true, false, false, false, false, false, false)
 		testPipeline.run()
@@ -67,19 +74,19 @@ vvv parameters.json vvv {
 
 	@Test
 	void testTestPipelineRa1AndRa3Fails() {
-		expectFailingActivites(['TestRa1': 'Failure', 'TestRa3': 'Failure'])
+		expectFailingActivities(['TestRa1': 'Failure', 'TestRa3': 'Failure'])
 
 		TestResultAction testResultAction = Mockito.mock(TestResultAction)
 		CaseResult caseResult1 = Mockito.mock(CaseResult)
 		Mockito.when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
 		Mockito.when(testResultAction.getPassedTests()).thenReturn([caseResult1])
-		Mockito.when(currentBuildMock.getAction(TestResultAction.class)).thenReturn(testResultAction)
-		Mockito.when(currentJobMock.getDescription()).thenReturn('''
+		Mockito.when(currentBuild.mock.getAction(TestResultAction.class)).thenReturn(testResultAction)
+		currentJob.description = '''
 vvv parameters.json vvv {
   "MAIN_SCM_URL": "scm://somewhere.git"
 , "MAIN_SCM_CREDENTIALS_ID": "somecreds"
 } ^^^ parameters.json ^^^
-''')
+'''
 
 		TestPipeline testPipeline = new TestPipeline(rawScript, true, false, true, false, false, false, false)
 		testPipeline.run()
