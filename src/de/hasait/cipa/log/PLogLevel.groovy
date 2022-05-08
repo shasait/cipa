@@ -14,44 +14,18 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.internal
+package de.hasait.cipa.log
 
-import com.cloudbees.groovy.cps.NonCPS
+enum PLogLevel {
 
-/**
- *
- */
-class CipaBeanRegistration implements Serializable {
+	ERROR(0, 'ERROR'), WARN(1, ' WARN'), INFO(2, ' INFO'), DEBUG(3, 'DEBUG')
 
-	private final Object bean
-	private final String name
+	final int number
+	final String text
 
-	CipaBeanRegistration(Object bean, String name) {
-		this.bean = bean
-		this.name = name
-	}
-
-	@NonCPS
-	Object getBean() {
-		return bean
-	}
-
-	@NonCPS
-	String getName() {
-		return name
-	}
-
-	@Override
-	@NonCPS
-	String toString() {
-		StringBuilder sb = new StringBuilder()
-		sb.append('Bean[')
-		if (name != null) {
-			sb.append('name=').append(name).append(';')
-		}
-		sb.append(bean)
-		sb.append(']')
-		return sb.toString()
+	PLogLevel(int number, String text) {
+		this.number = number
+		this.text = text
 	}
 
 }

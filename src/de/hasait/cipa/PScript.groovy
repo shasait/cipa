@@ -20,12 +20,12 @@ import com.cloudbees.groovy.cps.NonCPS
 import com.google.common.collect.ImmutableSet
 import de.hasait.cipa.activity.CheckoutConfiguration
 import de.hasait.cipa.activity.scm.ScmUrlTransformer
+import de.hasait.cipa.log.PLogger
 import de.hasait.cipa.tool.MavenExecution
 import groovy.json.JsonSlurper
 import hudson.FilePath
 import hudson.model.Job
 import hudson.model.Run
-import hudson.model.TaskListener
 import hudson.remoting.VirtualChannel
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
@@ -60,10 +60,13 @@ class PScript implements Serializable {
 	@Deprecated
 	static final String MVN_REPO_RELDIR = MavenExecution.MVN_DEFAULT_REPO_RELDIR
 
-	def rawScript
+	final def rawScript
+
+	private final PLogger logger
 
 	PScript(rawScript) {
 		this.rawScript = rawScript
+		logger = new PLogger(rawScript, 'Script')
 	}
 
 	@NonCPS
@@ -352,26 +355,21 @@ class PScript implements Serializable {
 		rawScript.dir(dirname, body)
 	}
 
-	void echo(String message) {
-		rawScript.echo '[Script] ' + message
+	void echo(String message, Throwable throwable = null) {
+		logger.echo(message, throwable)
 	}
 
+	/**
+	 * @deprecated Use {@link #echo(java.lang.String, java.lang.Throwable)}.
+	 */
+	@Deprecated
 	void echoStacktrace(String message, Throwable throwable) {
-		echo(message + ': ' + extractStacktrace(throwable))
+		echo(message, throwable)
 	}
 
 	@NonCPS
-	void echoNonCPS(String message) {
-		rawScript.getContext(TaskListener.class).getLogger().println(message)
-	}
-
-	@NonCPS
-	private String extractStacktrace(Throwable throwable) {
-		StringWriter sw = new StringWriter()
-		PrintWriter pw = new PrintWriter(sw)
-		throwable.printStackTrace(pw)
-		pw.flush()
-		return sw.toString()
+	void echoNonCPS(String message, Throwable throwable = null) {
+		logger.log(message, throwable)
 	}
 
 	boolean fileExists(String relativePath) {

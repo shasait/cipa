@@ -16,10 +16,13 @@
 
 package de.hasait.cipa.testsupport.model
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 import groovy.json.JsonSlurper
+import hudson.model.TaskListener
+import hudson.util.StreamTaskListener
 
 /**
  *
@@ -196,6 +199,12 @@ class TmRawScript {
 			return result
 		}
 
+	}
+
+	def context = [(TaskListener.class): new StreamTaskListener(System.out, StandardCharsets.UTF_8)]
+
+	def getContext(Class type) {
+		return context.get(type)
 	}
 
 	//-----------------------------------------------

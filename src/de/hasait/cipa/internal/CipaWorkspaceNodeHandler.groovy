@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package de.hasait.cipa.internal
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.CipaWorkspaceProvider
+import de.hasait.cipa.log.PLogger
 import de.hasait.cipa.nodehandler.AbstractCipaNodeHandler
 
 /**
@@ -26,8 +27,12 @@ import de.hasait.cipa.nodehandler.AbstractCipaNodeHandler
  */
 class CipaWorkspaceNodeHandler extends AbstractCipaNodeHandler {
 
+	private final PLogger logger
+
 	CipaWorkspaceNodeHandler(Object rawScriptOrCipa) {
 		super(rawScriptOrCipa)
+
+		logger = new PLogger(rawScript, CipaWorkspaceNodeHandler.class.simpleName)
 	}
 
 	@Override
@@ -45,7 +50,7 @@ class CipaWorkspaceNodeHandler extends AbstractCipaNodeHandler {
 
 	private void echoWorkspace(Closure<?> next) {
 		String workspace = rawScript.env.WORKSPACE
-		script.echo("[CIPA] workspace: ${workspace}")
+		logger.info('Workspace: ' + workspace)
 		next.call()
 	}
 

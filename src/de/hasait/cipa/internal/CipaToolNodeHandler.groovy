@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
 import de.hasait.cipa.CipaNode
 import de.hasait.cipa.CipaTool
+import de.hasait.cipa.log.PLogger
 import de.hasait.cipa.nodehandler.AbstractCipaNodeHandler
 import de.hasait.cipa.tool.CipaToolContribution
 
@@ -31,11 +32,15 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 	private static final String TOOL_TYPE___JDK = 'hudson.model.JDK'
 	private static final String TOOL_TYPE___MAVEN = 'hudson.tasks.Maven$MavenInstallation'
 
+	private final PLogger logger
+
 	private CipaTool toolJdk
 	private CipaTool toolMvn
 
 	CipaToolNodeHandler(Object rawScriptOrCipa) {
 		super(rawScriptOrCipa)
+
+		logger = new PLogger(rawScript, CipaToolNodeHandler.class.simpleName)
 	}
 
 	@Override
@@ -56,7 +61,7 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 		for (tool in tools) {
 			if (tool.node == null || tool.node.is(node)) {
 				def toolHome = rawScript.tool(name: tool.name, type: tool.type)
-				script.echo("[CIPA] Tool ${tool.name}: ${toolHome}")
+				logger.info("${tool}: ${toolHome}")
 				if (tool.dedicatedEnvVar) {
 					envVars.add("${tool.dedicatedEnvVar}=${toolHome}")
 				}
@@ -65,7 +70,7 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 				}
 				if (tool.type == TOOL_TYPE___MAVEN) {
 					String mvnRepo = script.determineMvnRepo()
-					script.echo("[CIPA] mvnRepo: ${mvnRepo}")
+					logger.info("Maven Repository: ${mvnRepo}")
 					envVars.add("${Cipa.ENV_VAR___MVN_REPO}=${mvnRepo}")
 					envVars.add("${Cipa.ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${tool.options} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}")
 				}

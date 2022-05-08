@@ -157,6 +157,24 @@ class CipaBeanTest extends CipaTestBase {
 		assertNull(result)
 	}
 
+	@Test
+	void test_addBean_duplicate_ignored() {
+		A a1 = new A()
+		cipa.addBean(a1)
+		cipa.addBean(a1)
+
+		List beans = cipa.findBeansAsList(A.class)
+		assertNotNull(beans)
+		assertEquals(1, beans.size())
+		assertEquals(a1, beans.get(0))
+	}
+
+	@Test(expected = IllegalStateException.class)
+	void test_addBean_different_name_fails() {
+		A a1 = new A()
+		cipa.addBean(a1, 'a1')
+		cipa.addBean(a1, 'a2')
+	}
 
 	private static class A {
 

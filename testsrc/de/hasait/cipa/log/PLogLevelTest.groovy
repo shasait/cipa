@@ -14,44 +14,26 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.internal
+package de.hasait.cipa.log
 
-import com.cloudbees.groovy.cps.NonCPS
+import org.junit.Assert
+import org.junit.Test
 
-/**
- *
- */
-class CipaBeanRegistration implements Serializable {
+class PLogLevelTest {
 
-	private final Object bean
-	private final String name
-
-	CipaBeanRegistration(Object bean, String name) {
-		this.bean = bean
-		this.name = name
+	@Test
+	void compareDEBUGvsINFO() {
+		Assert.assertTrue(PLogLevel.DEBUG > PLogLevel.INFO)
 	}
 
-	@NonCPS
-	Object getBean() {
-		return bean
+	@Test
+	void compareINFOvsWARN() {
+		Assert.assertTrue(PLogLevel.INFO > PLogLevel.WARN)
 	}
 
-	@NonCPS
-	String getName() {
-		return name
-	}
-
-	@Override
-	@NonCPS
-	String toString() {
-		StringBuilder sb = new StringBuilder()
-		sb.append('Bean[')
-		if (name != null) {
-			sb.append('name=').append(name).append(';')
-		}
-		sb.append(bean)
-		sb.append(']')
-		return sb.toString()
+	@Test
+	void compareWARNvsERROR() {
+		Assert.assertTrue(PLogLevel.WARN > PLogLevel.ERROR)
 	}
 
 }

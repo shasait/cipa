@@ -40,6 +40,8 @@ import de.hasait.cipa.internal.CipaPrepareNodeLabelPrefix
 import de.hasait.cipa.internal.CipaRunContext
 import de.hasait.cipa.internal.CipaToolNodeHandler
 import de.hasait.cipa.internal.CipaWorkspaceNodeHandler
+import de.hasait.cipa.log.PLogLevel
+import de.hasait.cipa.log.PLogger
 import de.hasait.cipa.nodehandler.CipaNodeHandler
 import de.hasait.cipa.resource.CipaCustomResource
 import de.hasait.cipa.resource.CipaFileResource
@@ -66,6 +68,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private final def rawScript
 	private final PScript script
+	private final PLogger logger
 	private final boolean waitForCbpAvailable
 	private final CipaPrepareNodeLabelPrefix nodeLabelPrefixHolder
 	private final CipaToolNodeHandler toolNodeHandler
@@ -80,22 +83,24 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	private CipaRunContext runContext
 
-	boolean debug = false
+	private final List<CipaBeanRegistration> debugAddedBeans = []
 
 	Cipa(rawScript) {
 		if (rawScript == null) {
-			throw new IllegalArgumentException('rawScript is null')
+			throw new IllegalArgumentException('rawScript cannot be null')
 		}
 		try {
 			rawScript.currentBuild
 		} catch (MissingPropertyException e) {
-			throw new IllegalArgumentException('Invalid rawScript', e)
+			throw new IllegalArgumentException('Invalid rawScript - please pass "this" from Pipeline Script', e)
 		}
 		this.rawScript = rawScript
 
+		logger = new PLogger(rawScript, Cipa.class.simpleName)
+
 		Cipa existingCipa = instances.putIfAbsent(rawScript, this)
 		if (existingCipa != null) {
-			throw new IllegalArgumentException('Duplicate construction - use getOrCreate')
+			throw new IllegalArgumentException('Cipa instance for specified rawScript exists already - prefer "Cipa.getOrCreate" over "new Cipa"')
 		}
 		script = findOrAddBean(PScript.class)
 
@@ -122,7 +127,19 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	public <T> T addBean(T bean, String name = null) {
 		synchronized (beanRegistrations) {
-			beanRegistrations.put(bean, new CipaBeanRegistration(bean, name))
+			CipaBeanRegistration existingBeanRegistration = beanRegistrations.get(bean)
+			if (existingBeanRegistration != null) {
+				if (existingBeanRegistration.name != name) {
+					throw new IllegalStateException("Bean already registered with different name: ${existingBeanRegistration.name} vs. ${name}")
+				}
+				return bean
+			}
+
+			CipaBeanRegistration newBeanRegistration = new CipaBeanRegistration(bean, name)
+			if (debug) {
+				debugAddedBeans.add(newBeanRegistration)
+			}
+			beanRegistrations.put(bean, newBeanRegistration)
 			return bean
 		}
 	}
@@ -201,7 +218,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 						if (result == null) {
 							result = (T) bean
 						} else {
-							throw new IllegalStateException("Multiple beans found: ${type}")
+							throw new IllegalStateException('Multiple beans found: ' + type)
 						}
 					}
 				}
@@ -209,7 +226,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		}
 
 		if (result == null && !optional) {
-			throw new IllegalStateException("No bean found: ${type}")
+			throw new IllegalStateException('No bean found: ' + type)
 		}
 
 		return result
@@ -281,15 +298,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				newBean = type.newInstance()
 			}
 
-			CipaBeanRegistration beanRegistration = beanRegistrations.get(newBean)
-			if (beanRegistration != null) {
-				if (beanRegistration.name != name) {
-					throw new RuntimeException("Bean already registered with different name: ${beanRegistration.name} vs. ${name}")
-				}
-				return newBean
-			} else {
-				return addBean(newBean, name)
-			}
+			return addBean(newBean, name)
 		}
 	}
 
@@ -379,10 +388,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			}
 			round++
 			if (round > 100) {
-				throw new IllegalStateException("Init loop? ${beans}")
+				throw new IllegalStateException('Init loop? ' + beans)
 			}
 			for (bean in beans) {
-				rawScript.echo("[CIPA] Initializing: ${bean}")
+				logger.info('Initializing: ' + bean)
 				bean.initCipa(this)
 				alreadyInitialized.add(bean)
 			}
@@ -401,45 +410,50 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		int round = 0
 		while (true) {
 			initBeans()
+			logAndClearDebugAddBean('Added beans after initBeans')
 
 			List<CipaPrepare> beans = findBeansToPrepare()
 			if (beans.empty) {
 				break
 			}
 			if (round > 0) {
-				rawScript.echo("[CIPA] Warning - Preparing late beans - prepare order might be incorrect!")
+				logger.warn('Preparing late beans - prepare order might be incorrect!')
 			}
 			round++
 			if (round > 100) {
-				throw new IllegalStateException("Prepare loop? ${beans}")
+				throw new IllegalStateException('Prepare loop? ' + beans)
 			}
 			for (bean in beans) {
-				rawScript.echo("[CIPA] Preparing: ${bean}")
+				logger.info('Preparing: ' + bean)
 				bean.prepareCipa(this)
 				alreadyPrepared.add(bean)
+				logAndClearDebugAddBean('Added beans after prepareCipa')
 			}
+
 		}
 	}
 
 	@Override
 	void run() {
+		logAndClearDebugAddBean('Added beans before init and prepare beans')
 		prepareBeans()
+		logAndClearDebugAddBean('Added beans after prepareBeans')
 
 		// if no other CipaArtifactStore exists create the default one
 		findOrAddBean(CipaArtifactStore.class, new DefaultCipaArtifactStoreSupplier(this))
 
 		List<CipaRunHandler> cipaRunHandlers = determineRunHandlers()
 		handleRun(cipaRunHandlers, 0) {
-			rawScript.echo("[CIPA] Creating RunContext...")
+			logger.info('Creating RunContext...')
 			runContext = new CipaRunContext(this)
 
-			rawScript.echo("[CIPA] Executing activities...")
+			logger.info('Executing activities...')
 			def parallelNodeBranches = [:]
 			for (int nodeI = 0; nodeI < runContext.nodes.size(); nodeI++) {
 				CipaNode node = runContext.nodes.get(nodeI)
 				List<CipaActivityWrapper> nodeWrappers = runContext.wrappersByNode.get(node)
 				if (nodeWrappers.empty) {
-					rawScript.echo("[CIPA] WARNING: ${node} has no activities!")
+					logger.warn(node + ' has no activities!')
 				}
 				parallelNodeBranches["${nodeI}-${node.label}"] = parallelNodeWithActivitiesBranch(nodeI, node, nodeWrappers)
 			}
@@ -447,9 +461,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			parallelNodeBranches.failFast = true
 			rawScript.parallel(parallelNodeBranches)
 
-			rawScript.echo(buildRunSummary())
+			logger.info(buildRunSummary())
 			CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
 		}
+
+		logAndClearDebugAddBean('Added beans')
 	}
 
 	@NonCPS
@@ -490,7 +506,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	private String buildRunSummary() {
 		StringBuilder sb = new StringBuilder()
-		sb.append('[CIPA] Done\nSummary of all activities:\n')
+		sb.append('Done\nSummary of all activities:\n')
 		for (wrapper in runContext.wrappers) {
 			sb.append("- ${wrapper.activity.name}\n    ${wrapper.buildStateHistoryString()}\n")
 		}
@@ -569,7 +585,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 					countWait++
 					List<String> notDoneDependencyNames = wrapper.readyToRunActivity(true)
 					if (countWait > 10 && !notDoneDependencyNames.empty) {
-						rawScript.echo("Activity [${wrapper.activity.name}] still waits for at least one dependency: ${notDoneDependencyNames}")
+						logger.info("Activity [${wrapper.activity.name}] still waits for at least one dependency: ${notDoneDependencyNames}")
 						countWait = 0
 					}
 					return notDoneDependencyNames.empty
@@ -601,7 +617,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	void node(CipaNode cipaNode, Closure body) {
 		rawScript.node(nodeLabel(cipaNode)) {
 			cipaNode.runtimeHostname = script.determineHostname()
-			script.echo('[CIPA] On host: ' + cipaNode.runtimeHostname)
+			logger.info('On host: ' + cipaNode.runtimeHostname)
 
 			List<CipaNodeHandler> cipaNodeHandlers = determineNodeHandlers()
 			handleNode(cipaNode, cipaNodeHandlers, 0, body)
@@ -622,6 +638,24 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			})
 		} else {
 			last.call()
+		}
+	}
+
+	@NonCPS
+	void setDebug(boolean debug) {
+		logger.setLogLevel(debug ? PLogLevel.DEBUG : PLogLevel.INFO)
+	}
+
+	@NonCPS
+	boolean isDebug() {
+		return logger.logLevelDebugOrHigher
+	}
+
+	@NonCPS
+	private void logAndClearDebugAddBean(String state, String separator = '\n- ') {
+		if (!debugAddedBeans.empty) {
+			logger.debug(state + separator + debugAddedBeans.join(separator))
+			debugAddedBeans.clear()
 		}
 	}
 

@@ -32,6 +32,8 @@ class CipaTestBase extends RawScriptTestBase {
 
 		cipa = Cipa.getOrCreate(rawScript)
 		script = cipa.findBean(PScript.class)
+
+		cipa.debug = true
 	}
 
 }

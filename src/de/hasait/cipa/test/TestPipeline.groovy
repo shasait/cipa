@@ -38,8 +38,6 @@ class TestPipeline extends AbstractCipaAroundActivity implements CipaInit, Seria
 	TestPipeline(rawScript, Boolean ra1f = null, Boolean ra2f = null, Boolean ra3f = null, Boolean wa1f = null, Boolean wa2f = null, Boolean wa3f = null, Boolean rb1f = null) {
 		super(rawScript)
 
-		cipa.debug = true
-
 		cipa.addStandardBeans(10)
 
 		CipaNode node1 = cipa.newNode('node1')

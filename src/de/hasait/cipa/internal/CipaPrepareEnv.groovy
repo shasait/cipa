@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,21 @@ package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaPrepare
-import de.hasait.cipa.PScript
+import de.hasait.cipa.activity.AbstractCipaBean
+import de.hasait.cipa.log.PLogger
 
 /**
  * Obtain more env variables from job description and parent folder descriptions.
  */
-class CipaPrepareEnv implements CipaInit, CipaPrepare, Serializable {
+class CipaPrepareEnv extends AbstractCipaBean implements CipaPrepare {
 
-	private PScript script
-	private def rawScript
+	private final PLogger logger
 
-	@Override
-	void initCipa(Cipa cipa) {
-		script = cipa.findBean(PScript.class)
-		rawScript = script.rawScript
+	CipaPrepareEnv(rawScriptOrCipa) {
+		super(rawScriptOrCipa)
+
+		logger = new PLogger(rawScript, CipaPrepareEnv.class.simpleName)
 	}
 
 	@Override
@@ -44,13 +43,13 @@ class CipaPrepareEnv implements CipaInit, CipaPrepare, Serializable {
 
 	@Override
 	void prepareCipa(Cipa cipa) {
-		script.echo('Populating env from descriptions...')
-
 		List<List<Object>> envAssignments = extractEnvAssignments()
-
-		for (envAssignment in envAssignments) {
-			script.echo("Adding ${envAssignment[0]} to env with value: ${envAssignment[1]}")
-			rawScript.env[(String) envAssignment[0]] = envAssignment[1]
+		if (!envAssignments.empty) {
+			logger.info('Populating env from descriptions...')
+			for (envAssignment in envAssignments) {
+				logger.info("Adding ${envAssignment[0]} to env with value: ${envAssignment[1]}")
+				rawScript.env[(String) envAssignment[0]] = envAssignment[1]
+			}
 		}
 	}
 

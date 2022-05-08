@@ -18,24 +18,25 @@ package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
-import de.hasait.cipa.CipaInit
 import de.hasait.cipa.CipaPrepare
-import de.hasait.cipa.PScript
+import de.hasait.cipa.activity.AbstractCipaBean
 import de.hasait.cipa.jobprops.CipaParamValueProvider
 import de.hasait.cipa.jobprops.JobParameterContribution
 import de.hasait.cipa.jobprops.JobPropertiesContribution
 import de.hasait.cipa.jobprops.PJobPropertiesManager
+import de.hasait.cipa.log.PLogger
 
-class CipaPrepareJobProperties implements CipaInit, CipaPrepare, Serializable {
+class CipaPrepareJobProperties extends AbstractCipaBean implements CipaPrepare {
 
 	static final int PREPARE_CIPA_ORDER = 2000
 
-	private PScript script
-	private PJobPropertiesManager manager
+	private final PLogger logger
+	private final PJobPropertiesManager manager
 
-	@Override
-	void initCipa(Cipa cipa) {
-		script = cipa.findBean(PScript.class)
+	CipaPrepareJobProperties(rawScriptOrCipa) {
+		super(rawScriptOrCipa)
+
+		logger = new PLogger(rawScript, CipaPrepareJobProperties.class.simpleName)
 		manager = new PJobPropertiesManager(script)
 	}
 
@@ -51,22 +52,22 @@ class CipaPrepareJobProperties implements CipaInit, CipaPrepare, Serializable {
 
 		List<JobParameterContribution> parameterContributions = cipa.findBeansAsList(JobParameterContribution.class)
 
-		script.echo("Collecting parameters via ${JobParameterContribution.class.simpleName}s...")
+		logger.info("Collecting parameters via ${JobParameterContribution.class.simpleName}s...")
 		for (JobParameterContribution parameterContribution in parameterContributions) {
 			parameterContribution.contributeParameters(manager)
 		}
 
 		List<JobPropertiesContribution> propertiesContributions = cipa.findBeansAsList(JobPropertiesContribution.class)
 
-		script.echo("Collecting job properties via ${JobPropertiesContribution.class.simpleName}s...")
+		logger.info("Collecting job properties via ${JobPropertiesContribution.class.simpleName}s...")
 		for (JobPropertiesContribution propertiesContribution in propertiesContributions) {
 			propertiesContribution.contributeJobProperties(manager)
 		}
 
-		script.echo('Updating job properties...')
+		logger.info('Updating job properties...')
 		manager.applyJobProperties()
 
-		script.echo('Processing parameters...')
+		logger.info('Processing parameters...')
 		for (JobParameterContribution parameterContribution in parameterContributions) {
 			parameterContribution.processParameters(manager)
 		}

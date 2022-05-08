@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -232,7 +232,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			activity.prepareNode()
 		} catch (Throwable throwable) {
 			prepareThrowable = throwable
-			script.echoStacktrace('prepareNode', throwable)
+			script.echo('prepareNode', throwable)
 		}
 	}
 
@@ -255,7 +255,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 					aroundActivity.handleFailedDependencies(this)
 				} catch (Throwable throwable) {
 					aroundThrowable = throwable
-					script.echoStacktrace('handleFailedDependencies', throwable)
+					script.echo('handleFailedDependencies', throwable)
 				}
 			}
 			return
@@ -266,7 +266,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 				aroundActivity.beforeActivityStarted(this)
 			} catch (Throwable throwable) {
 				aroundThrowable = throwable
-				script.echoStacktrace('beforeActivityStarted', throwable)
+				script.echo('beforeActivityStarted', throwable)
 			}
 		}
 		if (aroundThrowable) {
@@ -278,7 +278,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			runAroundActivity(0)
 		} catch (Throwable throwable) {
 			runThrowable = throwable
-			script.echoStacktrace('runActivity', throwable)
+			script.echo('runActivity', throwable)
 		} finally {
 			finishedDate = new Date()
 		}
@@ -294,7 +294,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 				aroundActivity.afterActivityFinished(this)
 			} catch (Throwable throwable) {
 				aroundThrowable = throwable
-				script.echoStacktrace('afterActivityFinished', throwable)
+				script.echo('afterActivityFinished', throwable)
 			}
 		}
 	}
@@ -334,7 +334,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			}
 		} catch (Throwable throwable) {
 			cleanupThrowable = throwable
-			script.echoStacktrace('cleanupNode', throwable)
+			script.echo('cleanupNode', throwable)
 		}
 	}
 
