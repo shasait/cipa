@@ -16,6 +16,7 @@
 
 package de.hasait.cipa
 
+import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Supplier
 
@@ -51,6 +52,7 @@ import de.hasait.cipa.resource.CipaResourceWithState
 import de.hasait.cipa.resource.CipaStashResource
 import de.hasait.cipa.runhandler.CipaRunHandler
 import de.hasait.cipa.runhandler.TimeoutCipaRunHandler
+import groovy.transform.SourceURI
 import org.jenkinsci.plugins.workflow.steps.StepDescriptor
 
 /**
@@ -64,6 +66,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	static final String ENV_VAR___MVN_SETTINGS = 'MVN_SETTINGS'
 	static final String ENV_VAR___MVN_TOOLCHAINS = 'MVN_TOOLCHAINS'
 	static final String ENV_VAR___MVN_OPTIONS = 'MAVEN_OPTS'
+
+	@SourceURI
+	static URI uri
 
 	private static final ConcurrentHashMap<Object, Cipa> instances = new ConcurrentHashMap<>()
 
@@ -122,6 +127,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			return existingCipa
 		}
 		return new Cipa(rawScript)
+	}
+
+	@NonCPS
+	static String determineLibraryPath() {
+		return Paths.get(uri).parent.parent.parent.parent.parent.toString()
 	}
 
 	@Override

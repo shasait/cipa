@@ -16,6 +16,7 @@
 
 package de.hasait.cipa
 
+
 import com.cloudbees.groovy.cps.NonCPS
 import com.google.common.collect.ImmutableSet
 import de.hasait.cipa.activity.CheckoutConfiguration
@@ -272,10 +273,6 @@ class PScript implements Serializable {
 		return descriptions
 	}
 
-	String readLibraryResource(String resource, String encoding = 'UTF-8') {
-		return rawScript.libraryResource(resource: resource, encoding: encoding)
-	}
-
 	/**
 	 * Copy library resource to current dir.
 	 */
@@ -486,6 +483,10 @@ class PScript implements Serializable {
 
 	def readJsonText(String text) {
 		return rawScript.readJSON(text: text)
+	}
+
+	String readLibraryResource(String resource, String encoding = 'UTF-8') {
+		return rawScript.libraryResource(resource: resource, encoding: encoding)
 	}
 
 	void setCustomBuildProperty(String key, Object value) {
