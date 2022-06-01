@@ -272,6 +272,10 @@ class PScript implements Serializable {
 		return descriptions
 	}
 
+	String readLibraryResource(String resource, String encoding = 'UTF-8') {
+		return rawScript.libraryResource(resource: resource, encoding: encoding)
+	}
+
 	/**
 	 * Copy library resource to current dir.
 	 */
