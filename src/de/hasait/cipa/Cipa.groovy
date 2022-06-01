@@ -268,6 +268,13 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			}
 			if (newBean == null && name != null) {
 				try {
+					newBean = type.getConstructor(PScript.class, String.class).newInstance(script, name)
+				} catch (NoSuchMethodException ignored) {
+					// ignore
+				}
+			}
+			if (newBean == null && name != null) {
+				try {
 					newBean = type.newInstance(rawScript, name)
 				} catch (GroovyRuntimeException e) {
 					analyzeGroovyRuntimeException(e)
@@ -276,6 +283,13 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			if (newBean == null) {
 				try {
 					newBean = type.getConstructor(Cipa.class).newInstance(this)
+				} catch (NoSuchMethodException ignored) {
+					// ignore
+				}
+			}
+			if (newBean == null) {
+				try {
+					newBean = type.getConstructor(PScript.class).newInstance(script)
 				} catch (NoSuchMethodException ignored) {
 					// ignore
 				}
