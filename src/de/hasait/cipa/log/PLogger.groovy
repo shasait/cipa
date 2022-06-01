@@ -105,7 +105,7 @@ class PLogger {
 	@NonCPS
 	void logWithLevel(PLogLevel messageLogLevel, String message, Throwable throwable = null) {
 		if (logLevel >= messageLogLevel) {
-			logInternal('[' + topic + '][' + messageLogLevel.text + '] ' + message, throwable)
+			logInternal('[' + messageLogLevel.text + '][' + topic + '] ' + message, throwable)
 		}
 	}
 
@@ -114,7 +114,7 @@ class PLogger {
 	 */
 	@NonCPS
 	void log(String message, Throwable throwable = null) {
-		logInternal('[' + topic + '] ' + message, throwable)
+		logInternal('[    *][' + topic + '] ' + message, throwable)
 	}
 
 	/**
