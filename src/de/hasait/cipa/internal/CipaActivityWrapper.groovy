@@ -74,6 +74,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 
 	private final Date creationDate
 	private Throwable prepareThrowable
+	private Throwable externalPrepareThrowable
 	private Date startedDate
 	private Date finishedDate
 	private Throwable runThrowable
@@ -142,7 +143,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 	@Override
 	@NonCPS
 	boolean isFailed() {
-		return prepareThrowable || failedDependencies || runThrowable || aroundThrowable
+		return prepareThrowable || externalPrepareThrowable || failedDependencies || runThrowable || aroundThrowable
 	}
 
 	@Override
@@ -153,19 +154,22 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		}
 
 		if (prepareThrowable) {
-			return prepareThrowable.message
+			return 'prepareNode failed - ' + prepareThrowable.message
+		}
+		if (externalPrepareThrowable) {
+			return 'prepareNode of other activity failed - ' + externalPrepareThrowable.message
 		}
 		if (failedDependencies) {
 			return buildFailedWrappersMessage('Dependencies', failedDependencies)
 		}
 		if (runThrowable) {
-			return runThrowable.message
+			return 'runActivity or runAroundActivity failed - ' + runThrowable.message
 		}
 		if (aroundThrowable) {
-			return aroundThrowable.message
+			return 'aroundActivity failed - ' + aroundThrowable.message
 		}
 
-		return 'Unknown (BUG?!)'
+		return 'Unknown failure'
 	}
 
 	@Override
@@ -174,13 +178,19 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		return prepareThrowable
 	}
 
+	@Override
 	@NonCPS
-	void setPrepareThrowable(Throwable prepareThrowable) {
-		if (prepareThrowable == null) {
-			throw new IllegalArgumentException('prepareThrowable is null')
+	Throwable getExternalPrepareThrowable() {
+		return externalPrepareThrowable
+	}
+
+	@NonCPS
+	void setExternalPrepareThrowable(Throwable externalPrepareThrowable) {
+		if (externalPrepareThrowable == null) {
+			throw new IllegalArgumentException('externalPrepareThrowable is null')
 		}
 
-		this.prepareThrowable = prepareThrowable
+		this.externalPrepareThrowable = externalPrepareThrowable
 	}
 
 	@Override
@@ -232,7 +242,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			activity.prepareNode()
 		} catch (Throwable throwable) {
 			prepareThrowable = throwable
-			script.echo('prepareNode', throwable)
+			script.echo('prepareNode failed', throwable)
 		}
 	}
 
@@ -245,7 +255,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 		}
 
 		if (done) {
-			throw new IllegalStateException('Already done')
+			throw new IllegalStateException('Activity already done')
 		}
 
 		failedDependencies = findFailedDependencyWrappers()
@@ -255,7 +265,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 					aroundActivity.handleFailedDependencies(this)
 				} catch (Throwable throwable) {
 					aroundThrowable = throwable
-					script.echo('handleFailedDependencies', throwable)
+					script.echo('handleFailedDependencies failed', throwable)
 				}
 			}
 			return
@@ -266,7 +276,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 				aroundActivity.beforeActivityStarted(this)
 			} catch (Throwable throwable) {
 				aroundThrowable = throwable
-				script.echo('beforeActivityStarted', throwable)
+				script.echo('beforeActivityStarted failed', throwable)
 			}
 		}
 		if (aroundThrowable) {
@@ -278,7 +288,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			runAroundActivity(0)
 		} catch (Throwable throwable) {
 			runThrowable = throwable
-			script.echo('runActivity', throwable)
+			script.echo('runActivity or runAroundActivity failed', throwable)
 		} finally {
 			finishedDate = new Date()
 		}
@@ -294,7 +304,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 				aroundActivity.afterActivityFinished(this)
 			} catch (Throwable throwable) {
 				aroundThrowable = throwable
-				script.echo('afterActivityFinished', throwable)
+				script.echo('afterActivityFinished failed', throwable)
 			}
 		}
 	}
@@ -334,7 +344,7 @@ class CipaActivityWrapper implements CipaActivityInfo, CipaActivityRunContext, S
 			}
 		} catch (Throwable throwable) {
 			cleanupThrowable = throwable
-			script.echo('cleanupNode', throwable)
+			script.echo('cleanupNode failed', throwable)
 		}
 	}
 

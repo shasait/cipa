@@ -54,7 +54,7 @@ vvv parameters.json vvv {
 
 	@Test
 	void testTestPipelineRa1Fails() {
-		expectFailingActivities(['TestRa1': 'Failure'])
+		expectFailingActivities(['TestRa1': 'runActivity or runAroundActivity failed - Failure'])
 
 		TestResultAction testResultAction = Mockito.mock(TestResultAction)
 		CaseResult caseResult1 = Mockito.mock(CaseResult)
@@ -74,7 +74,7 @@ vvv parameters.json vvv {
 
 	@Test
 	void testTestPipelineRa1AndRa3Fails() {
-		expectFailingActivities(['TestRa1': 'Failure', 'TestRa3': 'Failure'])
+		expectFailingActivities(['TestRa1': 'runActivity or runAroundActivity failed - Failure', 'TestRa3': 'runActivity or runAroundActivity failed - Failure'])
 
 		TestResultAction testResultAction = Mockito.mock(TestResultAction)
 		CaseResult caseResult1 = Mockito.mock(CaseResult)

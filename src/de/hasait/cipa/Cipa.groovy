@@ -558,7 +558,9 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				}
 				if (prepareThrowable) {
 					for (wrapper in nodeWrappers) {
-						wrapper.prepareThrowable = prepareThrowable
+						if (!wrapper.prepareThrowable) {
+							wrapper.externalPrepareThrowable = prepareThrowable
+						}
 						// will never run so mark here
 						waitForCbpMarkFinished(wrapper)
 					}
