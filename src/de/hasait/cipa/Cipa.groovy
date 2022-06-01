@@ -40,6 +40,7 @@ import de.hasait.cipa.internal.CipaPrepareNodeLabelPrefix
 import de.hasait.cipa.internal.CipaRunContext
 import de.hasait.cipa.internal.CipaToolNodeHandler
 import de.hasait.cipa.internal.CipaWorkspaceNodeHandler
+import de.hasait.cipa.jobprops.ItemDescriptionParamValues
 import de.hasait.cipa.log.PLogLevel
 import de.hasait.cipa.log.PLogger
 import de.hasait.cipa.nodehandler.CipaNodeHandler
@@ -155,6 +156,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		if (enableCleanup) {
 			findOrAddBean(CipaFileResourceCleanup.class)
 		}
+		findOrAddBean(ItemDescriptionParamValues.class)
 	}
 
 	@Override

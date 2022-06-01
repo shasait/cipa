@@ -19,6 +19,7 @@ package de.hasait.cipa.jobprops
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.PScript
+import de.hasait.cipa.log.PLogger
 import hudson.model.Item
 import hudson.model.ItemGroup
 import hudson.model.ParameterDefinition
@@ -41,6 +42,8 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 	private final PScript script
 	private final def rawScript
 
+	private final PLogger logger
+
 	private final Map<String, PJobArgument<?>> arguments = [:]
 	private final List parameters = []
 	private final List pipelineTriggers = []
@@ -55,10 +58,7 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 		this.script = script
 		this.rawScript = script.rawScript
 
-		addParamValueProviders([
-				new ItemDescriptionParamValues(script),
-				new ManagedFilesParamValues(script)
-		])
+		logger = new PLogger(rawScript, PJobPropertiesManager.class.simpleName)
 	}
 
 	@NonCPS
@@ -367,6 +367,11 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 
 	@NonCPS
 	private Object retrieveExternalValue(String name) {
+		if (paramValueProviders.empty) {
+			logger.warn('paramValueProviders is empty - adding ItemDescriptionParamValues')
+			paramValueProviders.add(new ItemDescriptionParamValues(script))
+		}
+
 		for (CipaParamValueProvider provider in paramValueProviders) {
 			def value = provider.getParamValueForCurrentRun(name)
 			if (value != null) {
