@@ -19,9 +19,6 @@ package de.hasait.cipa.testsupport.model
 import hudson.model.Item
 import hudson.model.ItemGroup
 import hudson.security.Permission
-import org.mockito.Mockito
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
 
 class TmItem<M extends Item> extends MockWrapper<M> implements TmItemAttributes {
 
@@ -36,13 +33,6 @@ class TmItem<M extends Item> extends MockWrapper<M> implements TmItemAttributes 
 		this.tmParent = tmParent
 		if (tmParent != null) {
 			tmParent.tmItems.add(this)
-			// Workaround for Mockito expecting Jenkins returned from getParent vs. ItemGroup
-			Mockito.doAnswer(new Answer() {
-				@Override
-				Object answer(InvocationOnMock invocation) throws Throwable {
-					return tmParent.mock
-				}
-			}).when(mock).getParent()
 		}
 	}
 

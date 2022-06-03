@@ -24,10 +24,21 @@ import org.mockito.stubbing.Answer
 
 class DelegateOrNullAnswer implements Answer {
 
+	private static String createMethodIdentifier(Method method) {
+		// include returnType because of bridge methods
+		return method.name + '|' + method.parameterTypes.join(';') + '|' + method.returnType
+	}
+
 	final Object delegate
+
+	final Map<String, Method> methodsById = new HashMap<>()
 
 	DelegateOrNullAnswer(Object delegate) {
 		this.delegate = delegate
+		delegate.getClass().getMethods().each { Method method ->
+			String methodId = createMethodIdentifier(method)
+			methodsById.put(methodId, method)
+		}
 	}
 
 	@Override
@@ -37,9 +48,9 @@ class DelegateOrNullAnswer implements Answer {
 		if (method.declaringClass.isAssignableFrom(delegate.getClass())) {
 			delegateMethod = method
 		} else {
-			try {
-				delegateMethod = delegate.getClass().getMethod(method.name, method.parameterTypes)
-			} catch (NoSuchMethodException ignored) {
+			String methodId = createMethodIdentifier(method)
+			delegateMethod = methodsById.get(methodId)
+			if (delegateMethod == null) {
 				return null
 			}
 		}
