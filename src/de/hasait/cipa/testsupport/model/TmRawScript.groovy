@@ -38,6 +38,7 @@ class TmRawScript {
 	def params = [:]
 
 	Map<String, String> readFileContents = [:]
+	Map<String, String> libraryResourceContents = [:]
 	Map<String, String> shResults = [:]
 	List<String> shExecute = []
 	Map<String, Object> httpRequestResults = [:]
@@ -72,6 +73,19 @@ class TmRawScript {
 	Object httpRequest(Map args) {
 		log('[httpRequest] ' + args)
 		return httpRequestResults.get(args.url)
+	}
+
+	String libraryResource(Map args) {
+		log('[libraryResource] ' + args)
+		String resource = args.resource
+		if (resource) {
+			for (e in libraryResourceContents) {
+				if (Pattern.compile(e.key).matcher(resource).matches()) {
+					return e.value
+				}
+			}
+		}
+		return null
 	}
 
 	void node(String label = '<none>', Closure<?> body) {

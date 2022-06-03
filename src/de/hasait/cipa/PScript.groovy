@@ -277,8 +277,9 @@ class PScript implements Serializable {
 	 * Copy library resource to current dir.
 	 */
 	void copyLibraryResource(String resource, String filepath, boolean archive = COPY_LIBRARY_RESOURCE_ARCHIVE_DEFAULT) {
-		String content = rawScript.libraryResource(resource: resource, encoding: 'Base64')
-		writeFile(filepath, content, 'Base64')
+		String binarySafeEncoding = 'Base64'
+		String content = readLibraryResource(resource, binarySafeEncoding)
+		writeFile(filepath, content, binarySafeEncoding)
 		if (archive) {
 			archiveArtifacts(filepath)
 		}
