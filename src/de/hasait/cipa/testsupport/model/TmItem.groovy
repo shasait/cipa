@@ -16,11 +16,12 @@
 
 package de.hasait.cipa.testsupport.model
 
+import hudson.model.AbstractItem
 import hudson.model.Item
 import hudson.model.ItemGroup
 import hudson.security.Permission
 
-class TmItem<M extends Item> extends MockWrapper<M> implements TmItemAttributes {
+class TmItem<M extends AbstractItem> extends TmActionable<M> implements TmItemAttributes {
 
 	final String name
 	final TmItemGroup tmParent

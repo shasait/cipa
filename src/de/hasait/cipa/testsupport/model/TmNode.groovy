@@ -16,24 +16,37 @@
 
 package de.hasait.cipa.testsupport.model
 
+import hudson.model.Computer
+import hudson.model.Node
+import hudson.model.labels.LabelAtom
 
-import hudson.model.Job
-import hudson.model.Run
+class TmNode<M extends Node> extends MockWrapper<M> {
 
-class TmRun extends TmActionable<Run> {
+	TmJenkins tmJenkins
 
-	final TmJob tmJob
-	final int number
+	String nodeName
 
-	TmRun(TmJob tmJob) {
-		super(Run.class)
-		this.tmJob = tmJob
-		this.number = tmJob.nextBuildNumber++
-		this.tmJob.tmRuns.add(this)
+	Set<LabelAtom> assignedLabels = new LinkedHashSet<>()
+
+	TmNode(Class<M> mockClass, TmJenkins tmJenkins, String nodeName, List<String> labels) {
+		super(mockClass)
+
+		if (this instanceof TmJenkins) {
+			this.tmJenkins = (TmJenkins) this
+		} else {
+			this.tmJenkins = tmJenkins
+		}
+
+
+		this.nodeName = nodeName
+		for (labelName in labels) {
+			LabelAtom label = new LabelAtom(labelName)
+			assignedLabels.add(label)
+		}
 	}
 
-	Job getParent() {
-		return tmJob.mock
+	Computer toComputer() {
+		return tmJenkins.computerMap.get(mock)
 	}
 
 }

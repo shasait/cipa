@@ -21,8 +21,10 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 import groovy.json.JsonSlurper
+import hudson.model.Run
 import hudson.model.TaskListener
 import hudson.util.StreamTaskListener
+import org.jenkinsci.plugins.custombuildproperties.CustomBuildPropertiesAction
 
 /**
  * Dummy implementation of a workflow script and some important steps.
@@ -157,6 +159,25 @@ class TmRawScript {
 		log('[readJSON] ' + args)
 		String file = args.file
 		return new JsonSlurper().parseText(readFileContents.get(file))
+	}
+
+	void setCustomBuildProperty(Map args) {
+		log('[setCustomBuildProperty] ' + args)
+		String key = args.key
+		Object value = args.value
+		Boolean onlySetIfAbsent = args.onlySetIfAbsent
+		def rawBuild = currentBuild.get('rawBuild')
+		if (rawBuild instanceof Run) {
+			if (rawBuild.getAction(CustomBuildPropertiesAction.class) == null) {
+				rawBuild.addAction(new CustomBuildPropertiesAction())
+			}
+			CustomBuildPropertiesAction action = rawBuild.getAction(CustomBuildPropertiesAction.class)
+			if (onlySetIfAbsent != null && onlySetIfAbsent) {
+				action.setPropertyIfAbsent(key, value)
+			} else {
+				action.setProperty(key, value)
+			}
+		}
 	}
 
 	String sh(Map args) {

@@ -17,16 +17,26 @@
 package de.hasait.cipa.testsupport.model
 
 import hudson.ExtensionList
+import hudson.model.Computer
+import hudson.model.Node
 import jenkins.model.Jenkins
 
-class TmJenkins extends MockWrapper<Jenkins> implements TmItemGroup<Jenkins> {
+class TmJenkins extends TmNode<Jenkins> implements TmItemGroup<Jenkins> {
 
 	String rootUrl = 'https://jenkins.example.org/'
 
 	Map<Class, TmExtensionList> tmExtensionListMap = [:]
 
+	Map<Node, Computer> computerMap = [:]
+	Map<TmNode, TmComputer> tmComputers = [:]
+	List<TmNode> tmNodes = []
+	TmComputer masterTmComputer
+
 	TmJenkins() {
-		super(Jenkins.class)
+		super(Jenkins.class, null, '', ['master'])
+
+		masterTmComputer = new TmComputer(this, 'jenkins.example.org')
+		addTmNodeWithComputer(this, masterTmComputer)
 
 		Jenkins.theInstance = mock
 	}
@@ -54,6 +64,36 @@ class TmJenkins extends MockWrapper<Jenkins> implements TmItemGroup<Jenkins> {
 
 	String getAbsoluteUrl() {
 		return rootUrl
+	}
+
+	Computer getComputer(String name) {
+		if (name == '(master)') {
+			name = ''
+		}
+
+		for (TmComputer c : tmComputers.values()) {
+			if (c.name == name) {
+				return c.mock
+			}
+		}
+
+		return null
+	}
+
+	void createTmNodeWithComputer(String nodeName, String hostName, String... labelNames) {
+		List<String> labels = []
+		labels.add(nodeName)
+		labels.addAll(labelNames)
+
+		TmNode<Node> tmNode = new TmNode<>(Node.class, this, nodeName, labels)
+		TmComputer tmComputer = new TmComputer(tmNode, hostName)
+		addTmNodeWithComputer(tmNode, tmComputer)
+	}
+
+	void addTmNodeWithComputer(TmNode tmNode, TmComputer tmComputer) {
+		tmNodes.add(tmNode)
+		tmComputers.put(tmNode, tmComputer)
+		computerMap.put((Node) tmNode.mock, tmComputer.mock)
 	}
 
 }

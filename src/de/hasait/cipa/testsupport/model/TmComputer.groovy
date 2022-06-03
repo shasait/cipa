@@ -16,24 +16,27 @@
 
 package de.hasait.cipa.testsupport.model
 
+import hudson.model.Computer
 
-import hudson.model.Job
-import hudson.model.Run
+class TmComputer extends TmActionable<Computer> {
 
-class TmRun extends TmActionable<Run> {
+	TmNode tmNode
+	String hostName
+	boolean offline
 
-	final TmJob tmJob
-	final int number
+	TmComputer(TmNode tmNode, String hostName) {
+		super(Computer.class)
 
-	TmRun(TmJob tmJob) {
-		super(Run.class)
-		this.tmJob = tmJob
-		this.number = tmJob.nextBuildNumber++
-		this.tmJob.tmRuns.add(this)
+		this.tmNode = tmNode
+		this.hostName = hostName
 	}
 
-	Job getParent() {
-		return tmJob.mock
+	String getName() {
+		return tmNode.nodeName
+	}
+
+	boolean isOnline() {
+		return !isOffline()
 	}
 
 }
