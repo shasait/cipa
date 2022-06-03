@@ -479,7 +479,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				CipaNode node = runContext.nodes.get(nodeI)
 				List<CipaActivityWrapper> nodeWrappers = runContext.wrappersByNode.get(node)
 				if (nodeWrappers.empty) {
-					logger.warn(node + ' has no activities!')
+					logger.warn('Node ' + node + ' has no activities!')
 				}
 				parallelNodeBranches["${nodeI}-${node.label}"] = parallelNodeWithActivitiesBranch(nodeI, node, nodeWrappers)
 			}
