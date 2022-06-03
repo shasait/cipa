@@ -43,6 +43,11 @@ class TmRawScript {
 	List<String> shExecute = []
 	Map<String, Object> httpRequestResults = [:]
 
+	/**
+	 * Use negative value to disable sleeping.
+	 */
+	long maxSleepTimeMillis = 5000
+
 	ThreadLocal<List<String>> pwdListHolder = new ThreadLocal<>()
 
 	void dir(String dir, Closure<?> body) {
@@ -163,9 +168,11 @@ class TmRawScript {
 		return '/jenkins/tools/' + args['type'] + '-' + args['name']
 	}
 
-	void sleep(int seconds) {
-		log('[sleep] ' + seconds)
-		Thread.sleep(TimeUnit.SECONDS.toMillis(seconds))
+	void sleep(int sleepTimeSeconds) {
+		long sleepTimeMillis = TimeUnit.SECONDS.toMillis(sleepTimeSeconds)
+		log('[sleep] ' + sleepTimeMillis + 'ms (limited to ' + maxSleepTimeMillis + 'ms)')
+		long limitedSleepTimeMillis = maxSleepTimeMillis < 0 ? sleepTimeMillis : Math.min(sleepTimeMillis, maxSleepTimeMillis)
+		Thread.sleep(limitedSleepTimeMillis)
 	}
 
 	void waitUntil(Closure<Boolean> test) {

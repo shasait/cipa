@@ -32,6 +32,8 @@ class TestPipelineTest extends CipaTestBase {
 	@Before
 	void init() {
 		initCipa()
+
+		rawScript.maxSleepTimeMillis = 100
 	}
 
 	@Test
