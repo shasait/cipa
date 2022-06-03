@@ -25,7 +25,7 @@ import hudson.model.TaskListener
 import hudson.util.StreamTaskListener
 
 /**
- *
+ * Dummy implementation of a workflow script and some important steps.
  */
 class TmRawScript {
 
@@ -35,12 +35,34 @@ class TmRawScript {
 
 	def currentBuild = ['number': 123]
 
+	/**
+	 * Build params
+	 */
 	def params = [:]
 
+	/**
+	 * Results for readFile: key is a regex.
+	 */
 	Map<String, String> readFileContents = [:]
+
+	/**
+	 * Results for libraryResource: key is a regex.
+	 */
 	Map<String, String> libraryResourceContents = [:]
+
+	/**
+	 * Results for sh: key is a regex.
+	 */
 	Map<String, String> shResults = [:]
+
+	/**
+	 * sh to really execute: list of regex.
+	 */
 	List<String> shExecute = []
+
+	/**
+	 * Results for httpRequest: key is a regex.
+	 */
 	Map<String, Object> httpRequestResults = [:]
 
 	/**
