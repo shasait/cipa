@@ -25,8 +25,8 @@ import org.mockito.stubbing.Answer
 class DelegateOrNullAnswer implements Answer {
 
 	private static String createMethodIdentifier(Method method) {
-		// include returnType because of bridge methods
-		return method.name + '|' + method.parameterTypes.join(';') + '|' + method.returnType
+		// not include returnType because of bridge methods
+		return method.name + '|' + method.parameterTypes.join(';')
 	}
 
 	final Object delegate

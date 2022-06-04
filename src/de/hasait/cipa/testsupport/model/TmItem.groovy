@@ -20,6 +20,9 @@ import hudson.model.AbstractItem
 import hudson.model.Item
 import hudson.model.ItemGroup
 import hudson.security.Permission
+import org.mockito.Mockito
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
 
 class TmItem<M extends AbstractItem> extends TmActionable<M> implements TmItemAttributes {
 
@@ -30,11 +33,18 @@ class TmItem<M extends AbstractItem> extends TmActionable<M> implements TmItemAt
 
 	protected TmItem(Class<M> mockClass, TmFactory tmFactory, TmItemGroup tmParent, String name) {
 		super(mockClass, tmFactory)
-		
+
 		this.name = name
 		this.tmParent = tmParent
 		if (tmParent != null) {
 			tmParent.tmItems.add(this)
+			// Workaround for Mockito expecting Jenkins returned from getParent vs. ItemGroup
+			Mockito.doAnswer(new Answer() {
+				@Override
+				Object answer(InvocationOnMock invocation) throws Throwable {
+					return tmParent.mock
+				}
+			}).when(mock).getParent()
 		}
 	}
 
