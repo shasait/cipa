@@ -23,13 +23,14 @@ import hudson.security.Permission
 
 class TmItem<M extends AbstractItem> extends TmActionable<M> implements TmItemAttributes {
 
-	final String name
 	final TmItemGroup tmParent
+	final String name
 
 	String description
 
-	protected TmItem(Class<M> mockClass, String name, TmItemGroup tmParent) {
-		super(mockClass)
+	protected TmItem(Class<M> mockClass, TmFactory tmFactory, TmItemGroup tmParent, String name) {
+		super(mockClass, tmFactory)
+		
 		this.name = name
 		this.tmParent = tmParent
 		if (tmParent != null) {

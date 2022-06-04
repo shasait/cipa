@@ -19,6 +19,7 @@ package de.hasait.cipa.testsupport
 import static org.hamcrest.CoreMatchers.allOf
 import static org.hamcrest.CoreMatchers.containsString
 
+import de.hasait.cipa.testsupport.model.TmFactory
 import de.hasait.cipa.testsupport.model.TmJob
 import de.hasait.cipa.testsupport.model.TmRawScript
 import de.hasait.cipa.testsupport.model.TmRun
@@ -40,12 +41,13 @@ class RawScriptTestBase extends JenkinsTestBase {
 	@Rule
 	public ExpectedException thrown = ExpectedException.none()
 
-	void initRawScript(String currentJobFullQualifiedName = DEFAULT_CURRENT_JOB_FQN) {
-		initJenkins()
+	void initRawScript(String currentJobFullQualifiedName = DEFAULT_CURRENT_JOB_FQN, TmFactory tmFactory = new TmFactory()) {
+		initJenkins(tmFactory)
 
-		rawScript = new TmRawScript()
+		rawScript = tmFactory.createTmRawScript()
 		currentJob = tmJenkins.getOrCreateTmJob(currentJobFullQualifiedName)
-		currentBuild = new TmRun(currentJob)
+		currentBuild = currentJob.createTmRun()
+		currentBuild.building = true
 		rawScript.currentBuild.rawBuild = currentBuild.mock
 	}
 

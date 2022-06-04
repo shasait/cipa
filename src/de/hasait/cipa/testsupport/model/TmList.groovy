@@ -18,12 +18,15 @@ package de.hasait.cipa.testsupport.model
 
 import org.mockito.Mockito
 
-class TmList<E, M extends AbstractList<E>> extends ArrayList<E> implements HasMock<M> {
+class TmList<E, M extends AbstractList<E>> extends ArrayList<E> implements HasMock<M>, HasTmFactory {
 
 	final M mock
 
-	TmList(Class<M> mockClass) {
+	final TmFactory tmFactory
+
+	TmList(Class<M> mockClass, TmFactory tmFactory) {
 		this.mock = Mockito.mock(mockClass, new DelegateOrNullAnswer(this))
+		this.tmFactory = tmFactory
 	}
 
 }

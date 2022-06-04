@@ -22,8 +22,8 @@ import hudson.util.DescribableList
 
 class TmDescribableList<T extends Describable<T>, D extends Descriptor<T>> extends TmList<T, DescribableList<T, D>> {
 
-	TmDescribableList() {
-		super(DescribableList.class)
+	TmDescribableList(TmFactory tmFactory) {
+		super(DescribableList.class, tmFactory)
 	}
 
 }

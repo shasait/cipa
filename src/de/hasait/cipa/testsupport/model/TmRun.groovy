@@ -25,10 +25,13 @@ class TmRun extends TmActionable<Run> {
 	final TmJob tmJob
 	final int number
 
-	TmRun(TmJob tmJob) {
-		super(Run.class)
+	boolean building
+
+	TmRun(TmFactory tmFactory, TmJob tmJob, int number) {
+		super(Run.class, tmFactory)
+
 		this.tmJob = tmJob
-		this.number = tmJob.nextBuildNumber++
+		this.number = number
 		this.tmJob.tmRuns.add(this)
 	}
 

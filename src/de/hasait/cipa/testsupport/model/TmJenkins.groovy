@@ -32,13 +32,36 @@ class TmJenkins extends TmNode<Jenkins> implements TmItemGroup<Jenkins> {
 	List<TmNode> tmNodes = []
 	TmComputer masterTmComputer
 
-	TmJenkins() {
-		super(Jenkins.class, null, '', ['master'])
+	TmJenkins(TmFactory tmFactory) {
+		super(Jenkins.class, tmFactory, null, '', ['master'])
 
-		masterTmComputer = new TmComputer(this, 'jenkins.example.org')
-		addTmNodeWithComputer(this, masterTmComputer)
+		masterTmComputer = tmFactory.createTmComputer(this, 'jenkins.example.org')
+		addTmComputer(masterTmComputer)
 
 		Jenkins.theInstance = mock
+	}
+
+	TmExtensionList createTmExtensionList(Class extensionType) {
+		TmExtensionList simple = tmFactory.createTmExtensionList()
+		tmExtensionListMap.put(extensionType, simple)
+		return simple
+	}
+
+	TmComputer createTmNodeWithTmComputer(String nodeName, String hostName, String... labelNames) {
+		List<String> labels = []
+		labels.add(nodeName)
+		labels.addAll(labelNames)
+
+		TmNode<Node> tmNode = tmFactory.<Node> createTmNode(Node.class, this, nodeName, labels)
+		TmComputer tmComputer = tmFactory.createTmComputer(tmNode, hostName)
+		addTmComputer(tmComputer)
+		return tmComputer
+	}
+
+	void addTmComputer(TmComputer tmComputer) {
+		tmNodes.add(tmComputer.tmNode)
+		tmComputers.put(tmComputer.tmNode, tmComputer)
+		computerMap.put((Node) tmComputer.tmNode.mock, tmComputer.mock)
 	}
 
 	ExtensionList getExtensionList(Class extensionType) {
@@ -46,12 +69,6 @@ class TmJenkins extends TmNode<Jenkins> implements TmItemGroup<Jenkins> {
 			return tmExtensionListMap.get(extensionType).mock
 		}
 		return createTmExtensionList(extensionType).mock
-	}
-
-	TmExtensionList createTmExtensionList(Class extensionType) {
-		TmExtensionList simple = new TmExtensionList()
-		tmExtensionListMap.put(extensionType, simple)
-		return simple
 	}
 
 	String getFullName() {
@@ -78,22 +95,6 @@ class TmJenkins extends TmNode<Jenkins> implements TmItemGroup<Jenkins> {
 		}
 
 		return null
-	}
-
-	void createTmNodeWithComputer(String nodeName, String hostName, String... labelNames) {
-		List<String> labels = []
-		labels.add(nodeName)
-		labels.addAll(labelNames)
-
-		TmNode<Node> tmNode = new TmNode<>(Node.class, this, nodeName, labels)
-		TmComputer tmComputer = new TmComputer(tmNode, hostName)
-		addTmNodeWithComputer(tmNode, tmComputer)
-	}
-
-	void addTmNodeWithComputer(TmNode tmNode, TmComputer tmComputer) {
-		tmNodes.add(tmNode)
-		tmComputers.put(tmNode, tmComputer)
-		computerMap.put((Node) tmNode.mock, tmComputer.mock)
 	}
 
 }

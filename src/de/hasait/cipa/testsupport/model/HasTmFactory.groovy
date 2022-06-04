@@ -14,27 +14,10 @@
  * limitations under the License.
  */
 
-package de.hasait.cipa.testsupport
+package de.hasait.cipa.testsupport.model
 
-import de.hasait.cipa.Cipa
-import de.hasait.cipa.PScript
-import de.hasait.cipa.testsupport.model.TmFactory
+interface HasTmFactory {
 
-/**
- *
- */
-class CipaTestBase extends RawScriptTestBase {
-
-	Cipa cipa
-	PScript script
-
-	void initCipa(String currentJobFullQualifiedName = DEFAULT_CURRENT_JOB_FQN, TmFactory tmFactory = new TmFactory()) {
-		initRawScript(currentJobFullQualifiedName, tmFactory)
-
-		cipa = Cipa.getOrCreate(rawScript)
-		script = cipa.findBean(PScript.class)
-
-		cipa.debug = true
-	}
+	TmFactory getTmFactory()
 
 }

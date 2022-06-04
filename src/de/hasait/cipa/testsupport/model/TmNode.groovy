@@ -20,23 +20,22 @@ import hudson.model.Computer
 import hudson.model.Node
 import hudson.model.labels.LabelAtom
 
-class TmNode<M extends Node> extends MockWrapper<M> {
+class TmNode<M extends Node> extends TmBase<M> {
 
-	TmJenkins tmJenkins
+	final TmJenkins tmJenkins
+
+	final Set<LabelAtom> assignedLabels = new LinkedHashSet<>()
 
 	String nodeName
 
-	Set<LabelAtom> assignedLabels = new LinkedHashSet<>()
-
-	TmNode(Class<M> mockClass, TmJenkins tmJenkins, String nodeName, List<String> labels) {
-		super(mockClass)
+	TmNode(Class<M> mockClass, TmFactory tmFactory, TmJenkins tmJenkins, String nodeName, List<String> labels) {
+		super(mockClass, tmFactory)
 
 		if (this instanceof TmJenkins) {
 			this.tmJenkins = (TmJenkins) this
 		} else {
 			this.tmJenkins = tmJenkins
 		}
-
 
 		this.nodeName = nodeName
 		for (labelName in labels) {

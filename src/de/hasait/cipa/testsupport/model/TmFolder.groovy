@@ -21,10 +21,12 @@ import hudson.util.DescribableList
 
 class TmFolder extends TmItem<Folder> implements TmItemGroup<Folder> {
 
-	final TmDescribableList tmProperties = new TmDescribableList()
+	final TmDescribableList tmProperties
 
-	protected TmFolder(String name, TmItemGroup parent) {
-		super(Folder.class, name, parent)
+	TmFolder(TmFactory tmFactory, TmItemGroup tmParent, String name) {
+		super(Folder.class, tmFactory, tmParent, name)
+
+		this.tmProperties = tmFactory.createTmDescribableList()
 	}
 
 	DescribableList getProperties() {

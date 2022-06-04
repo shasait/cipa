@@ -20,12 +20,13 @@ import hudson.model.Computer
 
 class TmComputer extends TmActionable<Computer> {
 
-	TmNode tmNode
+	final TmNode tmNode
+
 	String hostName
 	boolean offline
 
-	TmComputer(TmNode tmNode, String hostName) {
-		super(Computer.class)
+	TmComputer(TmFactory tmFactory, TmNode tmNode, String hostName) {
+		super(Computer.class, tmFactory)
 
 		this.tmNode = tmNode
 		this.hostName = hostName

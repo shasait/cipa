@@ -21,8 +21,8 @@ import hudson.ExtensionList
 
 class TmExtensionList<T> extends TmList<T, ExtensionList<T>> {
 
-	TmExtensionList() {
-		super(ExtensionList.class)
+	TmExtensionList(TmFactory tmFactory) {
+		super(ExtensionList.class, tmFactory)
 	}
 
 	public <U extends T> U get(Class<U> type) {

@@ -21,12 +21,12 @@ import java.util.concurrent.CopyOnWriteArrayList
 import hudson.model.Action
 import hudson.model.Actionable
 
-class TmActionable<M extends Actionable> extends MockWrapper<M> {
+class TmActionable<M extends Actionable> extends TmBase<M> {
 
 	private final List<Action> actions = new CopyOnWriteArrayList<>()
 
-	protected TmActionable(Class<M> mockClass) {
-		super(mockClass)
+	protected TmActionable(Class<M> mockClass, TmFactory tmFactory) {
+		super(mockClass, tmFactory)
 	}
 
 	List<Action> getActions() {

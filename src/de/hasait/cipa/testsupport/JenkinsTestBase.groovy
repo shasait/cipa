@@ -16,7 +16,7 @@
 
 package de.hasait.cipa.testsupport
 
-
+import de.hasait.cipa.testsupport.model.TmFactory
 import de.hasait.cipa.testsupport.model.TmJenkins
 import org.jenkinsci.plugins.configfiles.GlobalConfigFiles
 import org.mockito.Mockito
@@ -30,8 +30,8 @@ class JenkinsTestBase {
 
 	GlobalConfigFiles globalConfigFilesMock
 
-	void initJenkins() {
-		tmJenkins = new TmJenkins()
+	void initJenkins(TmFactory tmFactory = new TmFactory()) {
+		tmJenkins = tmFactory.createTmJenkins()
 		globalConfigFilesMock = Mockito.mock(GlobalConfigFiles.class)
 		tmJenkins.createTmExtensionList(GlobalConfigFiles.class).add(globalConfigFilesMock)
 	}

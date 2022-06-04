@@ -25,12 +25,16 @@ class TmJob extends TmItem<Job> {
 
 	int nextBuildNumber = 1
 
-	TmJob(String name, TmItemGroup parent) {
-		super(Job.class, name, parent)
+	TmJob(TmFactory tmFactory, TmItemGroup tmParent, String name) {
+		super(Job.class, tmFactory, tmParent, name)
 	}
 
 	TmRun getTmBuildByNumber(int number) {
 		return tmRuns.find { it.number == number }
+	}
+
+	TmRun createTmRun() {
+		TmRun tmRun = tmFactory.createTmRun(this, nextBuildNumber++)
 	}
 
 	Run getBuildByNumber(int number) {

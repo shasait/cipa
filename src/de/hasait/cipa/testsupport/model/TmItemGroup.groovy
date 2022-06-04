@@ -20,7 +20,7 @@ import hudson.model.Item
 import hudson.model.ItemGroup
 import hudson.model.Job
 
-trait TmItemGroup<M extends ItemGroup> implements HasMock<M>, TmItemAttributes {
+trait TmItemGroup<M extends ItemGroup> implements HasMock<M>, HasTmFactory, TmItemAttributes {
 
 	final List<TmItem> tmItems = []
 
@@ -44,9 +44,9 @@ trait TmItemGroup<M extends ItemGroup> implements HasMock<M>, TmItemAttributes {
 				TmItem item = parent.getTmItem(name)
 				if (item == null) {
 					if (!tokens.hasMoreTokens() && job) {
-						item = new TmJob(name, parent)
+						item = tmFactory.createTmJob(name, parent)
 					} else {
-						item = new TmFolder(name, parent)
+						item = tmFactory.createTmFolder(name, parent)
 					}
 				}
 
