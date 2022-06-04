@@ -20,10 +20,11 @@ import hudson.ExtensionList
 import hudson.model.Computer
 import hudson.model.Node
 import jenkins.model.Jenkins
+import jenkins.model.Nodes
 
 class TmJenkins extends TmNode<Jenkins> implements TmItemGroup<Jenkins> {
 
-	String rootUrl = 'https://jenkins.example.org/'
+	String rootUrl
 
 	Map<Class, TmExtensionList> tmExtensionListMap = [:]
 
@@ -32,10 +33,12 @@ class TmJenkins extends TmNode<Jenkins> implements TmItemGroup<Jenkins> {
 	List<TmNode> tmNodes = []
 	TmComputer masterTmComputer
 
-	TmJenkins(TmFactory tmFactory) {
+	TmJenkins(TmFactory tmFactory, String hostName = 'master.example.org') {
 		super(Jenkins.class, tmFactory, null, '', ['master'])
 
-		masterTmComputer = tmFactory.createTmComputer(this, 'jenkins.example.org')
+		rootUrl = 'https://' + hostName + '/'
+
+		masterTmComputer = tmFactory.createTmComputer(this, hostName)
 		addTmComputer(masterTmComputer)
 
 		Jenkins.theInstance = mock
@@ -81,6 +84,10 @@ class TmJenkins extends TmNode<Jenkins> implements TmItemGroup<Jenkins> {
 
 	String getAbsoluteUrl() {
 		return rootUrl
+	}
+
+	List<Nodes> getNodes() {
+		return tmNodes.findAll { it != this }.collect { it.mock }
 	}
 
 	Computer getComputer(String name) {

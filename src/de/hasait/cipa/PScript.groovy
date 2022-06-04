@@ -25,9 +25,13 @@ import de.hasait.cipa.log.PLogger
 import de.hasait.cipa.tool.MavenExecution
 import groovy.json.JsonSlurper
 import hudson.FilePath
+import hudson.model.AbstractItem
+import hudson.model.Item
+import hudson.model.ItemGroup
 import hudson.model.Job
 import hudson.model.Run
 import hudson.remoting.VirtualChannel
+import jenkins.model.Jenkins
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
@@ -261,14 +265,19 @@ class PScript implements Serializable {
 	@NonCPS
 	List<String> collectDescriptions(Job<?, ?> job = currentRawBuild.parent) {
 		List<String> descriptions = new ArrayList<>()
-		// start with Job
-		def current = job
-		while (current != null && current.hasProperty('description')) {
-			def description = current.description
-			if (description instanceof String) {
-				descriptions.add(description)
+
+		if (job.description) {
+			descriptions.add(job.description)
+		}
+		ItemGroup parent = job.parent
+		while (parent instanceof Item) {
+			if (parent instanceof AbstractItem) {
+				String description = ((AbstractItem) parent).description
+				if (description) {
+					descriptions.add(description)
+				}
 			}
-			current = current.hasProperty('parent') ? current.parent : null
+			parent = ((Item) parent).parent
 		}
 		return descriptions
 	}
@@ -439,14 +448,17 @@ class PScript implements Serializable {
 		return jenkins.getItemByFullName(fullName)
 	}
 
-	// not Jenkins return type to allow testing
 	@NonCPS
-	def getJenkins() {
-		def current = currentRawBuild
-		while (current.hasProperty('parent') && current.parent != null) {
-			current = current.parent
+	Jenkins getJenkins() {
+		Job job = currentRawBuild.parent
+		ItemGroup parent = job.parent
+		while (parent instanceof Item) {
+			parent = ((Item) parent).parent
 		}
-		return current
+		if (parent instanceof Jenkins) {
+			return parent
+		}
+		throw new IllegalStateException('Invalid model: ' + parent)
 	}
 
 	@NonCPS

@@ -16,9 +16,11 @@
 
 package de.hasait.cipa.testsupport.model
 
-
+import hudson.model.Cause
 import hudson.model.Job
+import hudson.model.Result
 import hudson.model.Run
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
 class TmRun extends TmActionable<Run> {
 
@@ -26,17 +28,48 @@ class TmRun extends TmActionable<Run> {
 	final int number
 
 	boolean building
+	Result result
+
+	List<String> log = []
+
+	List<Cause> causes = []
 
 	TmRun(TmFactory tmFactory, TmJob tmJob, int number) {
-		super(Run.class, tmFactory)
+		super(WorkflowRun.class, tmFactory)
 
 		this.tmJob = tmJob
 		this.number = number
 		this.tmJob.tmRuns.add(this)
+		result = Result.SUCCESS
 	}
 
 	Job getParent() {
 		return tmJob.mock
+	}
+
+	String getAbsoluteUrl() {
+		return tmJob.absoluteUrl + number + '/'
+	}
+
+	public <T extends Cause> T getCause(Class<T> type) {
+		for (Cause cause in causes) {
+			if (type.isInstance(cause)) {
+				return type.cast(cause)
+			}
+		}
+		return null
+	}
+
+	String getExternalizableId() {
+		return tmJob.fullName + '#' + number
+	}
+
+	List<String> getLog(int maxLines) {
+		if (log.empty || maxLines == 0) {
+			return []
+		}
+		int size = log.size()
+		return log.subList(Math.max(0, size - maxLines), size).collect()
 	}
 
 }

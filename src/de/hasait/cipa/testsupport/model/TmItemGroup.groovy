@@ -100,6 +100,11 @@ trait TmItemGroup<M extends ItemGroup> implements HasMock<M>, HasTmFactory, TmIt
 		return getTmItemByFullName(fullQualifiedName)?.mock as Item
 	}
 
+	public <T extends Item> T getItemByFullName(String fullQualifiedName, Class<T> type) {
+		def item = getTmItemByFullName(fullQualifiedName)?.mock
+		return type.isInstance(item) ? type.cast(item) : null
+	}
+
 	Collection<TmJob> getAllTmJobs() {
 		return tmItems.findAll { it instanceof TmJob }
 	}
