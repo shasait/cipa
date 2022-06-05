@@ -17,8 +17,8 @@
 package de.hasait.cipa.testsupport.model
 
 import hudson.model.Cause
-import hudson.model.Job
 import hudson.model.Result
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
 /**
@@ -46,8 +46,16 @@ class TmRun extends TmActionable<WorkflowRun> {
 		result = Result.SUCCESS
 	}
 
-	Job getParent() {
+	WorkflowJob getParent() {
 		return tmJob.mock
+	}
+
+	WorkflowRun getPreviousBuild() {
+		return tmJob.getBuildByNumber(number - 1)
+	}
+
+	WorkflowRun getNextBuild() {
+		return tmJob.getBuildByNumber(number + 1)
 	}
 
 	String getAbsoluteUrl() {

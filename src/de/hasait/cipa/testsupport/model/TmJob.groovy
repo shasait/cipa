@@ -17,8 +17,8 @@
 package de.hasait.cipa.testsupport.model
 
 
-import hudson.model.Run
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
 /**
  * <p>TestModel for {@link WorkflowJob}.</p>
@@ -42,15 +42,19 @@ class TmJob extends TmItem<WorkflowJob> {
 		TmRun tmRun = tmFactory.createTmRun(this, nextBuildNumber++)
 	}
 
-	Run getBuildByNumber(int number) {
+	WorkflowRun getBuildByNumber(int number) {
 		return getTmBuildByNumber(number)?.mock
 	}
 
-	Run getLastBuild() {
+	WorkflowRun getFirstBuild() {
+		return tmRuns.empty ? null : tmRuns[0].mock
+	}
+
+	WorkflowRun getLastBuild() {
 		return tmRuns.empty ? null : tmRuns.last().mock
 	}
 
-	Run getLastSuccessfulBuild() {
+	WorkflowRun getLastSuccessfulBuild() {
 		int i = tmRuns.findLastIndexOf { !it.building }
 		return i < 0 ? null : tmRuns[i].mock
 	}
