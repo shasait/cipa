@@ -16,24 +16,25 @@
 
 package de.hasait.cipa.log
 
-import org.junit.Assert
+import static org.junit.Assert.assertTrue
+
 import org.junit.Test
 
 class PLogLevelTest {
 
 	@Test
 	void compareDEBUGvsINFO() {
-		Assert.assertTrue(PLogLevel.DEBUG > PLogLevel.INFO)
+		assertTrue(PLogLevel.DEBUG > PLogLevel.INFO)
 	}
 
 	@Test
 	void compareINFOvsWARN() {
-		Assert.assertTrue(PLogLevel.INFO > PLogLevel.WARN)
+		assertTrue(PLogLevel.INFO > PLogLevel.WARN)
 	}
 
 	@Test
 	void compareWARNvsERROR() {
-		Assert.assertTrue(PLogLevel.WARN > PLogLevel.ERROR)
+		assertTrue(PLogLevel.WARN > PLogLevel.ERROR)
 	}
 
 }

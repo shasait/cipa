@@ -16,11 +16,15 @@
 
 package de.hasait.cipa.testsupport.model
 
-import hudson.model.Job
+
 import hudson.model.Run
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 
-class TmJob extends TmItem<Job> {
+/**
+ * <p>TestModel for {@link WorkflowJob}.</p>
+ * <p>See {@link TmBase} for details.</p>
+ */
+class TmJob extends TmItem<WorkflowJob> {
 
 	final List<TmRun> tmRuns = []
 

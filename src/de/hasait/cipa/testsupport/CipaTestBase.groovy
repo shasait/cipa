@@ -21,11 +21,17 @@ import de.hasait.cipa.PScript
 import de.hasait.cipa.testsupport.model.TmFactory
 
 /**
- *
+ * Base class for Tests. Call {@link CipaTestBase#initCipa()} to initialize mocking.
  */
 class CipaTestBase extends RawScriptTestBase {
 
+	/**
+	 * Non-mock instance.
+	 */
 	Cipa cipa
+	/**
+	 * Non-mock instance.
+	 */
 	PScript script
 
 	void initCipa(String currentJobFullQualifiedName = DEFAULT_CURRENT_JOB_FQN, TmFactory tmFactory = new TmFactory()) {

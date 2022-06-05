@@ -19,10 +19,13 @@ package de.hasait.cipa.testsupport.model
 import hudson.model.Cause
 import hudson.model.Job
 import hudson.model.Result
-import hudson.model.Run
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 
-class TmRun extends TmActionable<Run> {
+/**
+ * <p>TestModel for {@link WorkflowRun}.</p>
+ * <p>See {@link TmBase} for details.</p>
+ */
+class TmRun extends TmActionable<WorkflowRun> {
 
 	final TmJob tmJob
 	final int number

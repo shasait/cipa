@@ -23,20 +23,39 @@ import de.hasait.cipa.testsupport.model.TmFactory
 import de.hasait.cipa.testsupport.model.TmJob
 import de.hasait.cipa.testsupport.model.TmRawScript
 import de.hasait.cipa.testsupport.model.TmRun
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
+import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.junit.Rule
 import org.junit.rules.ExpectedException
 
 /**
- *
+ * Base class for Tests. Call {@link RawScriptTestBase#initRawScript()} to initialize mocking.
  */
 class RawScriptTestBase extends JenkinsTestBase {
 
 	static final String DEFAULT_CURRENT_JOB_FQN = 'Level1/Level2/SomeJob'
 
+	/**
+	 * TestModel RawScript.
+	 */
 	TmRawScript rawScript
 
-	TmJob currentJob
-	TmRun currentBuild
+	/**
+	 * TestModel for current running job.
+	 */
+	TmJob currentTmJob
+	/**
+	 * Mock delegating to currentTmJob.
+	 */
+	WorkflowJob currentJob
+	/**
+	 * TestModel for current running build.
+	 */
+	TmRun currentTmRun
+	/**
+	 * Mock delegating to currentTmRun.
+	 */
+	WorkflowRun currentRun
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none()
@@ -45,10 +64,12 @@ class RawScriptTestBase extends JenkinsTestBase {
 		initJenkins(tmFactory)
 
 		rawScript = tmFactory.createTmRawScript()
-		currentJob = tmJenkins.getOrCreateTmJob(currentJobFullQualifiedName)
-		currentBuild = currentJob.createTmRun()
-		currentBuild.building = true
-		rawScript.currentBuild.rawBuild = currentBuild.mock
+		currentTmJob = tmJenkins.getOrCreateTmJob(currentJobFullQualifiedName)
+		currentJob = currentTmJob.mock
+		currentTmRun = currentTmJob.createTmRun()
+		currentRun = currentTmRun.mock
+		currentTmRun.building = true
+		rawScript.currentBuild.rawBuild = currentRun
 	}
 
 	void expectFailingActivities(Map<String, String> activityWithMessage) {

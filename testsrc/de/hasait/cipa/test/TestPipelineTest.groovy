@@ -16,7 +16,8 @@
 
 package de.hasait.cipa.test
 
-import de.hasait.cipa.test.TestPipeline
+import static org.mockito.Mockito.when
+
 import de.hasait.cipa.testsupport.CipaTestBase
 import hudson.tasks.junit.CaseResult
 import hudson.tasks.junit.TestResultAction
@@ -40,10 +41,10 @@ class TestPipelineTest extends CipaTestBase {
 	void testTestPipelineAllGreen() {
 		TestResultAction testResultAction = Mockito.mock(TestResultAction)
 		CaseResult caseResult1 = Mockito.mock(CaseResult)
-		Mockito.when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
-		Mockito.when(testResultAction.getPassedTests()).thenReturn([caseResult1])
-		Mockito.when(currentBuild.mock.getAction(TestResultAction.class)).thenReturn(testResultAction)
-		currentJob.description = '''
+		when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
+		when(testResultAction.getPassedTests()).thenReturn([caseResult1])
+		currentTmRun.addAction(testResultAction)
+		currentTmJob.description = '''
 vvv parameters.json vvv {
   "MAIN_SCM_URL": "scm://somewhere.git"
 , "MAIN_SCM_CREDENTIALS_ID": "somecreds"
@@ -60,10 +61,10 @@ vvv parameters.json vvv {
 
 		TestResultAction testResultAction = Mockito.mock(TestResultAction)
 		CaseResult caseResult1 = Mockito.mock(CaseResult)
-		Mockito.when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
-		Mockito.when(testResultAction.getPassedTests()).thenReturn([caseResult1])
-		Mockito.when(currentBuild.mock.getAction(TestResultAction.class)).thenReturn(testResultAction)
-		currentJob.description = '''
+		when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
+		when(testResultAction.getPassedTests()).thenReturn([caseResult1])
+		currentTmRun.addAction(testResultAction)
+		currentTmJob.description = '''
 vvv parameters.json vvv {
   "MAIN_SCM_URL": "scm://somewhere.git"
 , "MAIN_SCM_CREDENTIALS_ID": "somecreds"
@@ -80,10 +81,10 @@ vvv parameters.json vvv {
 
 		TestResultAction testResultAction = Mockito.mock(TestResultAction)
 		CaseResult caseResult1 = Mockito.mock(CaseResult)
-		Mockito.when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
-		Mockito.when(testResultAction.getPassedTests()).thenReturn([caseResult1])
-		Mockito.when(currentBuild.mock.getAction(TestResultAction.class)).thenReturn(testResultAction)
-		currentJob.description = '''
+		when(caseResult1.getClassName()).thenReturn('foo.bar.SddTest')
+		when(testResultAction.getPassedTests()).thenReturn([caseResult1])
+		currentTmRun.addAction(testResultAction)
+		currentTmJob.description = '''
 vvv parameters.json vvv {
   "MAIN_SCM_URL": "scm://somewhere.git"
 , "MAIN_SCM_CREDENTIALS_ID": "somecreds"

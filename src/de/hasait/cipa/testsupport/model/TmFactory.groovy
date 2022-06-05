@@ -18,6 +18,10 @@ package de.hasait.cipa.testsupport.model
 
 import hudson.model.Node
 
+/**
+ * <p>Factory for TestModel instances.</p>
+ * <p>Extended TestModel implementations can be used by overriding the corresponding create method.</p>
+ */
 class TmFactory {
 
 	TmJenkins createTmJenkins() {

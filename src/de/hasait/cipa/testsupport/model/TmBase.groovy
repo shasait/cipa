@@ -16,6 +16,10 @@
 
 package de.hasait.cipa.testsupport.model
 
+/**
+ * <p>Base class for almost all TestModels.</p>
+ * <p>TestModels are used by the mocked instance as default answer (see {@link DelegateOrNullAnswer}).</p>
+ */
 class TmBase<M> extends MockWrapper<M> implements HasTmFactory {
 
 	final TmFactory tmFactory

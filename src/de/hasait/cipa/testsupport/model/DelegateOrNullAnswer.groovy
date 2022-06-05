@@ -22,6 +22,9 @@ import java.lang.reflect.Method
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 
+/**
+ * Delegate to an instance of a different type than the mock if the method signature matches; return null otherwise.
+ */
 class DelegateOrNullAnswer implements Answer {
 
 	private static String createMethodIdentifier(Method method) {

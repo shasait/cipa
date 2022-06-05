@@ -22,6 +22,10 @@ import hudson.model.Node
 import jenkins.model.Jenkins
 import jenkins.model.Nodes
 
+/**
+ * <p>TestModel for {@link Jenkins}.</p>
+ * <p>See {@link TmBase} for details.</p>
+ */
 class TmJenkins extends TmNode<Jenkins> implements TmItemGroup<Jenkins> {
 
 	String rootUrl
