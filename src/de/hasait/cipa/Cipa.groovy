@@ -147,7 +147,15 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			}
 
 			CipaBeanRegistration newBeanRegistration = new CipaBeanRegistration(bean, name)
-			if (debug) {
+			if (logger.logLevelDebugOrHigher) {
+				StringBuilder sb = new StringBuilder()
+				sb.append('addBean: ')
+				if (name != null) {
+					sb.append('name=').append(name).append('; ')
+				}
+				// cannot use bean.toString as addBean is called early in constructor where most fields are still uninitialized
+				sb.append(bean.getClass().simpleName)
+				logger.debug(sb.toString())
 				debugAddedBeans.add(newBeanRegistration)
 			}
 			beanRegistrations.put(bean, newBeanRegistration)
@@ -416,6 +424,7 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			if (round > 100) {
 				throw new IllegalStateException('Init loop? ' + beans)
 			}
+			logger.debug('initBeans - round: ' + round)
 			for (bean in beans) {
 				logger.info('Initializing: ' + bean)
 				bean.initCipa(this)
@@ -436,7 +445,6 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		int round = 0
 		while (true) {
 			initBeans()
-			logAndClearDebugAddBean('Added beans after initBeans')
 
 			List<CipaPrepare> beans = findBeansToPrepare()
 			if (beans.empty) {
@@ -449,11 +457,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			if (round > 100) {
 				throw new IllegalStateException('Prepare loop? ' + beans)
 			}
+			logger.debug('prepareBeans - round: ' + round)
 			for (bean in beans) {
 				logger.info('Preparing: ' + bean)
 				bean.prepareCipa(this)
 				alreadyPrepared.add(bean)
-				logAndClearDebugAddBean('Added beans after prepareCipa')
 			}
 
 		}
@@ -461,9 +469,10 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 
 	@Override
 	void run() {
-		logAndClearDebugAddBean('Added beans before init and prepare beans')
+		logger.info('Entering run...')
+		logAndClearDebugAddBean('Added beans before initBeans and prepareBeans')
 		prepareBeans()
-		logAndClearDebugAddBean('Added beans after prepareBeans')
+		logAndClearDebugAddBean('Added beans in initBeans and prepareBeans')
 
 		// if no other CipaArtifactStore exists create the default one
 		findOrAddBean(CipaArtifactStore.class, new DefaultCipaArtifactStoreSupplier(this))
@@ -484,14 +493,14 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				parallelNodeBranches["${nodeI}-${node.label}"] = parallelNodeWithActivitiesBranch(nodeI, node, nodeWrappers)
 			}
 
+			logAndClearDebugAddBean('Added beans before parallelNodeBranches')
 			parallelNodeBranches.failFast = true
 			rawScript.parallel(parallelNodeBranches)
+			logAndClearDebugAddBean('Added beans after parallelNodeBranches')
 
 			logger.info(buildRunSummary())
 			CipaActivityWrapper.throwOnAnyActivityFailure('Activities', runContext.wrappers)
 		}
-
-		logAndClearDebugAddBean('Added beans')
 	}
 
 	@NonCPS
