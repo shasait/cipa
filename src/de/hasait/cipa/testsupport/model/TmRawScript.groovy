@@ -31,8 +31,12 @@ import org.jenkinsci.plugins.custombuildproperties.CustomBuildPropertiesAction
  */
 class TmRawScript {
 
+	private static TaskListener TASK_LISTENER = new StreamTaskListener(System.out, StandardCharsets.UTF_8)
+
+	private static String LOG_TOPIC = TmRawScript.class.simpleName
+
 	private static void log(String message) {
-		System.out.println('[' + Thread.currentThread().name + ']' + message)
+		TASK_LISTENER.getLogger().println('[    *][' + LOG_TOPIC + '][' + Thread.currentThread().name + ']' + message)
 	}
 
 	def currentBuild = ['number': 123]
@@ -265,7 +269,7 @@ class TmRawScript {
 
 	}
 
-	def context = [(TaskListener.class): new StreamTaskListener(System.out, StandardCharsets.UTF_8)]
+	def context = [(TaskListener.class): TASK_LISTENER]
 
 	def getContext(Class type) {
 		return context.get(type)
