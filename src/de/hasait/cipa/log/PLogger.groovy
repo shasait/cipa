@@ -27,7 +27,14 @@ import hudson.model.TaskListener
  * <pre>
  * &#64;groovy.transform.Field
  * def PLogger_logLevel_Cipa=de.hasait.cipa.log.PLogLevel.DEBUG
- * </pre></p>
+ * </pre>
+ * or
+ * <pre>
+ * &#64;groovy.transform.Field
+ * def PLogger_logLevel_Cipa='DEBUG'
+ * </pre>
+ * </p>
+ * <p>and/or a root logLevel can be defined for all loggers: <code>PLogger_logLevel</code></p>
  */
 class PLogger {
 
@@ -41,12 +48,23 @@ class PLogger {
 		this.rawScript = rawScript
 		this.topic = topic
 		this.logLevel = defaultLogLevel
-		String logLevelPropertyForRawScript = PLogger.class.simpleName + '_logLevel_' + topic
+		if (!logLevelFromRawScript(PLogger.class.simpleName + '_logLevel_' + topic)) {
+			logLevelFromRawScript(PLogger.class.simpleName + '_logLevel')
+		}
+	}
+
+	@NonCPS
+	private boolean logLevelFromRawScript(String logLevelPropertyForRawScript) {
 		Object logLevelFromRawScript = rawScript.hasProperty(logLevelPropertyForRawScript)?.getProperty(rawScript)
+		if (logLevelFromRawScript instanceof String) {
+			logLevelFromRawScript = PLogLevel.valueOf(logLevelFromRawScript)
+		}
 		if (logLevelFromRawScript instanceof PLogLevel) {
 			logInternal('PLogger default logLevel overridden by ' + logLevelPropertyForRawScript + ' = ' + logLevelFromRawScript)
 			setLogLevel(logLevelFromRawScript)
+			return true
 		}
+		return false
 	}
 
 	@NonCPS
