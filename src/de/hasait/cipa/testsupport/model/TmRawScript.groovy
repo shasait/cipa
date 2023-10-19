@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2023 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import hudson.model.Run
 import hudson.model.TaskListener
 import hudson.util.StreamTaskListener
 import org.jenkinsci.plugins.custombuildproperties.CustomBuildPropertiesAction
+import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 
 /**
  * Dummy implementation of a workflow script and some important steps.
@@ -39,7 +40,7 @@ class TmRawScript {
 		TASK_LISTENER.getLogger().println('[    *][' + LOG_TOPIC + '][' + Thread.currentThread().name + ']' + message)
 	}
 
-	def currentBuild = ['number': 123]
+	RunWrapper currentBuild
 
 	/**
 	 * Build params
@@ -78,7 +79,7 @@ class TmRawScript {
 
 	ThreadLocal<List<String>> pwdListHolder = new ThreadLocal<>()
 
-	void dir(String dir, Closure<?> body) {
+	def dir(String dir, Closure<?> body) {
 		log('[dir] >>> ' + dir)
 		List<String> pwdList = pwdListHolder.get() ?: []
 		if (!pwdList) {
@@ -86,12 +87,14 @@ class TmRawScript {
 			pwdListHolder.set(pwdList)
 		}
 		pwdList.add(dir)
+		def bodyResult
 		try {
-			body()
+			bodyResult = body()
 		} finally {
 			pwdList.remove(pwdList.size() - 1)
 		}
 		log('[dir] <<< ' + dir)
+		return bodyResult
 	}
 
 	boolean fileExists(String file) {
@@ -121,10 +124,11 @@ class TmRawScript {
 		return null
 	}
 
-	void node(String label = '<none>', Closure<?> body) {
+	def node(String label = '<none>', Closure<?> body) {
 		log('[node] >>> ' + label)
-		body()
+		def bodyResult = body()
 		log('[node] <<< ' + label)
+		return bodyResult
 	}
 
 	void parallel(Map branches) {
@@ -170,7 +174,7 @@ class TmRawScript {
 		String key = args.key
 		Object value = args.value
 		Boolean onlySetIfAbsent = args.onlySetIfAbsent
-		def rawBuild = currentBuild.get('rawBuild')
+		def rawBuild = currentBuild.rawBuild
 		if (rawBuild instanceof Run) {
 			if (rawBuild.getAction(CustomBuildPropertiesAction.class) == null) {
 				rawBuild.addAction(new CustomBuildPropertiesAction())

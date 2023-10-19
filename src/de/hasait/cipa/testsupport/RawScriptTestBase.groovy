@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2023 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import de.hasait.cipa.testsupport.model.TmRawScript
 import de.hasait.cipa.testsupport.model.TmRun
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
+import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
 import org.junit.Rule
 import org.junit.rules.ExpectedException
 
@@ -67,9 +68,10 @@ class RawScriptTestBase extends JenkinsTestBase {
 		currentTmJob = tmJenkins.getOrCreateTmJob(currentJobFullQualifiedName)
 		currentJob = currentTmJob.mock
 		currentTmRun = currentTmJob.createTmRun()
-		currentRun = currentTmRun.mock
 		currentTmRun.building = true
-		rawScript.currentBuild.rawBuild = currentRun
+		currentRun = currentTmRun.mock
+		RunWrapper runWrapper = new RunWrapper(currentRun, true)
+		rawScript.currentBuild = runWrapper
 	}
 
 	void expectFailingActivities(Map<String, String> activityWithMessage) {
