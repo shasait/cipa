@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2023 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,10 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	static final String SBT_BRANCH_FROM_FOLDER = 'branch-from-folder'
 	static final String SBT_NONE = 'none'
 
-	protected static final String PARAM___SCM_URL = '_SCM_URL'
-	protected static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
-	protected static final String PARAM___SCM_BRANCH = '_SCM_BRANCH'
-	protected static final String PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX = '_SCM_BFF_PREFIX'
+	static final String PARAM___SCM_URL = '_SCM_URL'
+	static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
+	static final String PARAM___SCM_BRANCH = '_SCM_BRANCH'
+	static final String PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX = '_SCM_BFF_PREFIX'
 
 	final String id
 	final String idUpperCase
@@ -44,6 +44,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 
 	boolean dry
 	boolean params = true
+	List<String> selectedParams = []
 	boolean includeInPolling = true
 	boolean includeInChangelog = true
 	int shallowDepth = 0
@@ -82,6 +83,17 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	@NonCPS
 	CheckoutConfiguration disableParams() {
 		params = false
+		return this
+	}
+
+	/**
+	 * If params is true, single params can be removed here; if params is false, single params can be added here.
+	 * @param param One of the PARAM-constants here.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutConfiguration selectedParam(String param) {
+		selectedParams.add(param)
 		return this
 	}
 
@@ -147,10 +159,16 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 
 	@Override
 	void contributeParameters(JobParameterContainer container) {
-		if (params) {
+		if (params == !selectedParams.contains(PARAM___SCM_URL)) {
 			container.addStringParameter(idUpperCase + PARAM___SCM_URL, '', "${id}-SCM-URL for checkout (Git if ending in .git, otherwise SVN)")
+		}
+		if (params == !selectedParams.contains(PARAM___SCM_CREDENTIALS_ID)) {
 			container.addStringParameter(idUpperCase + PARAM___SCM_CREDENTIALS_ID, '', "${id}-SCM-Credentials needed for checkout")
+		}
+		if (params == !selectedParams.contains(PARAM___SCM_BRANCH)) {
 			container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH, '', "${id}-SCM-Branch for checkout (${SBT_TRUNK};${SBT_BRANCH}<i>name</i>;${SBT_TAG}<i>name</i>;${SBT_BRANCH_FROM_FOLDER};${SBT_REV}<i>revision</i>;${SBT_NONE})")
+		}
+		if (params == !selectedParams.contains(PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX)) {
 			container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '', "${id}-SCM-Branch-Prefix if ${SBT_BRANCH_FROM_FOLDER} is used, otherwise has no effect")
 		}
 	}
