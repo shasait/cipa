@@ -19,7 +19,7 @@
 
 	<groupId>de.hasait.cipa</groupId>
 	<artifactId>cipa</artifactId>
-	<version>4.3.7-SNAPSHOT</version>
+	<version>4.3.7</version>
 	<packaging>jar</packaging>
 
 	<name>CIPA</name>
