@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2023 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package de.hasait.cipa.activity.scm
 
+import java.util.concurrent.atomic.AtomicReference
+
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.activity.AbstractCipaBean
 
 class ScmUrlTransformerChain extends AbstractCipaBean implements ScmUrlTransformer {
 
-	private List<ScmUrlTransformer> transformerList
+	private AtomicReference<List<ScmUrlTransformer>> transformerListHolder = new AtomicReference<>()
 
 	ScmUrlTransformerChain(Object rawScriptOrCipa) {
 		super(rawScriptOrCipa)
@@ -29,13 +31,15 @@ class ScmUrlTransformerChain extends AbstractCipaBean implements ScmUrlTransform
 
 	@NonCPS
 	String transformScmUrl(String scmUrl) {
-		if (transformerList == null) {
-			transformerList = cipa.findBeansAsList(ScmUrlTransformer.class)
+		if (transformerListHolder.get() == null) {
+			List<ScmUrlTransformer> transformerList = cipa.findBeansAsList(ScmUrlTransformer.class)
 			transformerList.remove(this)
+			transformerListHolder.compareAndSet(null, transformerList)
 		}
 
 		String result = scmUrl
 
+		List<ScmUrlTransformer> transformerList = transformerListHolder.get()
 		if (!transformerList.empty) {
 			for (ScmUrlTransformer transformer in transformerList) {
 				result = transformer.transformScmUrl(result)
