@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,14 @@ class TmRun extends TmActionable<WorkflowRun> {
 
 	WorkflowRun getNextBuild() {
 		return tmJob.getBuildByNumber(number + 1)
+	}
+
+	WorkflowRun getPreviousSuccessfulBuild() {
+		def current = previousBuild
+		while (current != null && current.result != Result.SUCCESS) {
+			current = current.previousBuild
+		}
+		return current
 	}
 
 	String getAbsoluteUrl() {
