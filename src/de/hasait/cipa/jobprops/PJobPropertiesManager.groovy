@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 
 package de.hasait.cipa.jobprops
-
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.PScript
@@ -355,31 +354,10 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 	}
 
 	@NonCPS
-	private Object retrieveParamValue(String name) {
-		Objects.requireNonNull(name)
+	Object retrieveExternalItemValue(Item startItem, String name) {
+		ensureProvidersNotEmpty()
 
-		Object value = rawScript.params[name]
-		if (value instanceof String && value.empty) {
-			return null
-		}
-		return value
-	}
-
-	@NonCPS
-	private Object retrieveExternalValue(String name) {
-		if (paramValueProviders.empty) {
-			logger.warn('paramValueProviders is empty - adding ItemDescriptionParamValues')
-			paramValueProviders.add(new ItemDescriptionParamValues(script))
-		}
-
-		for (CipaParamValueProvider provider in paramValueProviders) {
-			def value = provider.getParamValueForCurrentRun(name)
-			if (value != null) {
-				return value
-			}
-		}
-
-		Item current = script.currentRawBuild.parent
+		Item current = startItem
 		while (current != null) {
 			for (CipaParamValueProvider provider in paramValueProviders) {
 				Object value = provider.getParamValueForItem(name, current)
@@ -403,6 +381,39 @@ class PJobPropertiesManager implements JobParameterContainer, JobParameterValues
 			}
 		}
 		return null
+	}
+
+	@NonCPS
+	private Object retrieveParamValue(String name) {
+		Objects.requireNonNull(name)
+
+		Object value = rawScript.params[name]
+		if (value instanceof String && value.empty) {
+			return null
+		}
+		return value
+	}
+
+	@NonCPS
+	private Object retrieveExternalValue(String name) {
+		ensureProvidersNotEmpty()
+
+		for (CipaParamValueProvider provider in paramValueProviders) {
+			def value = provider.getParamValueForCurrentRun(name)
+			if (value != null) {
+				return value
+			}
+		}
+
+		return retrieveExternalItemValue(script.currentRawBuild.parent, name)
+	}
+
+	@NonCPS
+	private void ensureProvidersNotEmpty() {
+		if (paramValueProviders.empty) {
+			logger.warn('paramValueProviders is empty - adding ItemDescriptionParamValues')
+			paramValueProviders.add(new ItemDescriptionParamValues(script))
+		}
 	}
 
 }
