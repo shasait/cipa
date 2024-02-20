@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,11 @@ import de.hasait.cipa.resource.CipaResourceWithState
  * TODO move to package scm.
  */
 class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithStage {
+
+	static final String RUNTIME_KEY___SCM_URL = 'SCM_URL'
+	static final String RUNTIME_KEY___SCM_REF = 'SCM_REF'
+	static final String RUNTIME_KEY___SCM_RESOLVED_BRANCH = 'SCM_RESOLVED_BRANCH'
+	static final String RUNTIME_KEY___SCM_REV = 'SCM_REV'
 
 	private final String name
 	private final boolean withStage
@@ -167,10 +172,16 @@ class CheckoutActivity extends AbstractCipaActivity implements CipaActivityWithS
 	private void checkout() {
 		script.dir(checkedOutFiles.resource.path) {
 			def result = script.checkout(config, forcedScmBranch, scmUrlTransformerChain)
+
 			scmUrl = result.scmUrl
 			scmRef = result.scmRef
 			scmResolvedBranch = result.scmResolvedBranch
 			scmRev = result.scmRev
+
+			checkedOutFiles.resource.runtime.put(RUNTIME_KEY___SCM_URL, scmUrl)
+			checkedOutFiles.resource.runtime.put(RUNTIME_KEY___SCM_REF, scmRef)
+			checkedOutFiles.resource.runtime.put(RUNTIME_KEY___SCM_RESOLVED_BRANCH, scmResolvedBranch)
+			checkedOutFiles.resource.runtime.put(RUNTIME_KEY___SCM_REV, scmRev)
 		}
 	}
 
