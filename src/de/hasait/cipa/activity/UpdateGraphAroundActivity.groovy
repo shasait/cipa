@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,13 @@ import java.util.regex.Pattern
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
+import org.jenkinsci.plugins.custombuildproperties.CustomBuildPropertiesAction
 
 class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements CipaAfterActivities, Serializable {
 
-	public static final int AROUND_ACTIVITY_ORDER = 1000
+	static final int AROUND_ACTIVITY_ORDER = 1000
+
+	static final String ACTIVITY_GRAPH_CBP_KEY = 'Activity-Graph'
 
 	private final Map<CipaActivityInfo, String> dotNodeNameByActivityInfo = new HashMap<>()
 
@@ -156,12 +159,20 @@ class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements Ci
 				} catch (err) {
 					script.echo("SVG creation failed: ${err}")
 				}
+				try {
+					// optional logic for custom-build-properties-plugin >= 2.90
+					String cbpSanizizerPrefix = CustomBuildPropertiesAction.class.getDeclaredField('CBP_SANITIZER_PREFIX').get(null)
+					String cbpInternalSanizizer = CustomBuildPropertiesAction.class.getDeclaredField('CBP_INTERNAL_SANITIZER').get(null)
+					script.setCustomBuildProperty(cbpSanizizerPrefix + 'Key_' + ACTIVITY_GRAPH_CBP_KEY + '_Value', cbpInternalSanizizer)
+				} catch (err) {
+					// ignored
+				}
 			}
 		}
 		if (svgContent != null) {
 			svgContent = transformSVG(svgContent)
 			try {
-				script.setCustomBuildProperty('Activity-Graph', svgContent)
+				script.setCustomBuildProperty(ACTIVITY_GRAPH_CBP_KEY, svgContent)
 			} catch (err) {
 				script.echo("setCustomBuildProperty failed: ${err}")
 			}
