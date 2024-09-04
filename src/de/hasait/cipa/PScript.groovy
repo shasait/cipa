@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,13 +117,18 @@ class PScript implements Serializable {
 		scmUrl = scmUrlTransformer != null ? scmUrlTransformer.transformScmUrl(config.scmUrl) : config.scmUrl
 		String scmBranch = forcedScmBranch ?: config.scmBranch
 
-		if (!scmUrl) {
+		if (!scmUrl || scmBranch == CheckoutConfiguration.SBT_SCM) {
 			if (!config.dry) {
 				// If it fails here first check if the config without scmUrl is intended.
+				echo("Using checkout scm for multibranch folders - most options of CheckoutConfiguration are ignored")
 				rawScript.checkout rawScript.scm
 				if (fileExists('.git')) {
 					// Git
+					if (!scmUrl) {
+						scmUrl = determineGitUrlOfCwd()
+					}
 					scmResolvedBranch = determineGitBranchOfCwd()
+					scmRef = scmResolvedBranch.startsWith('refs/') ? scmResolvedBranch : 'refs/heads/' + scmResolvedBranch
 					scmRev = determineGitRevOfCwd()
 				} else {
 					// Subversion
@@ -178,7 +183,15 @@ class PScript implements Serializable {
 					extensions.add([$class: 'SparseCheckoutPaths', sparseCheckoutPaths: pathList])
 				}
 				if (config.shallowDepth >= 1) {
-					extensions.add([$class: 'CloneOption', shallow: true, depth: config.shallowDepth])
+					if (config.referenceRepoDir) {
+						extensions.add([$class: 'CloneOption', reference: config.referenceRepoDir, shallow: true, depth: config.shallowDepth])
+					} else {
+						extensions.add([$class: 'CloneOption', shallow: true, depth: config.shallowDepth])
+					}
+				} else {
+					if (config.referenceRepoDir) {
+						extensions.add([$class: 'CloneOption', reference: config.referenceRepoDir])
+					}
 				}
 				rawScript.checkout(
 						changelog: config.includeInChangelog,
@@ -340,6 +353,17 @@ class PScript implements Serializable {
 	String determineSvnRevOfCwd() {
 		String svnRev = sh('svn info | awk \'/^Revision/{print $2}\'', true)
 		return svnRev.trim()
+	}
+
+	/**
+	 * Determine Git Url of current working directory.
+	 */
+	String determineGitUrlOfCwd() {
+		String gitUrl = sh('''git remote get-url origin || echo 'undefined' ''', true).trim()
+		if (gitUrl == 'undefined') {
+			return null
+		}
+		return gitUrl
 	}
 
 	/**

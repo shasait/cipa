@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	static final String SBT_REV = 'rev:'
 	static final String SBT_BRANCH_FROM_FOLDER = 'branch-from-folder'
 	static final String SBT_NONE = 'none'
+	static final String SBT_SCM = 'scm'
 
 	static final String PARAM___SCM_URL = '_SCM_URL'
 	static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
@@ -48,6 +49,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	boolean includeInPolling = true
 	boolean includeInChangelog = true
 	int shallowDepth = 0
+	String referenceRepoDir
 
 	String scmUrl
 	String scmCredentialsId
@@ -154,6 +156,16 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	@NonCPS
 	CheckoutConfiguration withShallowDepth(int shallowDepth) {
 		this.shallowDepth = shallowDepth
+		return this
+	}
+
+	/**
+	 * @param referenceRepoDir Directory of optional repository used to save time for cloning.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutConfiguration withReferenceRepo(String referenceRepoDir) {
+		this.referenceRepoDir = referenceRepoDir
 		return this
 	}
 
