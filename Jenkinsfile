@@ -138,7 +138,7 @@ node('linux') {
 				stage('Deploy') {
 					try {
 						echo "\u27A1 Deploying project..."
-						sh "${mvnCommand} deploy -Dmaven.test.failure.ignore=true"
+						sh "${mvnCommand} deploy -DskipTests=true"
 					} catch (err) {
 						echo "\u27A1 Error: ${err}"
 						currentBuild.result = 'FAILURE'
