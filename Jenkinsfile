@@ -77,15 +77,6 @@ node('linux') {
 				def currentBranch
 				def releaseTag
 
-				stage('Init') {
-					if (params.releaseVersion || params.developmentVersion) {
-						echo "\u27A1 Configuring git..."
-						sh "git config user.name '${params.gitUserName}'"
-						sh "git config user.email '${params.gitUserEmail}'"
-						sh "git config --local credential.username '${params.gitUserName}'"
-					}
-				}
-
 				stage('Checkout') {
 					checkout scm
 
@@ -97,6 +88,13 @@ node('linux') {
 						currentBranch = sh(returnStdout: true, script: "git branch | grep \\* | cut -d ' ' -f2").trim()
 					}
 					echo "\u27A1 On branch ${currentBranch}..."
+
+					if (params.releaseVersion || params.developmentVersion) {
+						echo "\u27A1 Configuring git..."
+						sh "git config user.name '${params.gitUserName}'"
+						sh "git config user.email '${params.gitUserEmail}'"
+						sh "git config --local credential.username '${params.gitUserName}'"
+					}
 				}
 
 				stage('Create Release Tag') {
