@@ -77,6 +77,15 @@ node('linux') {
 				def currentBranch
 				def releaseTag
 
+				stage('Init') {
+					if (params.releaseVersion || params.developmentVersion) {
+						echo "\u27A1 Configuring git..."
+						sh "git config user.name '${params.gitUserName}'"
+						sh "git config user.email '${params.gitUserEmail}'"
+						sh "git config --local credential.username '${params.gitUserName}'"
+					}
+				}
+
 				stage('Checkout') {
 					checkout scm
 
@@ -88,14 +97,9 @@ node('linux') {
 						currentBranch = sh(returnStdout: true, script: "git branch | grep \\* | cut -d ' ' -f2").trim()
 					}
 					echo "\u27A1 On branch ${currentBranch}..."
+				}
 
-					if (params.releaseVersion || params.developmentVersion) {
-						echo "\u27A1 Configuring git..."
-						sh "git config user.name '${params.gitUserName}'"
-						sh "git config user.email '${params.gitUserEmail}'"
-						sh "git config --local credential.username '${params.gitUserName}'"
-					}
-
+				stage('Create Release Tag') {
 					if (params.releaseVersion) {
 						releaseTag = "${params.releaseVersion}"
 						def msg = "Changing POM versions to release version ${params.releaseVersion}"
@@ -107,7 +111,28 @@ node('linux') {
 						def gitTagOptions = params.forceTag ? '-f' : ''
 						sh "git tag ${gitTagOptions} ${releaseTag}"
 						manager.addInfoBadge("Release ${params.releaseVersion}")
+					} else {
+					    echo "\u27A1 No Release Tag requested"
 					}
+				}
+
+				stage('Package') {
+					try {
+						echo "\u27A1 Packaging project..."
+						sh "${mvnCommand} package -Dmaven.test.failure.ignore=true"
+					} catch (err) {
+						echo "\u27A1 Error: ${err}"
+						currentBuild.result = 'FAILURE'
+						throw err
+					}
+				}
+
+				stage('Collect Test Results') {
+					junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
+				}
+
+				stage('Archive Artifacts') {
+					archiveArtifacts artifacts: '**/target/*.jar', onlyIfSuccessful: true, allowEmptyArchive: true
 				}
 
 				stage('Deploy') {
@@ -123,6 +148,9 @@ node('linux') {
 						echo "\u27A1 Pushing release tag ${releaseTag}..."
 						sh "git push -f origin tag ${releaseTag}"
 					}
+				}
+
+				stage('Change Development Version') {
 					if (params.developmentVersion) {
 						def msg = "Changing POM versions to development version ${params.developmentVersion}"
 						echo "\u27A1 ${msg}..."
@@ -131,15 +159,9 @@ node('linux') {
 						sh "find . -type f -name pom.xml -exec git add \\{\\} \\;"
 						sh "git commit -m '[Jenkinsfile] ${msg}'"
 						sh "git push origin ${currentBranch}"
+					} else {
+					    echo "\u27A1 No Development Version requested"
 					}
-				}
-
-				stage('Collect Test Results') {
-					junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
-				}
-
-				stage('Archive Artifacts') {
-					archiveArtifacts artifacts: '**/target/*.jar', onlyIfSuccessful: true, allowEmptyArchive: true
 				}
 			}
 		}
