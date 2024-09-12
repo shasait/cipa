@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ class MavenExecution extends AbstractCipaBean {
 	private List<String> arguments = []
 	private List<String> options = []
 	private List<String> stdoutFilters = MVN_DEFAULT_STDOUT_FILTERS
+	private List<String> preMvnStatements = []
 
 	private String privateRepo
 
@@ -67,6 +68,12 @@ class MavenExecution extends AbstractCipaBean {
 	@NonCPS
 	MavenExecution addStdoutFilters(List<String> stdoutFilters) {
 		this.stdoutFilters.addAll(stdoutFilters)
+		return this
+	}
+
+	@NonCPS
+	MavenExecution addPreMvnStatements(List<String> preMvnStatements) {
+		this.preMvnStatements.addAll(preMvnStatements)
 		return this
 	}
 
@@ -143,9 +150,8 @@ class MavenExecution extends AbstractCipaBean {
 
 	private String executeInternalSh(String allArgumentsString, String grepString, boolean returnStdout, int currentTry) {
 		script.writeFile(MVN_LOG_FILE, "Executing: mvn ${allArgumentsString}\nEnvironment:\n")
-		script.sh("printenv | sort | tee -a '${MVN_LOG_FILE}'")
 		try {
-			return script.sh("#!/bin/bash\nset -o pipefail\nmvn ${allArgumentsString} | tee -a '${MVN_LOG_FILE}' ${grepString}", returnStdout)
+			return script.sh("#!/bin/bash\n${preMvnStatements.join('\n')}\nprintenv | sort | tee -a '${MVN_LOG_FILE}'\nset -o pipefail\nmvn ${allArgumentsString} | tee -a '${MVN_LOG_FILE}' ${grepString}", returnStdout)
 		} catch (e) {
 			if (currentTry < retriesIfRepoAccessRace && privateRepo == null) {
 				String matchedLines = script.sh("cat '${MVN_LOG_FILE}' | grep 'Caused by: java.io.FileNotFoundException:' | grep '.part (No such file or directory)' || true", true)
