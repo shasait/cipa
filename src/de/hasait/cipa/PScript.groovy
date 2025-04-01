@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2025 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,6 +116,22 @@ class PScript implements Serializable {
 
 		scmUrl = scmUrlTransformer != null ? scmUrlTransformer.transformScmUrl(config.scmUrl) : config.scmUrl
 		String scmBranch = forcedScmBranch ?: config.scmBranch
+
+		if (config.preCheckoutSyncRepoDir != null) {
+			String preCheckoutSyncRepoDirQuoted = encapsulateStringInSingleQuotesForShell(config.preCheckoutSyncRepoDir)
+			sh("""\
+				if [ -d ${preCheckoutSyncRepoDirQuoted} ]; then
+					if [ "\$(find . -mindepth 1 -maxdepth 1 | wc -l)" == "0" ]; then
+					    echo "Syncing cached repo into local dir..."
+						rsync -a ${preCheckoutSyncRepoDirQuoted}/ ./
+                    else
+                        echo "Local dir not empty - skipping sync of cached repo"
+					fi
+				else
+				    echo "Cached repo does not exist:" ${preCheckoutSyncRepoDirQuoted}
+				fi
+				""".stripIndent())
+		}
 
 		if (!scmUrl || scmBranch == CheckoutConfiguration.SBT_SCM) {
 			if (!config.dry) {

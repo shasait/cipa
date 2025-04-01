@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2025 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	static final String PARAM___SCM_CREDENTIALS_ID = '_SCM_CREDENTIALS_ID'
 	static final String PARAM___SCM_BRANCH = '_SCM_BRANCH'
 	static final String PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX = '_SCM_BFF_PREFIX'
+	static final String PARAM___PRE_CHECKOUT_SYNC_REPO_DIR = '_PRE_CHECKOUT_SYNC_REPO_DIR'
 
 	final String id
 	final String idUpperCase
@@ -49,6 +50,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	boolean includeInPolling = true
 	boolean includeInChangelog = true
 	int shallowDepth = 0
+	String preCheckoutSyncRepoDir
 	String referenceRepoDir
 
 	String scmUrl
@@ -160,6 +162,16 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 	}
 
 	/**
+	 * @param preCheckoutSyncRepoDir Directory to copy if current dir is empty before doing any checkout.
+	 * @return this
+	 */
+	@NonCPS
+	CheckoutConfiguration withPreCheckoutSyncRepoDir(String preCheckoutSyncRepoDir) {
+		this.preCheckoutSyncRepoDir = preCheckoutSyncRepoDir
+		return this
+	}
+
+	/**
 	 * @param referenceRepoDir Directory of optional repository used to save time for cloning.
 	 * @return this
 	 */
@@ -183,6 +195,9 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 		if (params == !selectedParams.contains(PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX)) {
 			container.addStringParameter(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '', "${id}-SCM-Branch-Prefix if ${SBT_BRANCH_FROM_FOLDER} is used, otherwise has no effect")
 		}
+		if (params == !selectedParams.contains(PARAM___PRE_CHECKOUT_SYNC_REPO_DIR)) {
+			container.addStringParameter(idUpperCase + PARAM___PRE_CHECKOUT_SYNC_REPO_DIR, '', "${id}-PreCheckoutSyncRepoDir - sync this cached repo before checkout")
+		}
 	}
 
 	@Override
@@ -191,6 +206,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 		scmCredentialsId = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___SCM_CREDENTIALS_ID, null)
 		scmBranch = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___SCM_BRANCH, SBT_NONE)
 		scmBffPrefix = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '')
+		preCheckoutSyncRepoDir = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___PRE_CHECKOUT_SYNC_REPO_DIR, null)
 
 		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch.startsWith(SBT_REV) || scmBranch == SBT_NONE)) {
 			throw new RuntimeException("Parameter ${idUpperCase + PARAM___SCM_BRANCH} invalid: ${scmBranch}")
