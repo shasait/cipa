@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,7 @@ class CheckoutConfiguration implements JobParameterContribution, Serializable {
 		scmBffPrefix = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___SCM_BRANCH_FROM_FOLDER_PREFIX, '')
 		preCheckoutSyncRepoDir = values.retrieveOptionalStringParameterValue(idUpperCase + PARAM___PRE_CHECKOUT_SYNC_REPO_DIR, null)
 
-		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch.startsWith(SBT_REV) || scmBranch == SBT_NONE)) {
+		if (!(scmBranch == SBT_TRUNK || scmBranch.startsWith(SBT_BRANCH) || scmBranch.startsWith(SBT_TAG) || scmBranch == SBT_BRANCH_FROM_FOLDER || scmBranch.startsWith(SBT_REV) || scmBranch == SBT_NONE || scmBranch == SBT_SCM)) {
 			throw new RuntimeException("Parameter ${idUpperCase + PARAM___SCM_BRANCH} invalid: ${scmBranch}")
 		}
 	}
