@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	private final Set<CipaInit> alreadyInitialized = new HashSet<>()
 	private final Set<CipaPrepare> alreadyPrepared = new HashSet<>()
 
+	private boolean skipNodesWithoutActivities = true
+
 	private boolean waitForCbpEnabled = true
 	private String finishedCbpFormat = 'Activity-%s-Finished'
 
@@ -118,6 +120,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		findOrAddBean(CipaWorkspaceNodeHandler.class)
 		toolNodeHandler = findOrAddBean(CipaToolNodeHandler.class)
 		findOrAddBean(CipaCleanupNodeHandler.class)
+	}
+
+	@NonCPS
+	static Cipa getOrNull(rawScript) {
+		return instances.get(rawScript)
 	}
 
 	@NonCPS
@@ -488,7 +495,12 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 				CipaNode node = runContext.nodes.get(nodeI)
 				List<CipaActivityWrapper> nodeWrappers = runContext.wrappersByNode.get(node)
 				if (nodeWrappers.empty) {
-					logger.warn('Node ' + node + ' has no activities!')
+					if (skipNodesWithoutActivities) {
+						logger.warn('Node ' + node + ' has no activities - skipping!')
+						continue
+					} else {
+						logger.warn('Node ' + node + ' has no activities - allocating as skipNodesWithoutActivities is false')
+					}
 				}
 				parallelNodeBranches["${nodeI}-${node.label}"] = parallelNodeWithActivitiesBranch(nodeI, node, nodeWrappers)
 			}
@@ -536,6 +548,11 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	@NonCPS
 	void disableNodeLabelPrefixParam() {
 		nodeLabelPrefixHolder.disableParams()
+	}
+
+	@NonCPS
+	void keepNodesWithoutActivities() {
+		skipNodesWithoutActivities = false
 	}
 
 	@NonCPS
