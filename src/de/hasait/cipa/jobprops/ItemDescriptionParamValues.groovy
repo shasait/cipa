@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import hudson.model.Item
 import jenkins.model.Jenkins
 
 class ItemDescriptionParamValues implements CipaParamValueProvider, Serializable {
+
+	static final String BLOCK_ID = 'parameters'
 
 	private final PScript script
 	private final def rawScript
@@ -50,7 +52,7 @@ class ItemDescriptionParamValues implements CipaParamValueProvider, Serializable
 			if (item.hasProperty('description')) {
 				Object description = item.description
 				if (description instanceof String) {
-					parsedJsonBlock = script.parseJsonBlocks([description], 'parameters', 'additionalEnv')
+					parsedJsonBlock = script.parseJsonBlocks([description], BLOCK_ID)
 				} else {
 					parsedJsonBlock = null
 				}

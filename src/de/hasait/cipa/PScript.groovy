@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.cloudbees.groovy.cps.NonCPS
 import com.google.common.collect.ImmutableSet
 import de.hasait.cipa.activity.CheckoutConfiguration
 import de.hasait.cipa.activity.scm.ScmUrlTransformer
+import de.hasait.cipa.jobprops.ItemDescriptionParamValues
 import de.hasait.cipa.log.PLogger
 import de.hasait.cipa.tool.MavenExecution
 import groovy.json.JsonSlurper
@@ -351,8 +352,7 @@ class PScript implements Serializable {
 	@NonCPS
 	Map<String, Object> determineParametersFromDescriptionValues(Job<?, ?> job = currentRawBuild.parent) {
 		List<String> descriptions = collectDescriptions(job)
-		// TODO move additionalEnv to CipaPrepareEnv after projects migrated
-		return parseJsonBlocks(descriptions, 'parameters', 'additionalEnv')
+		return parseJsonBlocks(descriptions, ItemDescriptionParamValues.BLOCK_ID)
 	}
 
 	/**
