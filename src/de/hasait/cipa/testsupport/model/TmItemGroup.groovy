@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package de.hasait.cipa.testsupport.model
 
+import java.util.function.Predicate
+
 import hudson.model.Item
 import hudson.model.ItemGroup
+import hudson.model.Items
 import hudson.model.Job
 
 trait TmItemGroup<M extends ItemGroup> implements HasMock<M>, HasTmFactory, TmItemAttributes {
@@ -109,8 +112,23 @@ trait TmItemGroup<M extends ItemGroup> implements HasMock<M>, HasTmFactory, TmIt
 		return tmItems.findAll { it instanceof TmJob }
 	}
 
+	public <T extends Item> List<T> getAllItems(Class<T> type) {
+		getAllItems(type, { it -> true });
+	}
+
+	public <T extends Item> List<T> getAllItems(Class<T> type, Predicate<T> pred) {
+		return Items.getAllItems(mock, type, pred);
+	}
+
 	Collection<? extends Job> getAllJobs() {
-		return getAllTmJobs().collect { it.mock }
+		Set<Job> result = new HashSet<>()
+		for (Item item : getItems()) {
+			def allItemJobs = item.getAllJobs()
+			if (allItemJobs) {
+				result.addAll(allItemJobs)
+			}
+		}
+		return result
 	}
 
 }
