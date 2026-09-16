@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import de.hasait.cipa.testsupport.model.TmFactory
 import de.hasait.cipa.testsupport.model.TmJob
 import de.hasait.cipa.testsupport.model.TmRawScript
 import de.hasait.cipa.testsupport.model.TmRun
+import hudson.model.Result
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.job.WorkflowRun
 import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
@@ -67,16 +68,28 @@ class RawScriptTestBase extends JenkinsTestBase {
 		rawScript = tmFactory.createTmRawScript()
 		currentTmJob = tmJenkins.getOrCreateTmJob(currentJobFullQualifiedName)
 		currentJob = currentTmJob.mock
-		currentTmRun = currentTmJob.createTmRun()
-		currentTmRun.building = true
-		currentRun = currentTmRun.mock
-		RunWrapper runWrapper = new RunWrapper(currentRun, true)
-		rawScript.currentBuild = runWrapper
+		createNextBuildAsCurrent()
 	}
 
 	void expectFailingActivities(Map<String, String> activityWithMessage) {
 		thrown.expect(RuntimeException.class)
 		thrown.expectMessage(allOf(activityWithMessage.collect { containsString("${it.key} = ${it.value}") }))
+	}
+
+	TmRun createNextBuildAsCurrent(Result resultOfPreviousCurrent = null) {
+		if (currentTmRun != null) {
+			if (resultOfPreviousCurrent != null) {
+				currentTmRun.result = resultOfPreviousCurrent
+			}
+			currentTmRun.building = false
+		}
+		currentTmRun = currentTmJob.createTmRun()
+		currentTmRun.building = true
+		currentRun = currentTmRun.mock
+		RunWrapper runWrapper = new RunWrapper(currentRun, true)
+		rawScript.currentBuild = runWrapper
+
+		return currentTmRun
 	}
 
 }
