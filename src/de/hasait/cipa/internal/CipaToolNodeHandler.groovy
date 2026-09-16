@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import de.hasait.cipa.tool.CipaToolContribution
  */
 class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 
+	static final int NODE_ORDER = -20000000
+
 	private static final String TOOL_TYPE___JDK = 'hudson.model.JDK'
 	private static final String TOOL_TYPE___MAVEN = 'hudson.tasks.Maven$MavenInstallation'
 
@@ -48,6 +50,8 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 		def envVars = []
 		def pathEntries = []
 		def configFiles = []
+
+		populateConfigFiles(node.configFileEnvVars, configFiles)
 
 		List<CipaToolContribution> toolContributions = cipa.findBeansAsList(CipaToolContribution.class)
 		if (!toolContributions.empty) {
@@ -75,13 +79,11 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 					envVars.add("${Cipa.ENV_VAR___MVN_OPTIONS}=-Dmaven.multiModuleProjectDirectory=\"${toolHome}\" ${tool.options} ${rawScript.env[Cipa.ENV_VAR___MVN_OPTIONS] ?: ''}")
 				}
 
-				List<List<String>> configFileEnvVarsList = tool.buildConfigFileEnvVarsList()
-				for (configFileEnvVar in configFileEnvVarsList) {
-					configFiles.add(rawScript.configFile(fileId: configFileEnvVar[1], variable: configFileEnvVar[0]))
-				}
+				populateConfigFiles(tool.configFileEnvVars, configFiles)
 			}
 		}
 
+		envVars.addAll(node.additionalEnvVars)
 		envVars.add('PATH+=' + pathEntries.join(':'))
 
 		rawScript.withEnv(envVars) {
@@ -91,10 +93,17 @@ class CipaToolNodeHandler extends AbstractCipaNodeHandler {
 		}
 	}
 
+	@NonCPS
+	private void populateConfigFiles(Map<String, String> configFileEnvVars, List configFiles) {
+		for (configFileEnvVar in configFileEnvVars) {
+			configFiles.add(rawScript.configFile(fileId: configFileEnvVar.value, variable: configFileEnvVar.key))
+		}
+	}
+
 	@Override
 	@NonCPS
 	int getHandleNodeOrder() {
-		return -20000000
+		return NODE_ORDER
 	}
 
 	@NonCPS

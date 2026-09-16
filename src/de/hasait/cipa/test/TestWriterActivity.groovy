@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,8 +56,11 @@ class TestWriterActivity extends AbstractCipaActivity {
 		script.echo("TestWriter ${filesOut}")
 
 		script.dir(filesOut.resource.path) {
-			script.mvn().addGoals(['clean', 'package']).execute(true)
-			runContext.archiveMvnLogFile(getName() + '.log')
+			try {
+				script.mvn().addGoals(['clean', 'package']).execute(true)
+			} finally {
+				runContext.publishMvnLogFile(getName() + '.log')
+			}
 			runContext.addJUnitTestResults(null, '.*STest')
 		}
 

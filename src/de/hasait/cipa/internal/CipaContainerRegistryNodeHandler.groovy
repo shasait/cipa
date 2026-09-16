@@ -18,42 +18,34 @@ package de.hasait.cipa.internal
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.CipaNode
-import de.hasait.cipa.CipaWorkspaceProvider
-import de.hasait.cipa.log.PLogger
 import de.hasait.cipa.nodehandler.AbstractCipaNodeHandler
 
 /**
  *
  */
-class CipaWorkspaceNodeHandler extends AbstractCipaNodeHandler {
+class CipaContainerRegistryNodeHandler extends AbstractCipaNodeHandler {
 
-	static final int NODE_ORDER = -30000000
+	static final int NODE_ORDER = CipaWorkspaceNodeHandler.NODE_ORDER + 1
 
-	private final PLogger logger
-
-	CipaWorkspaceNodeHandler(Object rawScriptOrCipa) {
+	CipaContainerRegistryNodeHandler(Object rawScriptOrCipa) {
 		super(rawScriptOrCipa)
-
-		logger = new PLogger(rawScript, CipaWorkspaceNodeHandler.class.simpleName)
 	}
 
 	@Override
 	void handleNode(CipaNode node, Closure<?> next) {
-		CipaWorkspaceProvider workspaceProvider = cipa.findBean(CipaWorkspaceProvider.class, true)
-		if (workspaceProvider == null) {
-			echoWorkspace(next)
-		} else {
-			String wsPath = workspaceProvider.determineWorkspacePath()
-			rawScript.ws(wsPath) {
-				echoWorkspace(next)
+		if (node.containerRegistryUrl) {
+			if (node.containerRegistryCredId) {
+				rawScript.docker.withRegistry(node.containerRegistryUrl, node.containerRegistryCredId) {
+					next.call()
+				}
+			} else {
+				rawScript.docker.withRegistry(node.containerRegistryUrl) {
+					next.call()
+				}
 			}
+		} else {
+			next.call()
 		}
-	}
-
-	private void echoWorkspace(Closure<?> next) {
-		String workspace = rawScript.env.WORKSPACE
-		logger.info('Workspace: ' + workspace)
-		next.call()
 	}
 
 	@Override

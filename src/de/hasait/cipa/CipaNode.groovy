@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,20 @@ class CipaNode implements Serializable {
 	private final boolean applyPrefix
 
 	/**
+	 * E.g. https://public.ecr.aws
+	 */
+	private String containerRegistryUrl
+	private String containerRegistryCredId
+	/**
+	 * E.g. docker/library/maven:3.9.16-eclipse-temurin-25-noble
+	 */
+	private String containerImageCoords
+	private final List<String> containerArgs = []
+
+	private final Map<String, String> configFileEnvVars = new HashMap<>()
+	private final List<String> additionalEnvVars = []
+
+	/**
 	 * Hostname - only available while executing of activities.
 	 */
 	String runtimeHostname
@@ -50,10 +64,87 @@ class CipaNode implements Serializable {
 		return applyPrefix
 	}
 
+	@NonCPS
+	String getContainerRegistryUrl() {
+		return containerRegistryUrl
+	}
+
+	@NonCPS
+	String getContainerRegistryCredId() {
+		return containerRegistryCredId
+	}
+
+	@NonCPS
+	String getContainerImageCoords() {
+		return containerImageCoords
+	}
+
+	@NonCPS
+	CipaNode withContainer(String registryUrl, String imageCoords, String credentialsId = null) {
+		this.containerRegistryUrl = registryUrl
+		this.containerImageCoords = imageCoords
+		this.containerRegistryCredId = credentialsId
+		return this
+	}
+
+	@NonCPS
+	List<String> getContainerArgs() {
+		return Collections.unmodifiableList(containerArgs)
+	}
+
+	@NonCPS
+	void addContainerArgs(String... containerArgs) {
+		this.containerArgs.addAll(containerArgs)
+	}
+
+	@NonCPS
+	void removeAllContainerArgs() {
+		containerArgs.clear()
+	}
+
+	List<String> getAdditionalEnvVars() {
+		return Collections.unmodifiableList(additionalEnvVars)
+	}
+
+	@NonCPS
+	void addAdditionalEnvVar(String envVar, String value) {
+		additionalEnvVars.add(envVar + "=" + value)
+	}
+
+	@NonCPS
+	void addAdditionalEnvVarSupplement(String envVar, String value) {
+		additionalEnvVars.add(envVar + "+=" + value)
+	}
+
+	@NonCPS
+	Map<String, String> getConfigFileEnvVars() {
+		return Collections.unmodifiableMap(configFileEnvVars)
+	}
+
+	@NonCPS
+	void addConfigFileEnvVar(String envVar, String configFileId) {
+		configFileEnvVars.put(envVar, configFileId)
+	}
+
 	@Override
 	@NonCPS
 	String toString() {
-		return "Node[${label}]"
+		final StringBuffer sb = new StringBuffer("CipaNode{")
+		sb.append("label='").append(label).append('\'')
+		if (!applyPrefix) {
+			sb.append(", applyPrefix=").append(applyPrefix)
+		}
+		if (containerRegistryUrl) {
+			sb.append(", containerRegistryUrl='").append(containerRegistryUrl).append('\'')
+		}
+		if (containerRegistryCredId) {
+			sb.append(", containerRegistryCredId='").append(containerRegistryCredId).append('\'')
+		}
+		if (containerImageCoords) {
+			sb.append(", containerImageCoords='").append(containerImageCoords).append('\'')
+		}
+		sb.append('}')
+		return sb.toString()
 	}
 
 }

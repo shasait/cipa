@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import de.hasait.cipa.nodehandler.AbstractCipaNodeHandler
  */
 class CipaCleanupNodeHandler extends AbstractCipaNodeHandler {
 
+	static final int NODE_ORDER = -10000000
+
 	CipaCleanupNodeHandler(Object rawScriptOrCipa) {
 		super(rawScriptOrCipa)
 	}
@@ -44,7 +46,7 @@ class CipaCleanupNodeHandler extends AbstractCipaNodeHandler {
 	@Override
 	@NonCPS
 	int getHandleNodeOrder() {
-		return -10000000
+		return NODE_ORDER
 	}
 
 }

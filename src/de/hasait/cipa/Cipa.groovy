@@ -35,6 +35,8 @@ import de.hasait.cipa.internal.CipaActivityBuilder
 import de.hasait.cipa.internal.CipaActivityWrapper
 import de.hasait.cipa.internal.CipaBeanRegistration
 import de.hasait.cipa.internal.CipaCleanupNodeHandler
+import de.hasait.cipa.internal.CipaContainerImageNodeHandler
+import de.hasait.cipa.internal.CipaContainerRegistryNodeHandler
 import de.hasait.cipa.internal.CipaPrepareEnv
 import de.hasait.cipa.internal.CipaPrepareJobProperties
 import de.hasait.cipa.internal.CipaPrepareNodeLabelPrefix
@@ -120,6 +122,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 		findOrAddBean(CipaWorkspaceNodeHandler.class)
 		toolNodeHandler = findOrAddBean(CipaToolNodeHandler.class)
 		findOrAddBean(CipaCleanupNodeHandler.class)
+		findOrAddBean(CipaContainerRegistryNodeHandler.class)
+		findOrAddBean(CipaContainerImageNodeHandler.class)
 	}
 
 	@NonCPS
@@ -399,18 +403,18 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 	}
 
 	@NonCPS
-	CipaTool configureJDK(String version) {
-		return toolNodeHandler.configureJDK(version)
+	CipaTool configureJDK(String version, CipaNode node = null) {
+		return toolNodeHandler.configureJDK(version, node)
 	}
 
 	@NonCPS
-	CipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null) {
-		return toolNodeHandler.configureMaven(version, mvnSettingsFileId, mvnToolchainsFileId)
+	CipaTool configureMaven(String version, String mvnSettingsFileId = null, String mvnToolchainsFileId = null, CipaNode node = null) {
+		return toolNodeHandler.configureMaven(version, mvnSettingsFileId, mvnToolchainsFileId, node)
 	}
 
 	@NonCPS
-	CipaTool configureTool(String name, String type) {
-		return toolNodeHandler.configureTool(name, type)
+	CipaTool configureTool(String name, String type, CipaNode node = null) {
+		return toolNodeHandler.configureTool(name, type, node)
 	}
 
 	@NonCPS
@@ -574,6 +578,8 @@ class Cipa implements CipaBeanContainer, Runnable, Serializable {
 			}
 
 			node(cipaNode) {
+				script.echo("Inside node ${cipaNode}...")
+
 				Throwable prepareThrowable = null
 				for (wrapper in nodeWrappers) {
 					wrapper.prepareNode()

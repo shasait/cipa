@@ -42,7 +42,14 @@ class TestPipeline extends AbstractCipaAroundActivity implements CipaInit, Seria
 		cipa.addStandardBeans(10)
 
 		CipaNode node1 = cipa.newNode('node1')
+		configureTools(node1)
 		CipaNode node2 = cipa.newNode('node2')
+		configureTools(node2)
+		CipaNode node1Unused = cipa.newNode('node1')
+		CipaNode node1Container = cipa.newNode('node1').withContainer('https://public.ecr.aws', 'docker/library/maven:3.9.16-eclipse-temurin-25-noble')
+		node1Container.addContainerArgs('--network host')
+		node1Container.addConfigFileEnvVar(Cipa.ENV_VAR___MVN_SETTINGS, 'ciserver-settings.xml')
+		node1Container.addAdditionalEnvVar('FOOENV', 'BARVAL')
 
 		CipaResourceWithState<CipaFileResource> mainCheckedOutFiles = new CheckoutActivity(cipa, 'Checkout', 'Main', node1).excludeUser('autouser', 'robot').providedCheckedOutFiles
 		CipaResourceWithState<CipaStashResource> mainStash = new StashFilesActivity(cipa, 'StashMain', mainCheckedOutFiles).providedStash
@@ -54,14 +61,20 @@ class TestPipeline extends AbstractCipaAroundActivity implements CipaInit, Seria
 		new TestWriterActivity(cipa, "TestWa2", files, "StateW2", wa2f)
 		CipaResourceWithState<CipaFileResource> filesW3 = new TestWriterActivity(cipa, "TestWa3", files, "StateW3", wa3f).providedFilesOut
 		new TestReaderActivity(cipa, "TestRb1", filesW3, rb1f)
+
+		CipaResourceWithState<CipaFileResource> cMainCheckedOutFiles = new CheckoutActivity(cipa, 'C-Checkout', 'Main', node1Container).excludeUser('autouser', 'robot').providedCheckedOutFiles
+		new TestWriterActivity(cipa, "C-TestW", cMainCheckedOutFiles, "StateW", false)
+	}
+
+	@NonCPS
+	private void configureTools(CipaNode node) {
+		cipa.configureJDK('JDK25', node)
+		cipa.configureMaven('M3', 'ciserver-settings.xml', null, node)
+				.setOptions('-Xms1g -Xmx4g -XX:ReservedCodeCacheSize=256m -Dproject.build.sourceEncoding=UTF-8 -Dfile.encoding=UTF-8 -Dmaven.compile.fork=true')
 	}
 
 	@Override
 	void initCipa(Cipa cipa) {
-		cipa.configureJDK('JDK8')
-		cipa.configureMaven('M3', 'ciserver-settings.xml', 'ciserver-toolchains.xml')
-				.setOptions('-Xms1g -Xmx4g -XX:ReservedCodeCacheSize=256m -Dproject.build.sourceEncoding=UTF-8 -Dfile.encoding=UTF-8 -Dmaven.compile.fork=true')
-
 		script.setCustomBuildProperty("${CustomBuildPropertiesAction.CBP_TABLE_PREFIX}Activities", "Activity-(.*?)-(.*)")
 	}
 

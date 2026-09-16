@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 by Sebastian Hasait (sebastian at hasait dot de)
+ * Copyright (C) 2026 by Sebastian Hasait (sebastian at hasait dot de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.regex.Pattern
 
 import com.cloudbees.groovy.cps.NonCPS
 import de.hasait.cipa.Cipa
+import de.hasait.cipa.CipaNode
 import org.jenkinsci.plugins.custombuildproperties.CustomBuildPropertiesAction
 
 class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements CipaAfterActivities, Serializable {
@@ -103,8 +104,9 @@ class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements Ci
 
 		int nodeI = 0
 		cipa.activityInfosByNode.each { node, activityInfos ->
+			String nodeGraphLabel = determineNodeGraphLabel(node)
 			dotContent << "subgraph cluster_node${nodeI++} {\n"
-			dotContent << "label=\"${node.label}\";\n"
+			dotContent << "label=\"${nodeGraphLabel}\";\n"
 			dotContent << 'style=dotted;\n'
 			for (activityInfo in activityInfos) {
 				dotContent << "${dotNodeNameByActivityInfo.get(activityInfo)}[label=\"${activityInfo.activity.name}\"];\n"
@@ -128,6 +130,24 @@ class UpdateGraphAroundActivity extends AbstractCipaAroundActivity implements Ci
 		}
 		dotContent << '}\n'
 		return dotContent.toString()
+	}
+
+	@NonCPS
+	private String determineNodeGraphLabel(CipaNode node) {
+		StringBuilder result = new StringBuilder()
+		result << node.label
+		if (node.containerImageCoords) {
+			result << ' ('
+			int liofs = node.containerImageCoords.lastIndexOf('/')
+			if (liofs > 1) {
+				result << '...'
+				result << node.containerImageCoords.substring(liofs)
+			} else {
+				result << node.containerImageCoords
+			}
+			result << ')'
+		}
+		return result.toString()
 	}
 
 	@NonCPS
